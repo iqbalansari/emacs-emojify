@@ -1,6 +1,6 @@
-;; Another plugin to waste time in Emacs :sweat: :worried: :unamused:
-;; :rocket: :star2: :strawberry:
-
+;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :rocket:
+;;
+;; TODO: Handle non-font-lock modes like git-commit-mode, helm-mode
 (require 'json)
 (require 'subr-x)
 
@@ -31,7 +31,7 @@ Regexp match data 0 points to the chars."
                                                                         :ascent 'center
                                                                         ;; no-op if imagemagick is not available
                                                                         :height (default-font-height))))))
-      
+
       (remove-text-properties start end '(display))))
   nil)
 
@@ -40,6 +40,27 @@ Regexp match data 0 points to the chars."
     `((,(regexp-opt emojis)
        (0 (emoji-setup-emoji-display))))))
 
-(font-lock-add-keywords nil (emoji-make-keywords))
-(setq-local font-lock-extra-managed-props
-            (cons 'display font-lock-extra-managed-props))
+(defvar emoji-make-keywords (emoji-make-keywords))
+
+(define-minor-mode emojify-mode
+  "Emojify mode"
+  :init-value nil
+  ;; Do not bother non font-lock buffers
+  (when font-lock-major-mode
+    (if emojify-mode
+        ;; Turn on
+        (progn
+          (font-lock-add-keywords nil emoji-make-keywords)
+          (setq-local font-lock-extra-managed-props
+                      (cons 'display font-lock-extra-managed-props)))
+      ;; Turn off
+      (font-lock-remove-keywords nil emoji-make-keywords)
+      (setq font-lock-extra-managed-props (delq 'composition
+                                                font-lock-extra-managed-props)))
+    (font-lock-ensure)))
+
+(defun turn-on-emojify-mode ()
+  (emojify-mode 1))
+
+(define-globalized-minor-mode global-emojify-mode
+  emojify-mode turn-on-emojify-mode)
