@@ -1,6 +1,7 @@
 ;; Another plugin to waste time in Emacs :sweat: :worried: :unamused:
-;;
-;; TODO: Handle non-font-lock modes like git-commit-mode, helm-mode
+;; :) :( :O
+;; TODO: Handle non-font-lock modes like helm-mode
+;;       Custom images
 (require 'json)
 (require 'subr-x)
 
@@ -10,34 +11,43 @@
                            (json-object-type 'hash-table))
                        (json-read-file emoji-emoji-json)))
 
+;; Can be one of image, unicode, ascii
+(defvar emoji-substitution-style 'image)
+
+(defsubst emojify-get-image (name)
+  (let ((emoji-one (gethash name emoji-parsed)))
+    (create-image (expand-file-name (concat (gethash "unicode" emoji-one) ".png")
+                                    emoji-image-dir)
+                  ;; Use imagemagick if available (allows resizing images)
+                  (when (fboundp 'imagemagick-types)
+                    'imagemagick)
+                  nil
+                  :ascent 'center
+                  ;; no-op if imagemagick is not available
+                  :height (default-font-height))))
+
 (defun emoji-setup-emoji-display ()
   "Compose a sequence of characters into an emoji.
 Regexp match data 0 points to the chars."
   (let* ((start (match-beginning 0))
          (end (match-end 0))
          (syntax-ppss-at-point (syntax-ppss))
-         (emoji-text (substring (match-string 0) 1 -1))
+         (matched-string (match-string 0))
+         (emoji-text matched-string)
          match)
     (if (or (not (derived-mode-p 'prog-mode))
             (nth 3 syntax-ppss-at-point)
             (nth 4 syntax-ppss-at-point))
         (let ((emoji-one (gethash emoji-text emoji-parsed)))
           (when emoji-one
-            (add-text-properties start end (list 'display (create-image (expand-file-name (concat (gethash "unicode" emoji-one) ".png")
-                                                                                          emoji-image-dir)
-                                                                        ;; Use imagemagick if available (allows resizing images)
-                                                                        (when (fboundp 'imagemagick-types)
-                                                                          'imagemagick)
-                                                                        nil
-                                                                        :ascent 'center
-                                                                        ;; no-op if imagemagick is not available
-                                                                        :height (default-font-height))))))
+            (add-text-properties start end (list 'display (pcase emoji-substitution-style
+                                                            (`image (emojify-get-image emoji-text)))))))
 
       (remove-text-properties start end '(display))))
   nil)
 
 (defun emoji-make-keywords ()
-  (let ((emojis (mapcar (lambda (word) (concat ":" word ":")) (hash-table-keys emoji-parsed))))
+  (let ((emojis (hash-table-keys emoji-parsed)))
     `((,(regexp-opt emojis)
        (0 (emoji-setup-emoji-display))))))
 
