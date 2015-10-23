@@ -18,7 +18,8 @@ Regexp match data 0 points to the chars."
          (syntax-ppss-at-point (syntax-ppss))
          (emoji-text (substring (match-string 0) 1 -1))
          match)
-    (if (or (nth 3 syntax-ppss-at-point)
+    (if (or (not (derived-mode-p 'prog-mode))
+            (nth 3 syntax-ppss-at-point)
             (nth 4 syntax-ppss-at-point))
         (let ((emoji-one (gethash emoji-text emoji-parsed)))
           (when emoji-one
