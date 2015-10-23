@@ -1,4 +1,4 @@
-;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :rocket:
+;; Another plugin to waste time in Emacs :sweat: :worried: :unamused:
 ;;
 ;; TODO: Handle non-font-lock modes like git-commit-mode, helm-mode
 (require 'json)
@@ -43,6 +43,11 @@ Regexp match data 0 points to the chars."
 
 (defvar emoji-make-keywords (emoji-make-keywords))
 
+(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
+  (font-lock-fontify-buffer))
+
+(ad-activate 'text-scale-increase)
+
 (define-minor-mode emojify-mode
   "Emojify mode"
   :init-value nil
@@ -58,7 +63,7 @@ Regexp match data 0 points to the chars."
       (font-lock-remove-keywords nil emoji-make-keywords)
       (setq font-lock-extra-managed-props (delq 'composition
                                                 font-lock-extra-managed-props)))
-    (font-lock-ensure)))
+    (font-lock-fontify-buffer)))
 
 (defun turn-on-emojify-mode ()
   (emojify-mode 1))
