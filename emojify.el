@@ -1,7 +1,8 @@
 ;; Another plugin to waste time in Emacs :sweat: :worried: :unamused:
-;; :) :( :O
+;;
 ;; TODO: Handle non-font-lock modes like helm-mode
 ;;       Custom images
+;;       Do not emojify between words
 (require 'json)
 (require 'subr-x)
 
@@ -51,7 +52,7 @@ Regexp match data 0 points to the chars."
     `((,(regexp-opt emojis)
        (0 (emoji-setup-emoji-display))))))
 
-(defvar emoji-make-keywords (emoji-make-keywords))
+(defvar emoji-keywords (emoji-make-keywords))
 
 (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
   (font-lock-fontify-buffer))
@@ -66,11 +67,11 @@ Regexp match data 0 points to the chars."
     (if emojify-mode
         ;; Turn on
         (progn
-          (font-lock-add-keywords nil emoji-make-keywords)
+          (font-lock-add-keywords nil emoji-keywords)
           (setq-local font-lock-extra-managed-props
                       (cons 'display font-lock-extra-managed-props)))
       ;; Turn off
-      (font-lock-remove-keywords nil emoji-make-keywords)
+      (font-lock-remove-keywords nil emoji-keywords)
       (setq font-lock-extra-managed-props (delq 'composition
                                                 font-lock-extra-managed-props)))
     (font-lock-fontify-buffer)))
