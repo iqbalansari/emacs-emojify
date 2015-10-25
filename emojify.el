@@ -18,6 +18,10 @@
 (defvar emoji-regexps (let ((emojis (hash-table-keys emoji-parsed)))
                         (regexp-opt emojis)))
 
+(defun emojify--emojify-buffer-p ()
+  (not (or (minibufferp)
+           (string-match-p "^\\( \\|*\\)" (buffer-name)))))
+
 ;; Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
 
@@ -45,30 +49,28 @@
                                          'emojified t))))
 
 (defun emojify--emojify-region (beg end)
-  (with-silent-modifications
-    (save-excursion
-      (goto-char beg)
-      (while (search-forward-regexp emoji-regexps end t)
-        (emojify--setup-emoji-display (match-beginning 0)
-                                   (match-end 0)
-                                   (match-string 0))))))
+  (save-excursion
+    (goto-char beg)
+    (while (search-forward-regexp emoji-regexps end t)
+      (emojify--setup-emoji-display (match-beginning 0)
+                                    (match-end 0)
+                                    (match-string 0)))))
 
 (defun emojify--unemojify-region (beg end)
-  (with-silent-modifications
-    (save-excursion
-      (while (< beg end)
-        (let* ((emoji-start (text-property-any beg end 'emojified t))
-               (emoji-end (or (and emoji-start
-                                   (text-property-not-all emoji-start end 'emojified t))
-                              ;; If the emojified text is at the end of the region
-                              ;; assume that end is the emojified text.
-                              end)))
-          ;; Proceed only if we got some text with emoji property
-          (when emoji-start
-            (remove-text-properties emoji-start emoji-end (list 'emojified t
-                                                                'display t
-                                                                'composition t)))
-          (setq beg emoji-end))))))
+  (save-excursion
+    (while (< beg end)
+      (let* ((emoji-start (text-property-any beg end 'emojified t))
+             (emoji-end (or (and emoji-start
+                                 (text-property-not-all emoji-start end 'emojified t))
+                            ;; If the emojified text is at the end of the region
+                            ;; assume that end is the emojified text.
+                            end)))
+        ;; Proceed only if we got some text with emoji property
+        (when emoji-start
+          (remove-text-properties emoji-start emoji-end (list 'emojified t
+                                                              'display t
+                                                              'composition t)))
+        (setq beg emoji-end)))))
 
 (defun emojify--after-change-function (beginning end len)
   (save-excursion
@@ -92,19 +94,21 @@
 
 ;; (ad-activate 'text-scale-increase)
 (defun emojify-turn-on-emojify-mode ()
-  (save-restriction
-    (widen)
-    (emojify--emojify-region (point-min) (point-max)))
-  ;; Make sure emojis are displayed in newly inserted text
-  (add-hook 'after-change-functions #'emojify--after-change-function t t))
+  (when (emojify--emojify-buffer-p)
+    (save-restriction
+      (widen)
+      (emojify--emojify-region (point-min) (point-max)))
+    ;; Make sure emojis are displayed in newly inserted text
+    (add-hook 'after-change-functions #'emojify--after-change-function t t)))
 
 (defun emojify-turn-off-emojify-mode ()
-  ;; Remove currently displayed emojis
-  (save-restriction
-    (widen)
-    (emojify--unemojify-region (point-min) (point-max)))
-  ;; Make sure emojis are displayed in newly inserted text
-  (remove-hook 'after-change-functions #'emojify--after-change-function t))
+  (when (emojify--emojify-buffer-p)
+    ;; Remove currently displayed emojis
+    (save-restriction
+      (widen)
+      (emojify--unemojify-region (point-min) (point-max)))
+    ;; Make sure emojis are displayed in newly inserted text
+    (remove-hook 'after-change-functions #'emojify--after-change-function t)))
 
 (define-minor-mode emojify-mode
   "Emojify mode"
