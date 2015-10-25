@@ -57,36 +57,38 @@
                                     (match-string 0)))))
 
 (defun emojify--unemojify-region (beg end)
-  (save-excursion
-    (while (< beg end)
-      (let* ((emoji-start (text-property-any beg end 'emojified t))
-             (emoji-end (or (and emoji-start
-                                 (text-property-not-all emoji-start end 'emojified t))
-                            ;; If the emojified text is at the end of the region
-                            ;; assume that end is the emojified text.
-                            end)))
-        ;; Proceed only if we got some text with emoji property
-        (when emoji-start
-          (remove-text-properties emoji-start emoji-end (list 'emojified t
-                                                              'display t
-                                                              'composition t)))
-        (setq beg emoji-end)))))
+  (with-silent-modifications
+    (save-excursion
+      (while (< beg end)
+        (let* ((emoji-start (text-property-any beg end 'emojified t))
+               (emoji-end (or (and emoji-start
+                                   (text-property-not-all emoji-start end 'emojified t))
+                              ;; If the emojified text is at the end of the region
+                              ;; assume that end is the emojified text.
+                              end)))
+          ;; Proceed only if we got some text with emoji property
+          (when emoji-start
+            (remove-text-properties emoji-start emoji-end (list 'emojified t
+                                                                'display t
+                                                                'composition t)))
+          (setq beg emoji-end))))))
 
 (defun emojify--after-change-function (beginning end len)
-  (save-excursion
-    (let ((inhibit-read-only t)
-          ;; Extend the region to match the beginning of line where change began
-          (region-end (progn
-                        (goto-char end)
-                        (line-end-position)))
-          ;; Extend the region to match the end of line where change ended
-          (region-start (progn
-                          (goto-char beginning)
-                          (line-beginning-position))))
-      ;; Remove previously added emojis
-      (emojify--unemojify-region region-start region-end)
-      ;; Add emojis to the region
-      (emojify--emojify-region region-start region-end))))
+  (with-silent-modifications
+    (save-excursion
+      (let ((inhibit-read-only t)
+            ;; Extend the region to match the beginning of line where change began
+            (region-end (progn
+                          (goto-char end)
+                          (line-end-position)))
+            ;; Extend the region to match the end of line where change ended
+            (region-start (progn
+                            (goto-char beginning)
+                            (line-beginning-position))))
+        ;; Remove previously added emojis
+        (emojify--unemojify-region region-start region-end)
+        ;; Add emojis to the region
+        (emojify--emojify-region region-start region-end)))))
 
 ;; Resize emojis on text resize
 ;; (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
