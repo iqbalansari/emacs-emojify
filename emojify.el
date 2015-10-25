@@ -1,7 +1,6 @@
-;; Another plugin to waste time in Emacs :sweat: :worried: :unamused:
+;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p
 ;;
-;; TODO: Do not emojify between words
-;;       Bug in org-capture
+;; TODO: Bug in org-capture (what causes this)
 ;;       Sometimes point is changed after adding emoji
 ;;       Custom images
 ;;       Cleanup
@@ -20,7 +19,7 @@
 
 (defun emojify--emojify-buffer-p ()
   (not (or (minibufferp)
-           (string-match-p "^\\( \\|*\\)" (buffer-name)))))
+           (string-match-p "helm" (symbol-name major-mode)))))
 
 ;; Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
@@ -42,19 +41,24 @@
 
 (defun emojify--setup-emoji-display (start end match)
   "Emojify the text between start and end"
-  (when (or (not (derived-mode-p 'prog-mode))
-            (nth 8 (syntax-ppss)))
+  (when (and (or (not (derived-mode-p 'prog-mode))
+                 (nth 8 (syntax-ppss)))
+             (not (and (char-before start)
+                       (eq (char-syntax (char-before start)) ?w)))
+             (not (and (char-after end)
+                       (eq (char-syntax (char-after end)) ?w))))
     (add-text-properties start end (list 'display (pcase emoji-substitution-style
                                                     (`image (emojify-get-image match)))
                                          'emojified t))))
 
 (defun emojify--emojify-region (beg end)
-  (save-excursion
-    (goto-char beg)
-    (while (search-forward-regexp emoji-regexps end t)
-      (emojify--setup-emoji-display (match-beginning 0)
-                                    (match-end 0)
-                                    (match-string 0)))))
+  (with-silent-modifications
+    (save-excursion
+      (goto-char beg)
+      (while (search-forward-regexp emoji-regexps end t)
+        (emojify--setup-emoji-display (match-beginning 0)
+                                      (match-end 0)
+                                      (match-string 0))))))
 
 (defun emojify--unemojify-region (beg end)
   (with-silent-modifications
@@ -74,21 +78,19 @@
           (setq beg emoji-end))))))
 
 (defun emojify--after-change-function (beginning end len)
-  (with-silent-modifications
-    (save-excursion
-      (let ((inhibit-read-only t)
-            ;; Extend the region to match the beginning of line where change began
-            (region-end (progn
-                          (goto-char end)
-                          (line-end-position)))
-            ;; Extend the region to match the end of line where change ended
-            (region-start (progn
-                            (goto-char beginning)
-                            (line-beginning-position))))
-        ;; Remove previously added emojis
-        (emojify--unemojify-region region-start region-end)
-        ;; Add emojis to the region
-        (emojify--emojify-region region-start region-end)))))
+  (let ((inhibit-read-only t)
+        ;; Extend the region to match the beginning of line where change began
+        (region-end (save-excursion
+                      (goto-char end)
+                      (line-end-position)))
+        ;; Extend the region to match the end of line where change ended
+        (region-start (save-excursion
+                        (goto-char beginning)
+                        (line-beginning-position))))
+    ;; Remove previously added emojis
+    (emojify--unemojify-region region-start region-end)
+    ;; Add emojis to the region
+    (emojify--emojify-region region-start region-end)))
 
 ;; Resize emojis on text resize
 ;; (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
