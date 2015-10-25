@@ -1,8 +1,11 @@
 ;; Another plugin to waste time in Emacs :sweat: :worried: :unamused:
 ;;
-;; TODO: Handle non-font-lock modes like helm-mode
+;; TODO: Do not emojify between words
+;;       Bug in org-capture
+;;       Sometimes point is changed after adding emoji
 ;;       Custom images
-;;       Do not emojify between words
+;;       Cleanup
+
 (require 'json)
 (require 'subr-x)
 
@@ -12,72 +15,106 @@
                            (json-object-type 'hash-table))
                        (json-read-file emoji-emoji-json)))
 
+(defvar emoji-regexps (let ((emojis (hash-table-keys emoji-parsed)))
+                        (regexp-opt emojis)))
+
 ;; Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
 
 (defsubst emojify-get-image (name)
   (let ((emoji-one (gethash name emoji-parsed)))
-    (create-image (expand-file-name (concat (gethash "unicode" emoji-one) ".png")
-                                    emoji-image-dir)
-                  ;; Use imagemagick if available (allows resizing images)
-                  (when (fboundp 'imagemagick-types)
-                    'imagemagick)
-                  nil
-                  :ascent 'center
-                  ;; no-op if imagemagick is not available
-                  :height (default-font-height))))
+    (when emoji-one
+      (create-image (expand-file-name (concat (gethash "unicode" emoji-one) ".png")
+                                      emoji-image-dir)
+                    ;; Use imagemagick if available (allows resizing images
 
-(defun emoji-setup-emoji-display ()
-  "Compose a sequence of characters into an emoji.
-Regexp match data 0 points to the chars."
-  (let* ((start (match-beginning 0))
-         (end (match-end 0))
-         (syntax-ppss-at-point (syntax-ppss))
-         (matched-string (match-string 0))
-         (emoji-text matched-string)
-         match)
-    (if (or (not (derived-mode-p 'prog-mode))
-            (nth 3 syntax-ppss-at-point)
-            (nth 4 syntax-ppss-at-point))
-        (let ((emoji-one (gethash emoji-text emoji-parsed)))
-          (when emoji-one
-            (add-text-properties start end (list 'display (pcase emoji-substitution-style
-                                                            (`image (emojify-get-image emoji-text)))))))
+                    (when (fboundp 'imagemagick-types)
+                      'imagemagick)
+                    nil
+                    :ascent 'center
+                    ;; no-op if imagemagick is not available
 
-      (remove-text-properties start end '(display))))
-  nil)
+                    :height (default-font-height)))))
 
-(defun emoji-make-keywords ()
-  (let ((emojis (hash-table-keys emoji-parsed)))
-    `((,(regexp-opt emojis)
-       (0 (emoji-setup-emoji-display))))))
+(defun emojify--setup-emoji-display (start end match)
+  "Emojify the text between start and end"
+  (when (or (not (derived-mode-p 'prog-mode))
+            (nth 8 (syntax-ppss)))
+    (add-text-properties start end (list 'display (pcase emoji-substitution-style
+                                                    (`image (emojify-get-image match)))
+                                         'emojified t))))
 
-(defvar emoji-keywords (emoji-make-keywords))
+(defun emojify--emojify-region (beg end)
+  (with-silent-modifications
+    (save-excursion
+      (goto-char beg)
+      (while (search-forward-regexp emoji-regexps end t)
+        (emojify--setup-emoji-display (match-beginning 0)
+                                   (match-end 0)
+                                   (match-string 0))))))
 
-(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
-  (font-lock-fontify-buffer))
+(defun emojify--unemojify-region (beg end)
+  (with-silent-modifications
+    (save-excursion
+      (while (< beg end)
+        (let* ((emoji-start (text-property-any beg end 'emojified t))
+               (emoji-end (or (and emoji-start
+                                   (text-property-not-all emoji-start end 'emojified t))
+                              ;; If the emojified text is at the end of the region
+                              ;; assume that end is the emojified text.
+                              end)))
+          ;; Proceed only if we got some text with emoji property
+          (when emoji-start
+            (remove-text-properties emoji-start emoji-end (list 'emojified t
+                                                                'display t
+                                                                'composition t)))
+          (setq beg emoji-end))))))
 
-(ad-activate 'text-scale-increase)
+(defun emojify--after-change-function (beginning end len)
+  (save-excursion
+    (let ((inhibit-read-only t)
+          ;; Extend the region to match the beginning of line where change began
+          (region-end (progn
+                        (goto-char end)
+                        (line-end-position)))
+          ;; Extend the region to match the end of line where change ended
+          (region-start (progn
+                          (goto-char beginning)
+                          (line-beginning-position))))
+      ;; Remove previously added emojis
+      (emojify--unemojify-region region-start region-end)
+      ;; Add emojis to the region
+      (emojify--emojify-region region-start region-end))))
+
+;; Resize emojis on text resize
+;; (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
+;;   (font-lock-fontify-buffer))
+
+;; (ad-activate 'text-scale-increase)
+(defun emojify-turn-on-emojify-mode ()
+  (save-restriction
+    (widen)
+    (emojify--emojify-region (point-min) (point-max)))
+  ;; Make sure emojis are displayed in newly inserted text
+  (add-hook 'after-change-functions #'emojify--after-change-function t t))
+
+(defun emojify-turn-off-emojify-mode ()
+  ;; Remove currently displayed emojis
+  (save-restriction
+    (widen)
+    (emojify--unemojify-region (point-min) (point-max)))
+  ;; Make sure emojis are displayed in newly inserted text
+  (remove-hook 'after-change-functions #'emojify--after-change-function t))
 
 (define-minor-mode emojify-mode
   "Emojify mode"
   :init-value nil
-  ;; Do not bother non font-lock buffers
-  (when font-lock-major-mode
-    (if emojify-mode
-        ;; Turn on
-        (progn
-          (font-lock-add-keywords nil emoji-keywords)
-          (setq-local font-lock-extra-managed-props
-                      (cons 'display font-lock-extra-managed-props)))
-      ;; Turn off
-      (font-lock-remove-keywords nil emoji-keywords)
-      (setq font-lock-extra-managed-props (delq 'composition
-                                                font-lock-extra-managed-props)))
-    (font-lock-fontify-buffer)))
-
-(defun turn-on-emojify-mode ()
-  (emojify-mode 1))
+  (if emojify-mode
+      ;; Turn on
+      (emojify-turn-on-emojify-mode)
+    ;; Turn off
+    (emojify-turn-off-emojify-mode)))
 
 (define-globalized-minor-mode global-emojify-mode
-  emojify-mode turn-on-emojify-mode)
+  emojify-mode emojify-turn-on-emojify-mode
+  :init-value nil)
