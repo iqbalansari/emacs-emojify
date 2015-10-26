@@ -46,11 +46,14 @@
              (not (and (char-before start)
                        (eq (char-syntax (char-before start)) ?w)))
              (not (and (char-after end)
-                       (eq (char-syntax (char-after end)) ?w))))
-    (add-text-properties start end (list 'display (pcase emoji-substitution-style
-                                                    (`image (emojify-get-image match)))
-                                         'emojified t
-                                         'point-entered (lambda (x y) (message (format "%s" match)))))))
+                       (eq (char-syntax (char-after end)) ?w)))
+             (or (not (equal major-mode 'org-mode))
+                 (equal (face-at-point) 'org-tag)))
+    (when (gethash match emoji-parsed)
+      (add-text-properties start end (list 'display (pcase emoji-substitution-style
+                                                      (`image (emojify-get-image match)))
+                                           'emojified t
+                                           'point-entered (lambda (x y) (message (format "%s" match))))))))
 
 (defun emojify--emojify-region (beg end)
   (let ((inhibit-point-motion-hooks t))
