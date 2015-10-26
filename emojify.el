@@ -1,5 +1,5 @@
 ;; -*- lexical-binding: t; -*-
-;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :p :p
+;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :p
 ;; 
 ;; TODO: Custom images
 ;;       Benchmark
@@ -19,7 +19,8 @@
 
 (defun emojify--emojify-buffer-p ()
   (not (or (minibufferp)
-           (string-match-p "\\*helm" (buffer-name)))))
+           (string-match-p "\\*helm" (buffer-name))
+           (memq major-mode '(doc-view-mode pdf-view-mode image-mode)))))
 
 ;; Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
