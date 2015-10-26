@@ -50,10 +50,13 @@
                         (nth 8 (syntax-ppss)))))
              (or (not (char-before start))
                  ;; 32 space since ?  i.e. (? followed by a space is not readable)
-                 (memq (char-syntax (char-before start)) '(32 ?- ?< ?")))
+                 ;; 34 is "  since?" confuses font-lock
+                 ;; ?> Think multiline comments
+                 (memq (char-syntax (char-before start)) '(32 34 ?- ?< ?>)))
              (or (not (char-after end))
                  ;; 32 space since ?  i.e. (? followed by a space is not readable)
-                 (memq (char-syntax (char-after end)) '(32  ?- ?> ?")))
+                 ;; 34 is "  since?" confuses font-lock
+                 (memq (char-syntax (char-after end)) '(32  ?- ?> 34)))
              (or (not (equal major-mode 'org-mode))
                  (equal (face-at-point) 'org-tag)))
     ;; TODO: Remove double checks
