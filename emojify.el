@@ -1,4 +1,5 @@
-;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p
+;; -*- lexical-binding: t; -*-
+;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :P
 ;;
 ;; TODO: Bug in org-capture (what causes this)
 ;;       Sometimes point is changed after adding emoji
@@ -36,7 +37,6 @@
                     nil
                     :ascent 'center
                     ;; no-op if imagemagick is not available
-
                     :height (default-font-height)))))
 
 (defun emojify--setup-emoji-display (start end match)
@@ -49,7 +49,8 @@
                        (eq (char-syntax (char-after end)) ?w))))
     (add-text-properties start end (list 'display (pcase emoji-substitution-style
                                                     (`image (emojify-get-image match)))
-                                         'emojified t))))
+                                         'emojified t
+                                         'point-entered (lambda (x y) (message (format "%s" match)))))))
 
 (defun emojify--emojify-region (beg end)
   (let ((inhibit-point-motion-hooks t))
