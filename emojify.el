@@ -52,30 +52,37 @@
                                          'emojified t))))
 
 (defun emojify--emojify-region (beg end)
-  (with-silent-modifications
-    (save-excursion
-      (goto-char beg)
-      (while (search-forward-regexp emoji-regexps end t)
-        (emojify--setup-emoji-display (match-beginning 0)
-                                      (match-end 0)
-                                      (match-string 0))))))
+  (let ((inhibit-point-motion-hooks t))
+    (with-silent-modifications
+      (save-match-data
+        (save-excursion
+          (goto-char beg)
+          (while (search-forward-regexp emoji-regexps end t)
+            (emojify--setup-emoji-display (match-beginning 0)
+                                          (match-end 0)
+                                          (match-string 0))))))))
 
-(defun emojify--unemojify-region (beg end)
-  (with-silent-modifications
-    (save-excursion
-      (while (< beg end)
-        (let* ((emoji-start (text-property-any beg end 'emojified t))
-               (emoji-end (or (and emoji-start
-                                   (text-property-not-all emoji-start end 'emojified t))
-                              ;; If the emojified text is at the end of the region
-                              ;; assume that end is the emojified text.
-                              end)))
-          ;; Proceed only if we got some text with emoji property
-          (when emoji-start
-            (remove-text-properties emoji-start emoji-end (list 'emojified t
-                                                                'display t
-                                                                'composition t)))
-          (setq beg emoji-end))))))
+(defun emojify--unemojify-region (beg end &optional point-entered-p)
+  (let ((inhibit-point-motion-hooks t))
+    (with-silent-modifications
+      (save-match-data
+        (save-excursion
+          (while (< beg end)
+            (let* ((emoji-start (text-property-any beg end 'emojified t))
+                   (emoji-end (or (and emoji-start
+                                       (text-property-not-all emoji-start end 'emojified t))
+                                  ;; If the emojified text is at the end of the region
+                                  ;; assume that end is the emojified text.
+                                  end)))
+              ;; Proceed only if we got some text with emoji property
+              (when emoji-start
+                (remove-text-properties emoji-start emoji-end (append (list 'emojified t
+                                                                            'display t
+                                                                            'composition t
+                                                                            'point-entered t)
+                                                                      (unless point-entered-p
+                                                                        '(point-left t)))))
+              (setq beg emoji-end))))))))
 
 (defun emojify--after-change-function (beginning end len)
   (let ((inhibit-read-only t)
