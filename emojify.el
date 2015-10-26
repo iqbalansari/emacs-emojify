@@ -123,9 +123,11 @@
 
 (defun emojify-turn-on-emojify-mode ()
   (when (emojify--emojify-buffer-p)
-    (save-restriction
-      (widen)
-      (emojify--emojify-region (point-min) (point-max)))
+    (if font-lock-defaults
+        (jit-lock-register #'emojify--emojify-region)
+        (save-restriction
+          (widen)
+          (emojify--emojify-region (point-min) (point-max))))
     ;; Make sure emojis are displayed in newly inserted text
     (add-hook 'after-change-functions #'emojify--after-change-function t t)))
 
@@ -135,6 +137,7 @@
     (save-restriction
       (widen)
       (emojify--unemojify-region (point-min) (point-max)))
+    (jit-lock-unregister #'emojify--emojify-region)
     ;; Make sure emojis are displayed in newly inserted text
     (remove-hook 'after-change-functions #'emojify--after-change-function t)))
 
