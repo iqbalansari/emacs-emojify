@@ -1,9 +1,8 @@
 ;; -*- lexical-binding: t; -*-
 ;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :p :p
 ;; 
-;; TODO: Bug in org-capture (what causes this)
-;;       Sometimes point is changed after adding emoji
-;;       Custom images
+;; TODO: Custom images
+;;       Benchmark
 ;;       Cleanup
 
 (require 'json)
@@ -42,8 +41,13 @@
   "Emojify the text between start and end"
   ;; TODO Generalize these into a set of predicates
   (when (and (or (not (derived-mode-p 'prog-mode))
-                 ;; TODO: Handle emojis with quotes or comment character :sweat:
-                 (nth 8 (syntax-ppss)))
+                 ;; TODO: How (in)efficient is this
+                 (and (save-excursion
+                        (goto-char start)
+                        (nth 8 (syntax-ppss)))
+                      (save-excursion
+                        (goto-char end)
+                        (nth 8 (syntax-ppss)))))
              (or (not (char-before start))
                  ;; 32 space since ?  i.e. (? followed by a space is not readable)
                  (memq (char-syntax (char-before start)) '(32 ?- ?<)))
