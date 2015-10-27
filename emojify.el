@@ -17,13 +17,119 @@
 (defvar emoji-regexps (let ((emojis (hash-table-keys emoji-parsed)))
                         (regexp-opt emojis)))
 
-(defun emojify--emojify-buffer-p ()
-  (not (or (minibufferp)
-           (string-match-p "\\*helm" (buffer-name))
-           (memq major-mode '(doc-view-mode pdf-view-mode image-mode help-mode)))))
-
 ;; (Eventually) Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
+
+
+
+(defgroup emojify nil
+  "Customization options for mu4e-alert"
+  :group 'display
+  :prefix "emojify-")
+
+
+
+;; Customizations to control the enabling of emojify-mode
+
+(defcustom emojify-inhibit-major-modes
+  '(doc-view-mode
+    pdf-view-mode
+    image-mode
+    help-mode
+    magit-popup-mode)
+  "Major modes where emojify mode should not be enabled."
+  :type 'list
+  :group 'emojify)
+
+(defcustom emojify-inhibit-in-buffer-functions
+  '(minibufferp emojify-ephemeral-buffer-p emojify-inhibit-major-mode-p emojify-helm-buffer-p)
+  "Functions used to determine emojify-mode should be enabled in a buffer.
+
+These functions are called with one argument, the buffer where emojify-mode
+is about to be enabled, emojify is not enabled if any of the functions return
+a non-nil value."
+  :type 'hook
+  :group 'emojify)
+
+(defun emojify-ephemeral-buffer-p (buffer)
+  (string-match-p "^ " (buffer-name buffer)))
+
+(defun emojify-inhibit-major-mode-p (buffer)
+  (memq (with-current-buffer buffer
+          major-mode)
+        emojify-inhibit-major-modes))
+
+(defun emojify-helm-buffer-p (buffer)
+  (string-match-p "\\*helm" (buffer-name buffer)))
+
+(defun emojify-buffer-p (buffer)
+  (not (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer)))
+
+
+
+;; Customizations to control display of emojis
+
+(defcustom emojify-prog-contexts
+  'both
+  "Contexts where emojis can be displayed in programming modes.
+
+Possible values are
+`comment' - Display emojis only in comments
+`string'  - Display emojis only in strings
+`both'    - Display emojis in comments and strings
+`none'    - Do not display emojis in programming modes")
+
+(defcustom emojify-inhibit-hooks
+  '(emojify-inhibit-in-org-tags)
+  "Functions used to if emoji should displayed at current point.
+
+These functions are called with no arguments, the point is at the point
+where emoji text is found."
+  :type 'hook
+  :group 'emojify)
+
+(defun emojify-inhibit-in-org-tags ()
+  (memq 'org-tag (face-at-point nil t)))
+
+(defun emojify-valid-prog-context-p (beg end)
+  (unless (or (not emojify-prog-contexts)
+          (eq emojify-prog-contexts 'none))
+    (let ((syntax-beg (syntax-ppss beg))
+          (syntax-end (syntax-ppss end))
+          (pos (pcase emojify-prog-contexts
+                 (`string 3)
+                 (`comment 4)
+                 (`both 8))))
+      (and (nth pos syntax-beg)
+           (nth pos syntax-end)))))
+
+(defun emojify-valid-text-context-p (beg end)
+  (and (or (not (char-before beg))
+           ;; 32 space since ?  (? followed by a space) is not readable
+           ;; 34 is "  since?" confuses font-lock
+           (memq (char-syntax (char-before beg))
+                 ;; space
+                 '(32
+                   ;; start/end of string
+                   34
+                   ;; whitespace syntax
+                   ?-
+                   ;; comment start
+                   ?<
+                   ;; comment end, this handles text at start of line immediately
+                   ;; after comment line in a multiline comment
+                   ?>)))
+       ;; The text is at the end of the buffer
+       (or (not (char-after end))
+           (memq (char-syntax (char-after end))
+                 ;; space
+                 '(32
+                   ;; start/end of string
+                   34
+                   ;; whitespace syntax
+                   ?-
+                   ;; comment end
+                   ?>)))))
 
 
 
@@ -63,26 +169,18 @@ BEG and END are the beginning and end of the region respectively"
       (let ((match-beginning (match-beginning 0))
             (match-end (match-end 0))
             (match (match-string-no-properties 0)))
-        ;; TODO Generalize these into a set of predicates
+
+        ;; Display unconditionally in non-prog mode
         (when (and (or (not (derived-mode-p 'prog-mode))
-                       ;; TODO: How (in)efficient is this
-                       (and (save-excursion
-                              (goto-char match-beginning)
-                              (nth 8 (syntax-ppss)))
-                            (save-excursion
-                              (goto-char match-end)
-                              (nth 8 (syntax-ppss)))))
-                   (or (not (char-before match-beginning))
-                       ;; 32 space since ?  i.e. (? followed by a space is not readable)
-                       ;; 34 is "  since?" confuses font-lock
-                       ;; ?> Think multiline comments
-                       (memq (char-syntax (char-before match-beginning)) '(32 34 ?- ?< ?>)))
-                   (or (not (char-after match-end))
-                       ;; 32 space since ?  i.e. (? followed by a space is not readable)
-                       ;; 34 is "  since?" confuses font-lock
-                       (memq (char-syntax (char-after match-end)) '(32  ?- ?> 34)))
-                   (or (not (equal major-mode 'org-mode))
-                       (equal (face-at-point) 'org-tag)))
+                       ;; In prog mode enable respecting `emojify-prog-contexts'
+                       (emojify-valid-prog-context-p match-beginning
+                                                     match-end))
+                   ;; The text is at the beginning of the buffer
+                   (emojify-valid-text-context-p match-beginning
+                                            match-end)
+                   ;; Allow user to inhibit display
+                   (not (run-hook-with-args-until-success 'emojify-inhibit-hooks)))
+
           ;; TODO: Remove double checks
           (when (gethash match emoji-parsed)
             (add-text-properties match-beginning match-end (list 'display (pcase emoji-substitution-style
@@ -152,7 +250,7 @@ BEG and END are the beginning and end of the region respectively"
 ;; (ad-activate 'text-scale-increase)
 
 (defun emojify-turn-on-emojify-mode ()
-  (when (emojify--emojify-buffer-p)
+  (when (emojify-buffer-p (current-buffer))
     (if font-lock-defaults
         (jit-lock-register #'emojify-display-emojis-in-region)
         (save-restriction
@@ -162,14 +260,13 @@ BEG and END are the beginning and end of the region respectively"
     (add-hook 'after-change-functions #'emojify-after-change-function t t)))
 
 (defun emojify-turn-off-emojify-mode ()
-  (when (emojify--emojify-buffer-p)
-    ;; Remove currently displayed emojis
-    (save-restriction
-      (widen)
-      (emojify-undisplay-emojis-in-region (point-min) (point-max)))
-    (jit-lock-unregister #'emojify-display-emojis-in-region)
-    ;; Make sure emojis are displayed in newly inserted text
-    (remove-hook 'after-change-functions #'emojify-after-change-function t)))
+  ;; Remove currently displayed emojis
+  (save-restriction
+    (widen)
+    (emojify-undisplay-emojis-in-region (point-min) (point-max)))
+  (jit-lock-unregister #'emojify-display-emojis-in-region)
+  ;; Make sure emojis are displayed in newly inserted text
+  (remove-hook 'after-change-functions #'emojify-after-change-function t))
 
 (define-minor-mode emojify-mode
   "Emojify mode"
