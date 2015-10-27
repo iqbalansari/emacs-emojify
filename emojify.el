@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :p
-;; 
+;;
 ;; TODO: Custom images
 ;;       Benchmark
 ;;       Cleanup
@@ -20,7 +20,7 @@
 (defun emojify--emojify-buffer-p ()
   (not (or (minibufferp)
            (string-match-p "\\*helm" (buffer-name))
-           (memq major-mode '(doc-view-mode pdf-view-mode image-mode)))))
+           (memq major-mode '(doc-view-mode pdf-view-mode image-mode help-mode)))))
 
 ;; (Eventually) Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
@@ -42,39 +42,8 @@
                     ;; no-op if imagemagick is not available
                     :height (default-font-height)))))
 
-;; TODO Inline this, this depends too much on the state maintained in `emojify-display-emojis-in-region'
-;; to make sense as a standalone function
-(defun emojify--setup-emoji-display (beg end match)
-  "Emojify the text between BEG and END, MATCH is the string to highlighted."
-  ;; TODO Generalize these into a set of predicates
-  (when (and (or (not (derived-mode-p 'prog-mode))
-                 ;; TODO: How (in)efficient is this
-                 (and (save-excursion
-                        (goto-char beg)
-                        (nth 8 (syntax-ppss)))
-                      (save-excursion
-                        (goto-char end)
-                        (nth 8 (syntax-ppss)))))
-             (or (not (char-before beg))
-                 ;; 32 space since ?  i.e. (? followed by a space is not readable)
-                 ;; 34 is "  since?" confuses font-lock
-                 ;; ?> Think multiline comments
-                 (memq (char-syntax (char-before beg)) '(32 34 ?- ?< ?>)))
-             (or (not (char-after end))
-                 ;; 32 space since ?  i.e. (? followed by a space is not readable)
-                 ;; 34 is "  since?" confuses font-lock
-                 (memq (char-syntax (char-after end)) '(32  ?- ?> 34)))
-             (or (not (equal major-mode 'org-mode))
-                 (equal (face-at-point) 'org-tag)))
-    ;; TODO: Remove double checks
-    (when (gethash match emoji-parsed)
-      (add-text-properties beg end (list 'display (pcase emoji-substitution-style
-                                                      (`image (emojify-get-image match)))
-                                           'emojified t
-                                           'point-entered (lambda (x y) (message (format "%s" match))))))))
-
 (defmacro emojify-with-saved-buffer-state (&rest forms)
-  "Execute FORMS saving global point and mark, match-data, buffer modification state
+  "Execute FORMS saving point and mark, match-data and buffer modification state
 also inhibit buffer change, point motion hooks.
 
 Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-region'"
@@ -91,9 +60,40 @@ BEG and END are the beginning and end of the region respectively"
   (emojify-with-saved-buffer-state
     (goto-char beg)
     (while (search-forward-regexp emoji-regexps end t)
-      (emojify--setup-emoji-display (match-beginning 0)
-                                    (match-end 0)
-                                    (match-string 0)))))
+      (let ((match-beginning (match-beginning 0))
+            (match-end (match-end 0))
+            (match (match-string-no-properties 0)))
+        ;; TODO Generalize these into a set of predicates
+        (when (and (or (not (derived-mode-p 'prog-mode))
+                       ;; TODO: How (in)efficient is this
+                       (and (save-excursion
+                              (goto-char match-beginning)
+                              (nth 8 (syntax-ppss)))
+                            (save-excursion
+                              (goto-char match-end)
+                              (nth 8 (syntax-ppss)))))
+                   (or (not (char-before match-beginning))
+                       ;; 32 space since ?  i.e. (? followed by a space is not readable)
+                       ;; 34 is "  since?" confuses font-lock
+                       ;; ?> Think multiline comments
+                       (memq (char-syntax (char-before match-beginning)) '(32 34 ?- ?< ?>)))
+                   (or (not (char-after match-end))
+                       ;; 32 space since ?  i.e. (? followed by a space is not readable)
+                       ;; 34 is "  since?" confuses font-lock
+                       (memq (char-syntax (char-after match-end)) '(32  ?- ?> 34)))
+                   (or (not (equal major-mode 'org-mode))
+                       (equal (face-at-point) 'org-tag)))
+          ;; TODO: Remove double checks
+          (when (gethash match emoji-parsed)
+            (add-text-properties match-beginning match-end (list 'display (pcase emoji-substitution-style
+                                                                            (`image (emojify-get-image match)))
+                                                                 'emojified t
+                                                                 'point-entered (lambda (x y)
+                                                                                  (emojify-undisplay-emojis-in-region match-beginning match-end t))
+                                                                 'point-left (lambda (x y)
+                                                                               (when (or (< match-end y)
+                                                                                         (< y match-beginning))
+                                                                                 (emojify-display-emojis-in-region match-beginning match-end)))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end &optional point-entered-p)
   "Undisplay the emojis in region.
