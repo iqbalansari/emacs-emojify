@@ -193,7 +193,8 @@ BEG and END are the beginning and end of the region respectively"
     (while (search-forward-regexp emoji-regexps end t)
       (let ((match-beginning (match-beginning 0))
             (match-end (match-end 0))
-            (match (match-string-no-properties 0)))
+            (match (match-string-no-properties 0))
+            (buffer (current-buffer)))
 
         ;; Display unconditionally in non-prog mode
         (when (and (or (not (derived-mode-p 'prog-mode))
@@ -212,10 +213,12 @@ BEG and END are the beginning and end of the region respectively"
                                                                             (`image (emojify-get-image match)))
                                                                  'emojified t
                                                                  'point-entered (lambda (x y)
-                                                                                  (emojify-undisplay-emojis-in-region match-beginning match-end t))
+                                                                                  (when (equal buffer (current-buffer))
+                                                                                    (emojify-undisplay-emojis-in-region match-beginning match-end t)))
                                                                  'point-left (lambda (x y)
-                                                                               (when (or (< match-end y)
-                                                                                         (< y match-beginning))
+                                                                               (when (and (equal buffer (current-buffer))
+                                                                                          (or (< match-end y)
+                                                                                              (< y match-beginning)))
                                                                                  (emojify-display-emojis-in-region match-beginning match-end)))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end &optional point-entered-p)
