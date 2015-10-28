@@ -63,11 +63,11 @@
     help-mode
     magit-popup-mode)
   "Major modes where emojify mode should not be enabled."
-  :type 'list
+  :type '(repeat symbol)
   :group 'emojify)
 
 (defcustom emojify-inhibit-in-buffer-functions
-  '(minibufferp emojify-ephemeral-buffer-p emojify-inhibit-major-mode-p emojify-helm-buffer-p)
+  '(minibufferp emojify-helm-buffer-p)
   "Functions used to determine emojify-mode should be enabled in a buffer.
 
 These functions are called with one argument, the buffer where emojify-mode
@@ -205,6 +205,8 @@ BEG and END are the beginning and end of the region respectively"
                    (emojify-valid-text-context-p match-beginning
                                             match-end)
                    ;; Allow user to inhibit display
+                   (not (emojify-ephemeral-buffer-p (current-buffer)))
+                   (not (emojify-inhibit-major-mode-p (current-buffer)))
                    (not (run-hook-with-args-until-success 'emojify-inhibit-hooks)))
 
           ;; TODO: Remove double checks
