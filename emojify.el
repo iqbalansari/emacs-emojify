@@ -199,7 +199,8 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
 BEG and END are the beginning and end of the region respectively"
   (emojify-with-saved-buffer-state
     (goto-char beg)
-    (while (search-forward-regexp emoji-regexps end t)
+    (while (and (> end (point))
+                (search-forward-regexp emoji-regexps end t))
       (let ((match-beginning (match-beginning 0))
             (match-end (match-end 0))
             (match (match-string-no-properties 0))
