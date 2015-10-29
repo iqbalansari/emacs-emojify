@@ -27,23 +27,23 @@
 ;;       Benchmark
 ;;       Cleanup
 
+
 
 ;;; Code:
 
 (require 'json)
 (require 'subr-x)
 
-(defvar emoji-emoji-json (expand-file-name "emoji.json" (if load-file-name (file-name-directory load-file-name) default-directory)))
-(defvar emoji-image-dir (expand-file-name "images" (if load-file-name (file-name-directory load-file-name) default-directory)))
-(defvar emoji-parsed (let ((json-array-type 'list)
-                           (json-object-type 'hash-table))
-                       (json-read-file emoji-emoji-json)))
+
 
-(defvar emoji-regexps (let ((emojis (hash-table-keys emoji-parsed)))
-                        (regexp-opt emojis)))
+;; Satisfying the byte-compiler
 
-;; (Eventually) Can be one of image, unicode, ascii
-(defvar emoji-substitution-style 'image)
+;; Required to determine point is in an org-list
+(declare-function org-at-item-p "org-list")
+
+;; Required to determine point is in an org-src block
+(declare-function org-element-type "org-element")
+(declare-function org-element-at-point "org-element")
 
 
 
@@ -51,6 +51,34 @@
   "Customization options for mu4e-alert"
   :group 'display
   :prefix "emojify-")
+
+
+
+(defcustom emojify-emoji-json
+  (expand-file-name "emoji.json" (if load-file-name
+                                     (file-name-directory load-file-name)
+                                   default-directory))
+  "The path to JSON file containing the configuration for displaying emojis."
+  :type 'file
+  :group 'emojify)
+
+(defcustom emojify-image-dir
+  (expand-file-name "images" (if load-file-name
+                                 (file-name-directory load-file-name)
+                               default-directory))
+  "Path to the directory containing the image."
+  :type 'directory
+  :group 'emojify)
+
+(defvar emoji-parsed (let ((json-array-type 'list)
+                           (json-object-type 'hash-table))
+                       (json-read-file emojify-emoji-json)))
+
+(defvar emoji-regexps (let ((emojis (hash-table-keys emoji-parsed)))
+                        (regexp-opt emojis)))
+
+;; (Eventually) Can be one of image, unicode, ascii
+(defvar emoji-substitution-style 'image)
 
 
 
@@ -77,17 +105,27 @@ a non-nil value."
   :group 'emojify)
 
 (defun emojify-ephemeral-buffer-p (buffer)
+  "Determine if BUFFER is an ephemeral/temporary buffer."
   (string-match-p "^ " (buffer-name buffer)))
 
 (defun emojify-inhibit-major-mode-p (buffer)
+  "Determine if user has disabled the `major-mode' enabled for the BUFFER.
+
+Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-modes'"
   (memq (with-current-buffer buffer
           major-mode)
         emojify-inhibit-major-modes))
 
 (defun emojify-helm-buffer-p (buffer)
+  "Determine if the current BUFFER is a helm buffer."
   (string-match-p "\\*helm" (buffer-name buffer)))
 
 (defun emojify-buffer-p (buffer)
+  "Determine if `emojify-mode' should be enabled for given BUFFER.
+
+`emojify-mode' mode is not enabled in temporary buffers.  Additionally user
+customize `emojify-inhibit-major-modes' and
+`emojify-inhibit-in-buffer-functions' to disabled emojify in additional modes."
   (not (or (emojify-ephemeral-buffer-p (current-buffer))
            (emojify-inhibit-major-mode-p (current-buffer))
            (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
@@ -107,8 +145,8 @@ Possible values are
 `none'    - Do not display emojis in programming modes")
 
 (defcustom emojify-inhibit-functions
-  '(emojify-inhibit-in-org-tags emojify-inhibit-in-org-list)
-  "Functions used to if emoji should displayed at current point.
+  '(emojify-in-org-tags-p emojify-in-org-list-p)
+  "Functions used to determine given emoji should displayed at current point.
 
 These functions are called with 3 arguments, the text to be emojified, the start
 of emoji text and the end of emoji text.  These functions are called with the
@@ -116,16 +154,26 @@ buffer where emojis are going to be displayed selected."
   :type 'hook
   :group 'emojify)
 
-(defun emojify-inhibit-in-org-tags (match beg end)
+(defun emojify-in-org-tags-p (match beg end)
+  "Determine whether the point is on `org-mode' tag.
+
+MATCH, BEG and END are the text currently matched emoji and the start position
+and end position of emoji text respectively."
   (and (eq major-mode 'org-mode)
        (string-match-p ":.*:" match)
        (eq (line-end-position) end)))
 
-(defun emojify-inhibit-in-org-list (match beg end)
+(defun emojify-in-org-list-p (&rest ignored)
+  "Determine whether the point is in `org-mode' list.
+
+The arguments IGNORED are, well ignored"
   (and (eq major-mode 'org-mode)
        (org-at-item-p)))
 
 (defun emojify-valid-prog-context-p (beg end)
+  "Determine if the text between BEG and END should be used to display emojis.
+
+This returns non-nil if the region is valid according to `emojify-prog-contexts'"
   (unless (or (not emojify-prog-contexts)
           (eq emojify-prog-contexts 'none))
     (let ((syntax-beg (syntax-ppss beg))
@@ -138,12 +186,18 @@ buffer where emojis are going to be displayed selected."
            (nth pos syntax-end)))))
 
 (defun emojify-inside-org-src-p (point)
+  "Return non-nil if POINT is inside `org-mode' src block.
+
+This is used to inhibit display of emoji's in `org-mode' src blocks
+since our mechanisms do not work in it."
   (when (eq major-mode 'org-mode)
     (save-excursion
       (goto-char point)
       (eq (org-element-type (org-element-at-point)) 'src-block))))
 
 (defun emojify-valid-text-context-p (beg end)
+  "Determine if the okay to display for text between BEG and END."
+  ;; The text is at the start of the buffer
   (and (or (not (char-before beg))
            ;; 32 space since ?  (? followed by a space) is not readable
            ;; 34 is "  since?" confuses font-lock
@@ -176,17 +230,19 @@ buffer where emojis are going to be displayed selected."
 ;; Core functions and macros
 
 (defsubst emojify-get-image (name)
-  (let ((emoji-one (gethash name emoji-parsed)))
-    (when emoji-one
-      (create-image (expand-file-name (concat (gethash "unicode" emoji-one) ".png")
-                                      emoji-image-dir)
-                    ;; Use imagemagick if available (allows resizing images
-                    (when (fboundp 'imagemagick-types)
-                      'imagemagick)
-                    nil
-                    :ascent 'center
-                    ;; no-op if imagemagick is not available
-                    :height (default-font-height)))))
+  (let ((emoji-data (gethash name emoji-parsed)))
+    (when emoji-data
+      (let ((image-file (expand-file-name (concat (gethash "unicode" emoji-data) ".png")
+                                          emojify-image-dir)))
+        (when (file-exists-p image-file)
+          (create-image image-file
+                        ;; use imagemagick if available (allows resizing images
+                        (when (fboundp 'imagemagick-types)
+                          'imagemagick)
+                        nil
+                        :ascent 'center
+                        ;; no-op if imagemagick is not available
+                        :height (default-font-height)))))))
 
 (defmacro emojify-with-saved-buffer-state (&rest forms)
   "Execute FORMS saving point and mark, match-data and buffer modification state
