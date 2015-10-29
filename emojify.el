@@ -137,6 +137,12 @@ buffer where emojis are going to be displayed selected."
       (and (nth pos syntax-beg)
            (nth pos syntax-end)))))
 
+(defun emojify-inside-org-src-p (point)
+  (when (eq major-mode 'org-mode)
+    (save-excursion
+      (goto-char point)
+      (eq (org-element-type (org-element-at-point)) 'src-block))))
+
 (defun emojify-valid-text-context-p (beg end)
   (and (or (not (char-before beg))
            ;; 32 space since ?  (? followed by a space) is not readable
@@ -213,6 +219,8 @@ BEG and END are the beginning and end of the region respectively"
 
                    ;; The text is at the beginning of the buffer
                    (emojify-valid-text-context-p match-beginning match-end)
+
+                   (not (emojify-inside-org-src-p match-beginning))
 
                    ;; Inhibit possibly inside a list
                    ;; 41 is ?) but packages get confused by the extra closing paren
