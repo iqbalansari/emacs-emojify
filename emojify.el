@@ -108,13 +108,16 @@ Possible values are
   '(emojify-inhibit-in-org-tags)
   "Functions used to if emoji should displayed at current point.
 
-These functions are called with no arguments, the point is at the point
-where emoji text is found."
+These functions are called with 3 arguments, the text to be emojified, the start
+of emoji text and the end of emoji text.  These functions are called with the
+buffer where emojis are going to be displayed selected."
   :type 'hook
   :group 'emojify)
 
-(defun emojify-inhibit-in-org-tags ()
-  (memq 'org-tag (face-at-point nil t)))
+(defun emojify-inhibit-in-org-tags (match beg end)
+  (and (eq major-mode 'org-mode)
+       (string-match-p ":.*:" match)
+       (eq (line-end-position) end)))
 
 (defun emojify-valid-prog-context-p (beg end)
   (unless (or (not emojify-prog-contexts)
