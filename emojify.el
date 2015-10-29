@@ -104,8 +104,8 @@ Possible values are
 `both'    - Display emojis in comments and strings
 `none'    - Do not display emojis in programming modes")
 
-(defcustom emojify-inhibit-hooks
-  '(emojify-inhibit-in-org-tags)
+(defcustom emojify-inhibit-functions
+  '(emojify-inhibit-in-org-tags emojify-inhibit-in-org-list)
   "Functions used to if emoji should displayed at current point.
 
 These functions are called with 3 arguments, the text to be emojified, the start
@@ -118,6 +118,10 @@ buffer where emojis are going to be displayed selected."
   (and (eq major-mode 'org-mode)
        (string-match-p ":.*:" match)
        (eq (line-end-position) end)))
+
+(defun emojify-inhibit-in-org-list (match beg end)
+  (and (eq major-mode 'org-mode)
+       (org-at-item-p)))
 
 (defun emojify-valid-prog-context-p (beg end)
   (unless (or (not emojify-prog-contexts)
