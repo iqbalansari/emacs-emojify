@@ -88,7 +88,9 @@ a non-nil value."
   (string-match-p "\\*helm" (buffer-name buffer)))
 
 (defun emojify-buffer-p (buffer)
-  (not (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer)))
+  (not (or (emojify-ephemeral-buffer-p (current-buffer))
+           (emojify-inhibit-major-mode-p (current-buffer))
+           (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
 
 
 
@@ -206,15 +208,10 @@ BEG and END are the beginning and end of the region respectively"
         ;; Display unconditionally in non-prog mode
         (when (and (or (not (derived-mode-p 'prog-mode))
                        ;; In prog mode enable respecting `emojify-prog-contexts'
-                       (emojify-valid-prog-context-p match-beginning
-                                                     match-end))
+                       (emojify-valid-prog-context-p match-beginning match-end))
+
                    ;; The text is at the beginning of the buffer
-                   (emojify-valid-text-context-p match-beginning
-                                            match-end)
-                   ;; Allow user to inhibit display
-                   (not (emojify-ephemeral-buffer-p (current-buffer)))
-                   (not (emojify-inhibit-major-mode-p (current-buffer)))
-                   (not (run-hook-with-args-until-success 'emojify-inhibit-hooks)))
+                   (emojify-valid-text-context-p match-beginning match-end)
 
           ;; TODO: Remove double checks
           (when (gethash match emoji-parsed)
