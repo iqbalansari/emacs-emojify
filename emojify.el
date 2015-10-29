@@ -211,17 +211,19 @@ BEG and END are the beginning and end of the region respectively"
 
           ;; TODO: Remove double checks
           (when (gethash match emoji-parsed)
-            (add-text-properties match-beginning match-end (list 'display (pcase emoji-substitution-style
-                                                                            (`image (emojify-get-image match)))
-                                                                 'emojified t
-                                                                 'point-entered (lambda (x y)
-                                                                                  (when (equal buffer (current-buffer))
-                                                                                    (emojify-undisplay-emojis-in-region match-beginning match-end t)))
-                                                                 'point-left (lambda (x y)
-                                                                               (when (and (equal buffer (current-buffer))
-                                                                                          (or (< match-end y)
-                                                                                              (< y match-beginning)))
-                                                                                 (emojify-display-emojis-in-region match-beginning match-end)))))))))))
+            (add-text-properties match-beginning
+                                 match-end
+                                 (list 'display (pcase emoji-substitution-style
+                                                  (`image (emojify-get-image match)))
+                                       'emojified t
+                                       'point-entered (lambda (x y)
+                                                        (when (equal buffer (current-buffer))
+                                                          (emojify-undisplay-emojis-in-region match-beginning match-end t)))
+                                       'point-left (lambda (x y)
+                                                     (when (and (equal buffer (current-buffer))
+                                                                (or (< match-end y)
+                                                                    (< y match-beginning)))
+                                                       (emojify-display-emojis-in-region match-beginning match-end)))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end &optional point-entered-p)
   "Undisplay the emojis in region.
@@ -231,10 +233,10 @@ BEG and END are the beginning and end of the region respectively"
       ;; Get the start of emojified region in the region, the region is marked
       ;; with text-property `emojified' whose value is `t'. The region is marked
       ;; so that we do not inadvertently remove display composition or other
-      ;; properties inserted by other packages.  This might fails too if a
+      ;; properties inserted by other packages.  This might fail too if a
       ;; package adds any of these properties between an emojified text, but
-      ;; that situation is hopefully very rare and better than blindly removing
-      ;; all text properties
+      ;; that situation is hopefully very rare and this is better than blindly
+      ;; removing all text properties
       (let* ((emoji-start (text-property-any beg end 'emojified t))
              ;; Get the end emojified text, if we could not find the start set
              ;; emoji-end to region `end', this merely to make looping easier.
