@@ -214,6 +214,14 @@ BEG and END are the beginning and end of the region respectively"
                    ;; The text is at the beginning of the buffer
                    (emojify-valid-text-context-p match-beginning match-end)
 
+                   ;; Inhibit possibly inside a list
+                   ;; 41 is ?) but packages get confused by the extra closing paren
+                   ;; TODO Report bugs to such packages
+                   (not (and (eq (char-syntax (char-before match-end)) 41)
+                             (ignore-errors (scan-sexps match-end -1))))
+
+                   (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
+
           ;; TODO: Remove double checks
           (when (gethash match emoji-parsed)
             (add-text-properties match-beginning
