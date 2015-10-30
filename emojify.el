@@ -32,11 +32,14 @@
 ;;; Code:
 
 (require 'json)
-(require 'subr-x)
+(require 'regexp-opt)
+(require 'jit-lock)
 
 
 
 ;; Satisfying the byte-compiler
+;; We do not "require" these functions but if `org-mode' is active we use them
+;; if
 
 ;; Required to determine point is in an org-list
 (declare-function org-at-item-p "org-list")
@@ -69,13 +72,6 @@
   "Path to the directory containing the image."
   :type 'directory
   :group 'emojify)
-
-(defvar emoji-parsed (let ((json-array-type 'list)
-                           (json-object-type 'hash-table))
-                       (json-read-file emojify-emoji-json)))
-
-(defvar emoji-regexps (let ((emojis (hash-table-keys emoji-parsed)))
-                        (regexp-opt emojis)))
 
 ;; (Eventually) Can be one of image, unicode, ascii
 (defvar emoji-substitution-style 'image)
@@ -124,8 +120,8 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
   "Determine if `emojify-mode' should be enabled for given BUFFER.
 
 `emojify-mode' mode is not enabled in temporary buffers.  Additionally user
-customize `emojify-inhibit-major-modes' and
-`emojify-inhibit-in-buffer-functions' to disabled emojify in additional modes."
+can customize `emojify-inhibit-major-modes' and
+`emojify-inhibit-in-buffer-functions' to disabled emojify in additional buffers."
   (not (or (emojify-ephemeral-buffer-p (current-buffer))
            (emojify-inhibit-major-mode-p (current-buffer))
            (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
@@ -227,10 +223,35 @@ since our mechanisms do not work in it."
 
 
 
+;; Utility functions
+
+;; subr-x has a version of this, unfortunately it is available only on Emacs v24.4 and newer
+
+(defsubst emojify-hash-table-keys (hash-table)
+  "Return a list of keys in HASH-TABLE."
+  (let (keys)
+    (maphash (lambda (k _v) (push k keys)) hash-table)
+    keys))
+
+
+
+;; Emoji data
+
+(defvar emojify--emojis (let ((json-array-type 'list)
+                             (json-object-type 'hash-table))
+                         (json-read-file emojify-emoji-json))
+  "Data about the emojis, this contains only the emojis that come with emojify.")
+
+(defvar emojify--regexps (let ((emojis (emojify-hash-table-keys emojify--emojis)))
+                          (regexp-opt emojis))
+  "Regexp to match text to emojified.")
+
+
+
 ;; Core functions and macros
 
 (defsubst emojify-get-image (name)
-  (let ((emoji-data (gethash name emoji-parsed)))
+  (let ((emoji-data (gethash name emojify--emojis)))
     (when emoji-data
       (let ((image-file (expand-file-name (concat (gethash "unicode" emoji-data) ".png")
                                           emojify-image-dir)))
@@ -245,8 +266,10 @@ since our mechanisms do not work in it."
                         :height (default-font-height)))))))
 
 (defmacro emojify-with-saved-buffer-state (&rest forms)
-  "Execute FORMS saving point and mark, match-data and buffer modification state
-also inhibit buffer change, point motion hooks.
+  "Execute FORMS saving current buffer state.
+
+This saves point and mark, `match-data' and buffer modification state it also
+inhibits buffer change, point motion hooks.
 
 Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-region'"
   (declare (debug t) (indent 0))
@@ -258,11 +281,12 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
 
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
+
 BEG and END are the beginning and end of the region respectively"
   (emojify-with-saved-buffer-state
     (goto-char beg)
     (while (and (> end (point))
-                (search-forward-regexp emoji-regexps end t))
+                (search-forward-regexp emojify--regexps end t))
       (let ((match-beginning (match-beginning 0))
             (match-end (match-end 0))
             (match (match-string-no-properties 0))
@@ -287,7 +311,7 @@ BEG and END are the beginning and end of the region respectively"
                    (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
           ;; TODO: Remove double checks
-          (when (gethash match emoji-parsed)
+          (when (gethash match emojify--emojis)
             (add-text-properties match-beginning
                                  match-end
                                  (list 'display (pcase emoji-substitution-style
@@ -304,7 +328,10 @@ BEG and END are the beginning and end of the region respectively"
 
 (defun emojify-undisplay-emojis-in-region (beg end &optional point-entered-p)
   "Undisplay the emojis in region.
-BEG and END are the beginning and end of the region respectively"
+
+BEG and END are the beginning and end of the region respectively,
+POINT-ENTERED-P should be non-nil if the emoji's are being undisplayed because
+point is on it."
   (emojify-with-saved-buffer-state
     (while (< beg end)
       ;; Get the start of emojified region in the region, the region is marked
@@ -359,22 +386,31 @@ BEG and END are the beginning and end of the region respectively"
 ;; (ad-activate 'text-scale-increase)
 
 (defun emojify-turn-on-emojify-mode ()
+  "Turn on `emojify-mode' in current buffer."
   (when (emojify-buffer-p (current-buffer))
     (if font-lock-defaults
+        ;; Use jit-lock if available, it is much better for larger
+        ;; buffers than our brute force display
         (jit-lock-register #'emojify-display-emojis-in-region)
-        (save-restriction
-          (widen)
-          (emojify-display-emojis-in-region (point-min) (point-max))))
-    ;; Make sure emojis are displayed in newly inserted text
+      (save-restriction
+        (widen)
+        (emojify-display-emojis-in-region (point-min) (point-max))))
+
+    ;; An after change hook is added irrespective of whether jit-lock is used
+    ;; because we do not rely of font-locks mechanism for clearing the `display'
+    ;; when text is deleted and thus should do it manually
     (add-hook 'after-change-functions #'emojify-after-change-function t t)))
 
 (defun emojify-turn-off-emojify-mode ()
+  "Turn off `emojify-mode' in current buffer."
   ;; Remove currently displayed emojis
   (save-restriction
     (widen)
     (emojify-undisplay-emojis-in-region (point-min) (point-max)))
+
   (jit-lock-unregister #'emojify-display-emojis-in-region)
-  ;; Make sure emojis are displayed in newly inserted text
+
+  ;; Uninstall our after change hook
   (remove-hook 'after-change-functions #'emojify-after-change-function t))
 
 (define-minor-mode emojify-mode
