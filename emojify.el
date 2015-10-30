@@ -164,10 +164,10 @@ can customize `emojify-inhibit-major-modes' and
   "Contexts where emojis can be displayed in programming modes.
 
 Possible values are
-`comment' - Display emojis only in comments
-`string'  - Display emojis only in strings
-`both'    - Display emojis in comments and strings
-`none'    - Do not display emojis in programming modes")
+`comments' - Display emojis only in comments
+`string'   - Display emojis only in strings
+`both'     - Display emojis in comments and strings
+`none'     - Do not display emojis in programming modes")
 
 (defcustom emojify-inhibit-functions
   '(emojify-in-org-tags-p emojify-in-org-list-p)
@@ -205,7 +205,7 @@ This returns non-nil if the region is valid according to `emojify-prog-contexts'
           (syntax-end (syntax-ppss end))
           (pos (pcase emojify-prog-contexts
                  (`string 3)
-                 (`comment 4)
+                 (`comments 4)
                  (`both 8))))
       (and (nth pos syntax-beg)
            (nth pos syntax-end)))))
