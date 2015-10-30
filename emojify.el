@@ -263,20 +263,40 @@ since our mechanisms do not work in it."
 
 ;; Core functions and macros
 
-(defsubst emojify-get-image (name)
-  (let ((emoji-data (gethash name emojify--emojis)))
-    (when emoji-data
-      (let ((image-file (expand-file-name (concat (gethash "unicode" emoji-data) ".png")
-                                          emojify-image-dir)))
-        (when (file-exists-p image-file)
-          (create-image image-file
-                        ;; use imagemagick if available (allows resizing images
-                        (when (fboundp 'imagemagick-types)
-                          'imagemagick)
-                        nil
-                        :ascent 'center
-                        ;; no-op if imagemagick is not available
-                        :height (default-font-height)))))))
+(defsubst emojify--get-image-display (data)
+  (let ((image-file (expand-file-name (concat (gethash "unicode" data) ".png")
+                                      emojify-image-dir)))
+    (when (file-exists-p image-file)
+      (create-image image-file
+                    ;; use imagemagick if available (allows resizing images
+                    (when (fboundp 'imagemagick-types)
+                      'imagemagick)
+                    nil
+                    :ascent 'center
+                    ;; no-op if imagemagick is not available
+                    :height (default-font-height)))))
+
+(defsubst emojify--get-unicode-display (data)
+  ;; TODO Handle multiple characters
+  (let* ((unicode (gethash "unicode" data))
+         (character (when unicode (string-to-number data 16))))
+    (when (and character
+               (char-displayable-p character))
+      (make-string 1 character))))
+
+(defsubst emojify--get-ascii-display (data)
+  ;; TODO Handle multiple characters
+  (let ((aliases (gethash "aliases_ascii" data)))
+    (when aliases
+      (make-string 1 (car aliases)))))
+
+(defsubst emojify--get-text-props (name)
+  (let* ((emoji-data (gethash name emojify--emojis))
+         (display (when emoji-data
+                    (pcase emojify-substitution-style
+                      (`image (emojify--get-image-display emoji-data))))))
+    (when display
+      (list 'display display))))
 
 (defmacro emojify-with-saved-buffer-state (&rest forms)
   "Execute FORMS saving current buffer state.
@@ -323,21 +343,20 @@ BEG and END are the beginning and end of the region respectively"
 
                    (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-          ;; TODO: Remove double checks
-          (when (gethash match emojify--emojis)
-            (add-text-properties match-beginning
-                                 match-end
-                                 (list 'display (pcase emoji-substitution-style
-                                                  (`image (emojify-get-image match)))
-                                       'emojified t
-                                       'point-entered (lambda (x y)
-                                                        (when (equal buffer (current-buffer))
-                                                          (emojify-undisplay-emojis-in-region match-beginning match-end t)))
-                                       'point-left (lambda (x y)
-                                                     (when (and (equal buffer (current-buffer))
-                                                                (or (< match-end y)
-                                                                    (< y match-beginning)))
-                                                       (emojify-display-emojis-in-region match-beginning match-end)))))))))))
+          (let ((display-props (emojify--get-text-props match)))
+            (when display-props
+              (add-text-properties match-beginning
+                                   match-end
+                                   (append display-props
+                                           (list 'emojified t
+                                                 'point-entered (lambda (x y)
+                                                                  (when (equal buffer (current-buffer))
+                                                                    (emojify-undisplay-emojis-in-region match-beginning match-end t)))
+                                                 'point-left (lambda (x y)
+                                                               (when (and (equal buffer (current-buffer))
+                                                                          (or (< match-end y)
+                                                                              (< y match-beginning)))
+                                                                 (emojify-display-emojis-in-region match-beginning match-end)))))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end &optional point-entered-p)
   "Undisplay the emojis in region.
