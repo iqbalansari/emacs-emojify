@@ -39,7 +39,6 @@
 
 ;; Satisfying the byte-compiler
 ;; We do not "require" these functions but if `org-mode' is active we use them
-;; if
 
 ;; Required to determine point is in an org-list
 (declare-function org-at-item-p "org-list")
@@ -50,12 +49,24 @@
 
 
 
+;; Utility functions
+
+;; subr-x has a version of this, unfortunately it is available only on Emacs v24.4 and newer
+
+(defsubst emojify-hash-table-keys (hash-table)
+  "Return a list of keys in HASH-TABLE."
+  (let (keys)
+    (maphash (lambda (k _v) (push k keys)) hash-table)
+    keys))
+
+
+
+;; Customizations for control how emojis are displayed
+
 (defgroup emojify nil
   "Customization options for mu4e-alert"
   :group 'display
   :prefix "emojify-")
-
-
 
 (defcustom emojify-emoji-json
   (expand-file-name "emoji.json" (if load-file-name
@@ -74,7 +85,32 @@
   :group 'emojify)
 
 ;; (Eventually) Can be one of image, unicode, ascii
-(defvar emoji-substitution-style 'image)
+(defcustom emojify-substitution-style
+  'image
+  "How the emoji's be displayed.
+
+Possible values are
+`image'   - Display emojis using images, this requires images are supported by
+            user's Emacs installation
+`unicode' - Display emojis using unicode codepoints, this works well on
+            platforms with good emoji fonts.  In this case the emoji text
+            ':wink:' will be substituted with 😉.
+`ascii'   - Display emojis as ascii charcters, this is simplest and does not
+            require any external dependencies.  In this cases emoji text like
+            ':wink:' are substituted with ascii equivalents like ';)'")
+
+
+
+;; Emoji data
+
+(defvar emojify--emojis (let ((json-array-type 'list)
+                             (json-object-type 'hash-table))
+                         (json-read-file emojify-emoji-json))
+  "Data about the emojis, this contains only the emojis that come with emojify.")
+
+(defvar emojify--regexps (let ((emojis (emojify-hash-table-keys emojify--emojis)))
+                          (regexp-opt emojis))
+  "Regexp to match text to emojified.")
 
 
 
@@ -218,33 +254,10 @@ since our mechanisms do not work in it."
                    34
                    ;; whitespace syntax
                    ?-
+                   ;; punctuation
+                   ?.
                    ;; comment end
                    ?>)))))
-
-
-
-;; Utility functions
-
-;; subr-x has a version of this, unfortunately it is available only on Emacs v24.4 and newer
-
-(defsubst emojify-hash-table-keys (hash-table)
-  "Return a list of keys in HASH-TABLE."
-  (let (keys)
-    (maphash (lambda (k _v) (push k keys)) hash-table)
-    keys))
-
-
-
-;; Emoji data
-
-(defvar emojify--emojis (let ((json-array-type 'list)
-                             (json-object-type 'hash-table))
-                         (json-read-file emojify-emoji-json))
-  "Data about the emojis, this contains only the emojis that come with emojify.")
-
-(defvar emojify--regexps (let ((emojis (emojify-hash-table-keys emojify--emojis)))
-                          (regexp-opt emojis))
-  "Regexp to match text to emojified.")
 
 
 
