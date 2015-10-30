@@ -257,6 +257,7 @@ since our mechanisms do not work in it."
 ;; Core functions and macros
 
 (defsubst emojify--get-image-display (data)
+  "Get the display text property to display the emoji specified in DATA as an image."
   (let ((image-file (expand-file-name (concat (ht-get data "unicode") ".png")
                                       emojify-image-dir)))
     (when (file-exists-p image-file)
@@ -270,6 +271,7 @@ since our mechanisms do not work in it."
                     :height (default-font-height)))))
 
 (defsubst emojify--get-unicode-display (data)
+  "Get the display text property to display the emoji specified in DATA as unicode characters."
   (let* ((unicode (ht-get data "unicode"))
          (characters (when unicode
                        (seq-map (lambda (hex)
@@ -279,9 +281,11 @@ since our mechanisms do not work in it."
       (seq-mapcat #'char-to-string characters 'string))))
 
 (defsubst emojify--get-ascii-display (data)
+  "Get the display text property to display the emoji specified in DATA as ascii characters."
   (car (ht-get data "aliases_ascii")))
 
 (defsubst emojify--get-text-display-props (name)
+  "The the display property for an emoji named NAME."
   (let* ((emoji-data (ht-get emojify--emojis name))
          (display (when emoji-data
                     (pcase emojify-substitution-style
@@ -387,7 +391,11 @@ point is on it."
         ;; Setup the next iteration
         (setq beg emoji-end)))))
 
-(defun emojify-after-change-function (beginning end len)
+(defun emojify-after-change-function (beg end len)
+  "Redisplay emojis in region after change.
+
+This functions is added to `after-change-functions'.  See documentation
+of `after-change-functions' to understand the meaning of BEG, END and LEN."
   (let ((inhibit-read-only t)
         ;; Extend the region to match the beginning of line where change began
         (region-end (save-excursion
@@ -395,7 +403,7 @@ point is on it."
                       (line-end-position)))
         ;; Extend the region to match the end of line where change ended
         (region-start (save-excursion
-                        (goto-char beginning)
+                        (goto-char beg)
                         (line-beginning-position))))
     ;; Remove previously added emojis
     (emojify-undisplay-emojis-in-region region-start region-end)
@@ -435,7 +443,7 @@ point is on it."
 
   (jit-lock-unregister #'emojify-display-emojis-in-region)
 
-  ;; Uninstall our after change hook
+  ;; Uninstall our after change function
   (remove-hook 'after-change-functions #'emojify-after-change-function t))
 
 (define-minor-mode emojify-mode
