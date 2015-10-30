@@ -23,10 +23,6 @@
 ;;; Commentary:
 
 ;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :p
-;;
-;; TODO: Custom images
-;;       Benchmark
-;;       Cleanup
 
 
 
