@@ -31,11 +31,13 @@
 
 ;;; Code:
 
+(require 'seq)
 (require 'ht)
 
 (require 'json)
 (require 'regexp-opt)
 (require 'jit-lock)
+(require 'pcase)
 
 
 
@@ -268,24 +270,24 @@ since our mechanisms do not work in it."
                     :height (default-font-height)))))
 
 (defsubst emojify--get-unicode-display (data)
-  ;; TODO Handle multiple characters
-  (let* ((unicode (gethash "unicode" data))
-         (character (when unicode (string-to-number data 16))))
-    (when (and character
-               (char-displayable-p character))
-      (make-string 1 character))))
+  (let* ((unicode (ht-get data "unicode"))
+         (characters (when unicode
+                       (seq-map (lambda (hex)
+                                  (string-to-number hex 16))
+                                (split-string unicode "-")))))
+    (when (seq-every-p #'char-displayable-p characters)
+      (seq-mapcat #'char-to-string characters 'string))))
 
 (defsubst emojify--get-ascii-display (data)
-  ;; TODO Handle multiple characters
-  (let ((aliases (gethash "aliases_ascii" data)))
-    (when aliases
-      (make-string 1 (car aliases)))))
+  (car (ht-get data "aliases_ascii")))
 
 (defsubst emojify--get-text-props (name)
   (let* ((emoji-data (ht-get emojify--emojis name))
          (display (when emoji-data
                     (pcase emojify-substitution-style
-                      (`image (emojify--get-image-display emoji-data))))))
+                      (`image (emojify--get-image-display emoji-data))
+                      (`unicode (emojify--get-unicode-display emoji-data))
+                      (`ascii (emojify--get-ascii-display emoji-data))))))
     (when display
       (list 'display display))))
 
