@@ -281,7 +281,7 @@ since our mechanisms do not work in it."
 (defsubst emojify--get-ascii-display (data)
   (car (ht-get data "aliases_ascii")))
 
-(defsubst emojify--get-text-props (name)
+(defsubst emojify--get-text-display-props (name)
   (let* ((emoji-data (ht-get emojify--emojis name))
          (display (when emoji-data
                     (pcase emojify-substitution-style
@@ -336,7 +336,7 @@ BEG and END are the beginning and end of the region respectively"
 
                    (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-          (let ((display-props (emojify--get-text-props match)))
+          (let ((display-props (emojify--get-text-display-props match)))
             (when display-props
               (add-text-properties match-beginning
                                    match-end
