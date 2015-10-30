@@ -271,6 +271,9 @@ function  - It is called with 4 arguments
 
 Does nothing if the value is anything else.")
 
+(defcustom emojify-show-help t
+  "If non-nil the underlying text is displayed in a popup when mouse moves over it.")
+
 (defun emojify-point-entered-function (old-point new-point)
   "Create a function to be executed when point enters an emojified text.
 
@@ -295,6 +298,17 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
                                                                  (emojify-display-emojis-in-region match-beginning match-end))))))))
             ((functionp 'emojify-point-entered-behaviour)
              (funcall emojify-point-entered-behaviour buffer match match-beginning match-end))))))
+
+(defun emojify-help-function (window string pos)
+  "Function to get help string to be echoed when point/mouse into the point.
+
+To understand WINDOW, STRING and POS see the function documentation for
+`help-echo' text-property."
+  (when emojify-show-help
+    (plist-get (text-properties-at pos) 'emojify-text)))
+
+
+
 ;; Core functions and macros
 
 (defsubst emojify--get-image-display (data)
@@ -391,7 +405,8 @@ BEG and END are the beginning and end of the region respectively"
                                                  'emojify-text match
                                                  'emojify-start match-beginning
                                                  'emojify-end match-end
-                                                 'point-entered #'emojify-point-entered-function))))))))))
+                                                 'point-entered #'emojify-point-entered-function
+                                                 'help-echo #'emojify-help-function))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
@@ -425,7 +440,8 @@ BEG and END are the beginning and end of the region respectively"
                                                                       'emojify-buffer t
                                                                       'emojify-text t
                                                                       'emojify-start t
-                                                                      'emojify-end t))))
+                                                                      'emojify-end t
+                                                                      'help-echo t))))
         ;; Setup the next iteration
         (setq beg emoji-end)))))
 
