@@ -31,6 +31,8 @@
 
 ;;; Code:
 
+(require 'ht)
+
 (require 'json)
 (require 'regexp-opt)
 (require 'jit-lock)
@@ -46,18 +48,6 @@
 ;; Required to determine point is in an org-src block
 (declare-function org-element-type "org-element")
 (declare-function org-element-at-point "org-element")
-
-
-
-;; Utility functions
-
-;; subr-x has a version of this, unfortunately it is available only on Emacs v24.4 and newer
-
-(defsubst emojify-hash-table-keys (hash-table)
-  "Return a list of keys in HASH-TABLE."
-  (let (keys)
-    (maphash (lambda (k _v) (push k keys)) hash-table)
-    keys))
 
 
 
@@ -108,8 +98,8 @@ Possible values are
                          (json-read-file emojify-emoji-json))
   "Data about the emojis, this contains only the emojis that come with emojify.")
 
-(defvar emojify--regexps (let ((emojis (emojify-hash-table-keys emojify--emojis)))
-                          (regexp-opt emojis))
+(defvar emojify--regexps (let ((emojis (ht-keys emojify--emojis)))
+                           (regexp-opt emojis))
   "Regexp to match text to emojified.")
 
 
@@ -264,7 +254,7 @@ since our mechanisms do not work in it."
 ;; Core functions and macros
 
 (defsubst emojify--get-image-display (data)
-  (let ((image-file (expand-file-name (concat (gethash "unicode" data) ".png")
+  (let ((image-file (expand-file-name (concat (ht-get data "unicode") ".png")
                                       emojify-image-dir)))
     (when (file-exists-p image-file)
       (create-image image-file
@@ -291,7 +281,7 @@ since our mechanisms do not work in it."
       (make-string 1 (car aliases)))))
 
 (defsubst emojify--get-text-props (name)
-  (let* ((emoji-data (gethash name emojify--emojis))
+  (let* ((emoji-data (ht-get emojify--emojis name))
          (display (when emoji-data
                     (pcase emojify-substitution-style
                       (`image (emojify--get-image-display emoji-data))))))
