@@ -150,6 +150,7 @@ can customize `emojify-inhibit-major-modes' and
 `emojify-inhibit-in-buffer-functions' to disabled emojify in additional buffers."
   (not (or (emojify-ephemeral-buffer-p (current-buffer))
            (emojify-inhibit-major-mode-p (current-buffer))
+           (buffer-base-buffer buffer)
            (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
 
 
