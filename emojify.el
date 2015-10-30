@@ -255,6 +255,46 @@ since our mechanisms do not work in it."
 
 
 
+;; Customizations to control the behaviour when point enters emojified text
+
+(defcustom emojify-point-entered-behaviour 'echo
+  "The behaviour when point enters, an emojified text.
+
+It can be one of the following
+`echo'    - Echo the underlying text in the minibuffer
+`uncover' - Display the underlying text while point is on it
+function  - It is called with 4 arguments
+            1) buffer where emoji text is
+            2) the emoji text
+            3) starting position of emoji text
+            4) ending position of emoji text
+
+Does nothing if the value is anything else.")
+
+(defun emojify-point-entered-function (old-point new-point)
+  "Create a function to be executed when point enters an emojified text.
+
+OLD-POINT and NEW-POINT are the point before entering and after entering."
+  (let* ((text-props (text-properties-at new-point))
+         (buffer (plist-get text-props 'emojify-buffer))
+         (match (plist-get text-props 'emojify-text))
+         (match-beginning (plist-get text-props 'emojify-start))
+         (match-end (plist-get text-props 'emojify-end)))
+    (when (eq buffer (current-buffer))
+      (cond ((eq emojify-point-entered-behaviour 'echo)
+             (message (substring-no-properties match)))
+            ((eq emojify-point-entered-behaviour 'uncover)
+             (progn (emojify-undisplay-emojis-in-region match-beginning match-end)
+                    (with-silent-modifications
+                      (add-text-properties match-end
+                                           match-beginning
+                                           (list 'point-left (lambda (old-point new-point)
+                                                               (when (and (equal buffer (current-buffer))
+                                                                          (or (< match-end new-point)
+                                                                              (< new-point match-beginning)))
+                                                                 (emojify-display-emojis-in-region match-beginning match-end))))))))
+            ((functionp 'emojify-point-entered-behaviour)
+             (funcall emojify-point-entered-behaviour buffer match match-beginning match-end))))))
 ;; Core functions and macros
 
 (defsubst emojify--get-image-display (data)
@@ -347,21 +387,16 @@ BEG and END are the beginning and end of the region respectively"
                                    match-end
                                    (append display-props
                                            (list 'emojified t
-                                                 'point-entered (lambda (x y)
-                                                                  (when (equal buffer (current-buffer))
-                                                                    (emojify-undisplay-emojis-in-region match-beginning match-end t)))
-                                                 'point-left (lambda (x y)
-                                                               (when (and (equal buffer (current-buffer))
-                                                                          (or (< match-end y)
-                                                                              (< y match-beginning)))
-                                                                 (emojify-display-emojis-in-region match-beginning match-end)))))))))))))
+                                                 'emojify-buffer buffer
+                                                 'emojify-text match
+                                                 'emojify-start match-beginning
+                                                 'emojify-end match-end
+                                                 'point-entered #'emojify-point-entered-function))))))))))
 
-(defun emojify-undisplay-emojis-in-region (beg end &optional point-entered-p)
+(defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
 
-BEG and END are the beginning and end of the region respectively,
-POINT-ENTERED-P should be non-nil if the emoji's are being undisplayed because
-point is on it."
+BEG and END are the beginning and end of the region respectively"
   (emojify-with-saved-buffer-state
     (while (< beg end)
       ;; Get the start of emojified region in the region, the region is marked
@@ -385,10 +420,12 @@ point is on it."
           (remove-text-properties emoji-start emoji-end (append (list 'emojified t
                                                                       'display t
                                                                       'composition t
-                                                                      'point-entered t)
-                                                                ;; Get this working
-                                                                (unless point-entered-p
-                                                                  '(point-left t)))))
+                                                                      'point-entered t
+                                                                      'point-left t
+                                                                      'emojify-buffer t
+                                                                      'emojify-text t
+                                                                      'emojify-start t
+                                                                      'emojify-end t))))
         ;; Setup the next iteration
         (setq beg emoji-end)))))
 
