@@ -531,21 +531,16 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
+
+  ;; Calculate emoji data if needed
   (unless (and emojify-emojis emojify-regexps)
     (emojify-set-emoji-data))
 
   (when (emojify-buffer-p (current-buffer))
-    (if font-lock-defaults
-        ;; Use jit-lock if available, it is much better for larger
-        ;; buffers than our brute force display
-        (jit-lock-register #'emojify-display-emojis-in-region)
-      (save-restriction
-        (widen)
-        (emojify-display-emojis-in-region (point-min) (point-max))))
+    ;; Install our jit-lock function
+    (jit-lock-register #'emojify-display-emojis-in-region)
 
-    ;; An after change hook is added irrespective of whether jit-lock is used
-    ;; because we do not rely of font-locks mechanism for clearing the `display'
-    ;; when text is deleted and thus should do it manually
+    ;; Add an after change hook to emojify regions on change
     (add-hook 'after-change-functions #'emojify-after-change-function t t)))
 
 (defun emojify-turn-off-emojify-mode ()
@@ -555,6 +550,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
     (widen)
     (emojify-undisplay-emojis-in-region (point-min) (point-max)))
 
+  ;; Uninstall our jit-lock function
   (jit-lock-unregister #'emojify-display-emojis-in-region)
 
   ;; Uninstall our after change function
