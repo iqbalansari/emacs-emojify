@@ -73,7 +73,6 @@
   :type 'directory
   :group 'emojify)
 
-;; (Eventually) Can be one of image, unicode, ascii
 (defcustom emojify-substitution-style
   'image
   "How the emoji's be displayed.
@@ -86,20 +85,8 @@ Possible values are
             ':wink:' will be substituted with 😉.
 `ascii'   - Display emojis as ascii charcters, this is simplest and does not
             require any external dependencies.  In this cases emoji text like
-            ':wink:' are substituted with ascii equivalents like ';)'")
-
-
-
-;; Emoji data
-
-(defvar emojify--emojis (let ((json-array-type 'list)
-                             (json-object-type 'hash-table))
-                         (json-read-file emojify-emoji-json))
-  "Data about the emojis, this contains only the emojis that come with emojify.")
-
-(defvar emojify--regexps (let ((emojis (ht-keys emojify--emojis)))
-                           (regexp-opt emojis))
-  "Regexp to match text to emojified.")
+            ':wink:' are substituted with ascii equivalents like ';)'"
+  :group 'emojify)
 
 
 
@@ -156,6 +143,57 @@ can customize `emojify-inhibit-major-modes' and
 
 ;; Customizations to control display of emojis
 
+(defvar emojify-emojis nil
+  "Data about the emojis, this contains only the emojis that come with emojify.")
+
+(defvar emojify-regexps nil
+  "Regexp to match text to emojified.")
+
+(defun emojify-set-emoji-data ()
+  "Read the emoji data and set the regexp required to search them."
+  (setq emojify-emojis (let ((json-array-type 'list)
+                             (json-object-type 'hash-table))
+                         (json-read-file emojify-emoji-json)))
+
+  (unless (eq emojify-preferred-style 'all)
+    (let ((style (symbol-name emojify-preferred-style)))
+      (ht-reject! (lambda (key value)
+                    (not (string= style (ht-get value "style"))))
+                  emojify-emojis)))
+
+  (setq emojify-regexps (let ((emojis (ht-keys emojify-emojis)))
+                          (regexp-opt emojis))))
+
+;;;###autoload
+(defun emojify-set-preferred-style (value)
+  "Set the type of emojis that should be displayed.
+
+VALUE is the value to be used as preferred style, see `emojify-preferred-style'"
+  (let ((style (if (consp value)
+                   (eval value)
+                 value)))
+    (unless (memq style '(all github ascii))
+      (user-error "[emojify] Do not know how to use `%s' style, please set to one of %s"
+                  value
+                  '(all github ascii)))
+    (setq-default emojify-preferred-style style)
+    (emojify-set-emoji-data)))
+
+(defcustom emojify-preferred-style
+  'all
+  "The type of emojis that should be displayed.
+
+These can have one of the following values
+
+`ascii'  - Display only ascii emojis for example ';)'
+`github' - Display only github style emojis for example ':wink:'
+`all'    - Display all of the above"
+  :type '(radio :tag "Emoji Style"
+                (const :tag "Display only ascii emojis" ascii)
+                (const :tag "Display only github emojis" github)
+                (const :tag "Display all emojis" all))
+  :set (lambda (_ value) (emojify-set-preferred-style value)))
+
 (defcustom emojify-prog-contexts
   'both
   "Contexts where emojis can be displayed in programming modes.
@@ -164,7 +202,8 @@ Possible values are
 `comments' - Display emojis only in comments
 `string'   - Display emojis only in strings
 `both'     - Display emojis in comments and strings
-`none'     - Do not display emojis in programming modes")
+`none'     - Do not display emojis in programming modes"
+  :group 'emojify)
 
 (defcustom emojify-inhibit-functions
   '(emojify-in-org-tags-p emojify-in-org-list-p)
@@ -265,10 +304,12 @@ function  - It is called with 4 arguments
             3) starting position of emoji text
             4) ending position of emoji text
 
-Does nothing if the value is anything else.")
+Does nothing if the value is anything else."
+  :group 'emojify)
 
 (defcustom emojify-show-help t
-  "If non-nil the underlying text is displayed in a popup when mouse moves over it.")
+  "If non-nil the underlying text is displayed in a popup when mouse moves over it."
+  :group 'emojify)
 
 (defun emojify-point-entered-function (old-point new-point)
   "Create a function to be executed when point enters an emojified text.
@@ -346,7 +387,7 @@ mark the start and end of region containing the text."
 
 (defun emojify--get-text-display-props (name)
   "The the display property for an emoji named NAME."
-  (let* ((emoji-data (ht-get emojify--emojis name))
+  (let* ((emoji-data (ht-get emojify-emojis name))
          (display (when emoji-data
                     (pcase emojify-substitution-style
                       (`image (emojify--get-image-display emoji-data))
@@ -376,7 +417,7 @@ BEG and END are the beginning and end of the region respectively"
   (emojify-with-saved-buffer-state
     (goto-char beg)
     (while (and (> end (point))
-                (search-forward-regexp emojify--regexps end t))
+                (search-forward-regexp emojify-regexps end t))
       (let ((match-beginning (match-beginning 0))
             (match-end (match-end 0))
             (match (match-string-no-properties 0))
@@ -478,6 +519,9 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
+  (unless (and emojify-emojis emojify-regexps)
+    (emojify-set-emoji-data))
+
   (when (emojify-buffer-p (current-buffer))
     (if font-lock-defaults
         ;; Use jit-lock if available, it is much better for larger
