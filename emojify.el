@@ -370,7 +370,7 @@ mark the start and end of region containing the text."
 
 (defun emojify--get-image-display (data)
   "Get the display text property to display the emoji specified in DATA as an image."
-  (let ((image-file (expand-file-name (concat (ht-get data "unicode") ".png")
+  (let ((image-file (expand-file-name (ht-get data "image")
                                       emojify-image-dir)))
     (when (file-exists-p image-file)
       (create-image image-file
@@ -394,7 +394,7 @@ mark the start and end of region containing the text."
 
 (defun emojify--get-ascii-display (data)
   "Get the display text property to display the emoji specified in DATA as ascii characters."
-  (car (ht-get data "aliases_ascii")))
+  (ht-get data "ascii"))
 
 (defun emojify--get-text-display-props (name)
   "The the display property for an emoji named NAME."
