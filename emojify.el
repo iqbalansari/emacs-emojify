@@ -321,7 +321,9 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
          (match-beginning (plist-get text-props 'emojify-start))
          (match-end (plist-get text-props 'emojify-end)))
     (when (eq buffer (current-buffer))
-      (cond ((eq emojify-point-entered-behaviour 'echo)
+      (cond ((and (eq emojify-point-entered-behaviour 'echo)
+                  ;; Do not echo in isearch-mode
+                  (not isearch-mode))
              (message (substring-no-properties match)))
             ((eq emojify-point-entered-behaviour 'uncover)
              (progn (emojify-undisplay-emojis-in-region match-beginning match-end)
