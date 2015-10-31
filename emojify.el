@@ -287,11 +287,9 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
                     (with-silent-modifications
                       (add-text-properties match-end
                                            match-beginning
-                                           (list 'point-left (lambda (old-point new-point)
-                                                               (when (and (equal buffer (current-buffer))
-                                                                          (or (< match-end new-point)
-                                                                              (< new-point match-beginning)))
-                                                                 (emojify-display-emojis-in-region match-beginning match-end))))))))
+                                           (list 'point-left (emojify--get-point-left-function buffer
+                                                                                               match-beginning
+                                                                                               match-end))))))
             ((functionp 'emojify-point-entered-behaviour)
              (funcall emojify-point-entered-behaviour buffer match match-beginning match-end))))))
 
@@ -306,6 +304,17 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 
 ;; Core functions and macros
+
+(defun emojify--get-point-left-function (buffer match-beginning match-end)
+  "Create a function that can be executed in point-left hook for emoji text.
+
+BUFFER is the buffer where the text is from, MATCH-BEGINNING and MATCH-END.
+mark the start and end of region containing the text."
+  (lambda (old-point new-point)
+    (when (and (equal buffer (current-buffer))
+               (or (< match-end new-point)
+                   (< new-point match-beginning)))
+      (emojify-display-emojis-in-region match-beginning match-end))))
 
 (defun emojify--get-image-display (data)
   "Get the display text property to display the emoji specified in DATA as an image."
