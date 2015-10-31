@@ -307,7 +307,7 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
-(defsubst emojify--get-image-display (data)
+(defun emojify--get-image-display (data)
   "Get the display text property to display the emoji specified in DATA as an image."
   (let ((image-file (expand-file-name (concat (ht-get data "unicode") ".png")
                                       emojify-image-dir)))
@@ -321,7 +321,7 @@ To understand WINDOW, STRING and POS see the function documentation for
                     ;; no-op if imagemagick is not available
                     :height (default-font-height)))))
 
-(defsubst emojify--get-unicode-display (data)
+(defun emojify--get-unicode-display (data)
   "Get the display text property to display the emoji specified in DATA as unicode characters."
   (let* ((unicode (ht-get data "unicode"))
          (characters (when unicode
@@ -331,11 +331,11 @@ To understand WINDOW, STRING and POS see the function documentation for
     (when (seq-every-p #'char-displayable-p characters)
       (seq-mapcat #'char-to-string characters 'string))))
 
-(defsubst emojify--get-ascii-display (data)
+(defun emojify--get-ascii-display (data)
   "Get the display text property to display the emoji specified in DATA as ascii characters."
   (car (ht-get data "aliases_ascii")))
 
-(defsubst emojify--get-text-display-props (name)
+(defun emojify--get-text-display-props (name)
   "The the display property for an emoji named NAME."
   (let* ((emoji-data (ht-get emojify--emojis name))
          (display (when emoji-data
@@ -412,11 +412,11 @@ BEG and END are the beginning and end of the region respectively"
     (while (< beg end)
       ;; Get the start of emojified region in the region, the region is marked
       ;; with text-property `emojified' whose value is `t'. The region is marked
-      ;; so that we do not inadvertently remove display composition or other
-      ;; properties inserted by other packages.  This might fail too if a
-      ;; package adds any of these properties between an emojified text, but
-      ;; that situation is hopefully very rare and this is better than blindly
-      ;; removing all text properties
+      ;; so that we do not inadvertently remove display or other properties
+      ;; inserted by other packages.  This might fail too if a package adds any
+      ;; of these properties between an emojified text, but that situation is
+      ;; hopefully very rare and this is better than blindly removing all text
+      ;; properties
       (let* ((emoji-start (text-property-any beg end 'emojified t))
              ;; Get the end emojified text, if we could not find the start set
              ;; emoji-end to region `end', this merely to make looping easier.
@@ -430,7 +430,6 @@ BEG and END are the beginning and end of the region respectively"
           ;; Remove the properties
           (remove-text-properties emoji-start emoji-end (append (list 'emojified t
                                                                       'display t
-                                                                      'composition t
                                                                       'point-entered t
                                                                       'point-left t
                                                                       'emojify-buffer t
