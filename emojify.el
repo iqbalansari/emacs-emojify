@@ -334,7 +334,9 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
     (when (eq buffer (current-buffer))
       (cond ((and (eq emojify-point-entered-behaviour 'echo)
                   ;; Do not echo in isearch-mode
-                  (not isearch-mode))
+                  (not isearch-mode)
+                  (not (active-minibuffer-window))
+                  (not (current-message)))
              (message (substring-no-properties match)))
             ((eq emojify-point-entered-behaviour 'uncover)
              (emojify--uncover-emoji buffer match-beginning match-end))
@@ -351,7 +353,10 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
 
 To understand WINDOW, STRING and POS see the function documentation for
 `help-echo' text-property."
-  (when emojify-show-help
+  (when (and emojify-show-help
+             (not isearch-mode)
+             (not (active-minibuffer-window))
+             (not (current-message)))
     (plist-get (text-properties-at pos) 'emojify-text)))
 
 
