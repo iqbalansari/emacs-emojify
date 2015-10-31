@@ -311,6 +311,16 @@ Does nothing if the value is anything else."
   "If non-nil the underlying text is displayed in a popup when mouse moves over it."
   :group 'emojify)
 
+(defun emojify--uncover-emoji (buffer match-beginning match-end)
+  "Uncover emoji in BUFFER between MATCH-BEGINNING and MATCH-END."
+  (progn (emojify-undisplay-emojis-in-region match-beginning match-end)
+         (with-silent-modifications
+           (add-text-properties match-end
+                                match-beginning
+                                (list 'point-left (emojify--get-point-left-function buffer
+                                                                                    match-beginning
+                                                                                    match-end))))))
+
 (defun emojify-point-entered-function (old-point new-point)
   "Create a function to be executed when point enters an emojified text.
 
@@ -326,15 +336,14 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
                   (not isearch-mode))
              (message (substring-no-properties match)))
             ((eq emojify-point-entered-behaviour 'uncover)
-             (progn (emojify-undisplay-emojis-in-region match-beginning match-end)
-                    (with-silent-modifications
-                      (add-text-properties match-end
-                                           match-beginning
-                                           (list 'point-left (emojify--get-point-left-function buffer
-                                                                                               match-beginning
-                                                                                               match-end))))))
+             (emojify--uncover-emoji buffer match-beginning match-end))
             ((functionp 'emojify-point-entered-behaviour)
-             (funcall emojify-point-entered-behaviour buffer match match-beginning match-end))))))
+             (funcall emojify-point-entered-behaviour buffer match match-beginning match-end)))
+
+      ;; Uncover at point anyway in isearch-mode
+      (when (and isearch-mode
+                 (not (eq emojify-point-entered-behaviour 'uncover)))
+        (emojify--uncover-emoji buffer match-beginning match-end)))))
 
 (defun emojify-help-function (window string pos)
   "Function to get help string to be echoed when point/mouse into the point.
