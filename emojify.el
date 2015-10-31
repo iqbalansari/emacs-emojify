@@ -93,7 +93,8 @@ Possible values are
 ;; Customizations to control the enabling of emojify-mode
 
 (defcustom emojify-inhibit-major-modes
-  '(doc-view-mode
+  '(dired-mode
+    doc-view-mode
     pdf-view-mode
     image-mode
     help-mode
@@ -568,6 +569,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
     ;; Turn off
     (emojify-turn-off-emojify-mode)))
 
+;; While this is convenient it is not really what we want
 (define-globalized-minor-mode global-emojify-mode
   emojify-mode emojify-turn-on-emojify-mode
   :init-value nil)
