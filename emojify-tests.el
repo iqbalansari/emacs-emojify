@@ -1,4 +1,4 @@
-;;; Code:
+;; -*- compile-command: "cask exec emacs -batch -l ert -l emojify-tests.el -f ert-run-tests-batch-and-exit"; -*-
 
 (unless noninteractive
   (let ((default-directory (expand-file-name ".cask/")))
@@ -11,7 +11,12 @@
 (require 'el-mock)
 (require 'cl)
 
-(defmacro emojify-tests-with-saved-custumizations (&rest forms)
+;; Used for testing integration with programming modes
+(require 'org)
+(require 'org-agenda)
+(require 'cc-mode)
+
+(defmacro emojify-tests-with-saved-customizations (&rest forms)
   "Run forms saving current customizations and restoring them on completion.
 
 Helps isolate tests from each other's customizations."
@@ -51,7 +56,7 @@ Helps isolate tests from each other's customizations."
            ;; Rename it uniquely so that subsequent buffers do not conflict with it
            (rename-uniquely)
            ;; Save all possible customizations
-           (emojify-tests-with-saved-custumizations
+           (emojify-tests-with-saved-customizations
              (setq emojify-point-entered-behaviour nil)
              (insert ,str)
              (emojify-mode +1)
@@ -172,34 +177,130 @@ Helps isolate tests from each other's customizations."
       (emojify-tests-should-be-emojified github-emoji-pos))))
 
 (ert-deftest emojify-tests-prog-contexts ()
-  (emojify-tests-with-emojified-static-buffer ";; :) :smile:\n\":smile:\""
+  (emojify-tests-with-emojified-static-buffer ";; :) :smile:\n\":smile:\"\n8)"
     (let* ((comment-ascii-emoji-pos (+ 3 (point-min)))
            (comment-github-emoji-pos (+ comment-ascii-emoji-pos (length ":) ")))
-           (string-github-emoji-pos (1+ (line-beginning-position 2))))
+           (string-github-emoji-pos (1+ (line-beginning-position 2)))
+           (prog-ascii-emoji-pos (1+ (line-beginning-position 3))))
       (emacs-lisp-mode)
       (setq emojify-prog-contexts 'both)
       (emojify-redisplay-emojis)
       (emojify-tests-should-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-be-emojified string-github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos)
 
       (setq emojify-prog-contexts 'comments)
       (emojify-redisplay-emojis)
       (emojify-tests-should-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-not-be-emojified string-github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos)
 
       (setq emojify-prog-contexts 'string)
       (emojify-redisplay-emojis)
       (emojify-tests-should-not-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-be-emojified string-github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos)
 
       (setq emojify-prog-contexts 'none)
       (emojify-redisplay-emojis)
       (emojify-tests-should-not-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified comment-github-emoji-pos)
-      (emojify-tests-should-not-be-emojified string-github-emoji-pos))))
+      (emojify-tests-should-not-be-emojified string-github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos))))
+
+(ert-deftest emojify-tests-text-contexts ()
+  ;; At start of comment
+  (emojify-tests-with-emojified-static-buffer ";:smile:"
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-be-emojified (1+ (point-min))))
+
+  ;; In comment after space
+  (emojify-tests-with-emojified-static-buffer "; :smile:"
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-be-emojified (+ 2 (point-min))))
+
+  ;; Inside a comment
+  (emojify-tests-with-emojified-static-buffer "/**\n:)"
+    (c-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-be-emojified (line-beginning-position 2)))
+
+  ;; Immediately after a bracket
+  (emojify-tests-with-emojified-static-buffer "(:smile:"
+    (emojify-tests-should-not-be-emojified (1+ (point-min))))
+
+  ;; Immediately after a word
+  (emojify-tests-with-emojified-static-buffer "A:)"
+    (emojify-tests-should-not-be-emojified (1+ (point-min))))
+
+  ;; Immediately before a word
+  (emojify-tests-with-emojified-static-buffer ":)A"
+    (emojify-tests-should-not-be-emojified (1+ (point-min))))
+
+  ;; Immediately before a closing bracket
+  (emojify-tests-with-emojified-static-buffer ":))"
+    (emojify-tests-should-be-emojified (1+ (point-min))))
+
+  ;; Immediately before a closing bracket
+  (emojify-tests-with-emojified-static-buffer ":))"
+    (emojify-tests-should-be-emojified (1+ (point-min))))
+
+  ;; Immediately after a punctuation character
+  (emojify-tests-with-emojified-static-buffer "!:)"
+    (emojify-tests-should-not-be-emojified (1+ (point-min))))
+
+  ;; Following a punctuation and a space
+  (emojify-tests-with-emojified-static-buffer "! :)"
+    (emojify-tests-should-be-emojified (+ 2 (point-min))))
+
+  ;; Outside a comment
+  (emojify-tests-with-emojified-static-buffer "/**/:)"
+    (c-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (+ 4 (point-min))))
+
+  ;; Surrounded by comments
+  (emojify-tests-with-emojified-static-buffer "/*:)*/"
+    (c-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (+ 2 (point-min)))))
+
+(ert-deftest emojify-tests-emojifying-lists ()
+  (emojify-tests-with-emojified-static-buffer ":]"
+    (emojify-tests-should-be-emojified (point-min)))
+
+  (emojify-tests-with-emojified-static-buffer "[ :]"
+    (emojify-tests-should-not-be-emojified (+ 3 (point-min))))
+
+  (emojify-tests-with-emojified-static-buffer ";; 8)"
+    (emojify-tests-should-be-emojified (+ 3 (point-min))))
+
+  (emojify-tests-with-emojified-static-buffer ";; (lambda () 8)"
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (+ 14 (point-min)))))
+
+(ert-deftest emojify-tests-emojifying-org-mode-buffers ()
+  (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
+    (org-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (1- (line-end-position)))
+    (emojify-tests-should-be-emojified (line-beginning-position 2)))
+
+  (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
+    (org-agenda-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (1- (line-end-position)))
+    (emojify-tests-should-be-emojified (line-beginning-position 2))))
+
+;; So that tests can be run simply by doing `eval-buffer'
+(unless noninteractive
+  (ert "^emojify-"))
 
 (provide 'emojify-tests)
 ;;; emojify-tests.el ends here
