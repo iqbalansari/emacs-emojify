@@ -98,7 +98,9 @@ Possible values are
     pdf-view-mode
     image-mode
     help-mode
-    magit-popup-mode)
+    magit-popup-mode
+    ert-results-mode
+    compilation-mode)
   "Major modes where emojify mode should not be enabled."
   :type '(repeat symbol)
   :group 'emojify)
@@ -121,9 +123,8 @@ a non-nil value."
   "Determine if user has disabled the `major-mode' enabled for the BUFFER.
 
 Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-modes'"
-  (memq (with-current-buffer buffer
-          major-mode)
-        emojify-inhibit-major-modes))
+  (with-current-buffer buffer
+    (apply #'derived-mode-p emojify-inhibit-major-modes)))
 
 (defun emojify-helm-buffer-p (buffer)
   "Determine if the current BUFFER is a helm buffer."
