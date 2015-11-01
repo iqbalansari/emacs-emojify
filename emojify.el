@@ -247,8 +247,8 @@ The arguments IGNORED are, well ignored"
   "Determine if the text between BEG and END should be used to display emojis.
 
 This returns non-nil if the region is valid according to `emojify-prog-contexts'"
-  (unless (or (not emojify-prog-contexts)
-          (eq emojify-prog-contexts 'none))
+  (when (and emojify-prog-contexts
+             (memq emojify-prog-contexts '(string comments both)))
     (let ((syntax-beg (syntax-ppss beg))
           (syntax-end (syntax-ppss end))
           (pos (pcase emojify-prog-contexts
