@@ -43,6 +43,7 @@
 
 ;; Required to determine point is in an org-list
 (declare-function org-at-item-p "org-list")
+(declare-function org-at-heading-p "org")
 
 ;; Required to determine point is in an org-src block
 (declare-function org-element-type "org-element")
@@ -231,10 +232,16 @@ buffer where emojis are going to be displayed selected."
   "Determine whether the point is on `org-mode' tag.
 
 MATCH, BEG and END are the text currently matched emoji and the start position
-and end position of emoji text respectively."
-  (and (eq major-mode 'org-mode)
+and end position of emoji text respectively.
+
+Easiest would have to inspect face at point but unfortunately, there is no
+way to guarantee that we run after font-lock"
+  (and (memq major-mode '(org-mode org-agenda-mode))
        (string-match-p ":.*:" match)
-       (eq (line-end-position) end)))
+       (org-at-heading-p)
+       (not (save-excursion
+              (save-match-data
+                (search-forward-regexp "\\s-" (line-end-position) t))))))
 
 (defun emojify-in-org-list-p (&rest ignored)
   "Determine whether the point is in `org-mode' list.
