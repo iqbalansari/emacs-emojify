@@ -1,5 +1,3 @@
-;; -*- compile-command: "cask exec emacs -batch -l ert -l emojify-tests.el -f ert-run-tests-batch-and-exit"; -*-
-
 (unless noninteractive
   (let ((default-directory (expand-file-name ".cask/")))
     (normal-top-level-add-subdirs-to-load-path)))
