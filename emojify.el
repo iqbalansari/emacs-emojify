@@ -281,6 +281,7 @@ since our mechanisms do not work in it."
   (and (or (not (char-before beg))
            ;; 32 space since ?  (? followed by a space) is not readable
            ;; 34 is "  since?" confuses font-lock
+           ;; 41 is )  since?) (extra paren) confuses most packages
            (memq (char-syntax (char-before beg))
                  ;; space
                  '(32
@@ -304,6 +305,8 @@ since our mechanisms do not work in it."
                    ?-
                    ;; punctuation
                    ?.
+                   ;; closing braces
+                   41
                    ;; comment end
                    ?>)))))
 
