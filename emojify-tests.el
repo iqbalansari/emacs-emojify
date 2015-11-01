@@ -108,7 +108,7 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point-min) 'emojify-buffer) (current-buffer)))
     (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
-    (should (equal (get-text-property (point-min) 'emojify-end) (1+ (length ":)"))))
+    (should (equal (get-text-property (point-min) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point-min) 'emojify-text)  ":)"))))
 
 (ert-deftest emojify-tests-simple-github-emoji-test ()
@@ -116,22 +116,32 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
     (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
-    (should (equal (get-text-property (point) 'emojify-end) (1+ (length ":smile:"))))
+    (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
-(ert-deftest emojify-tests-uncovering ()
+(ert-deftest emojify-tests-emoji-uncovering ()
   (emojify-tests-with-emojified-buffer " :)"
     (setq emojify-point-entered-behaviour 'uncover)
     (goto-char (1+ (point-min)))
     (emojify-tests-should-be-uncovered (point))))
 
-(ert-deftest emojify-tests-echoing ()
+(ert-deftest emojify-tests-emoji-echoing ()
   (emojify-tests-with-emojified-buffer " :)"
     (with-mock
       (mock (message ":)"))
       (setq emojify-point-entered-behaviour 'echo)
       (goto-char (1+ (point-min)))
       (emojify-tests-should-be-emojified (point)))))
+
+(ert-deftest emojify-tests-custom-point-entered-function ()
+  (emojify-tests-with-emojified-buffer " :)"
+    (setq emojify-point-entered-behaviour (lambda (buffer emoji-text emoji-start emoji-end)
+                                            (should (equal buffer (current-buffer)))
+                                            (should (equal emoji-text ":)"))
+                                            (should (equal emoji-start (1+ (point-min))))
+                                            (should (equal emoji-start (point-max)))))
+    (goto-char (1+ (point-min)))
+    (emojify-tests-should-be-emojified (point))))
 
 (ert-deftest emojify-tests-emojify-setting-styles ()
   (emojify-tests-with-emojified-static-buffer ":) :smile:"
@@ -160,6 +170,36 @@ Helps isolate tests from each other's customizations."
 
       ;; Github emojis should be displayed
       (emojify-tests-should-be-emojified github-emoji-pos))))
+
+(ert-deftest emojify-tests-prog-contexts ()
+  (emojify-tests-with-emojified-static-buffer ";; :) :smile:\n\":smile:\""
+    (let* ((comment-ascii-emoji-pos (+ 3 (point-min)))
+           (comment-github-emoji-pos (+ comment-ascii-emoji-pos (length ":) ")))
+           (string-github-emoji-pos (1+ (line-beginning-position 2))))
+      (emacs-lisp-mode)
+      (setq emojify-prog-contexts 'both)
+      (emojify-redisplay-emojis)
+      (emojify-tests-should-be-emojified comment-ascii-emoji-pos)
+      (emojify-tests-should-be-emojified comment-github-emoji-pos)
+      (emojify-tests-should-be-emojified string-github-emoji-pos)
+
+      (setq emojify-prog-contexts 'comments)
+      (emojify-redisplay-emojis)
+      (emojify-tests-should-be-emojified comment-ascii-emoji-pos)
+      (emojify-tests-should-be-emojified comment-github-emoji-pos)
+      (emojify-tests-should-not-be-emojified string-github-emoji-pos)
+
+      (setq emojify-prog-contexts 'string)
+      (emojify-redisplay-emojis)
+      (emojify-tests-should-not-be-emojified comment-ascii-emoji-pos)
+      (emojify-tests-should-not-be-emojified comment-github-emoji-pos)
+      (emojify-tests-should-be-emojified string-github-emoji-pos)
+
+      (setq emojify-prog-contexts 'none)
+      (emojify-redisplay-emojis)
+      (emojify-tests-should-not-be-emojified comment-ascii-emoji-pos)
+      (emojify-tests-should-not-be-emojified comment-github-emoji-pos)
+      (emojify-tests-should-not-be-emojified string-github-emoji-pos))))
 
 (provide 'emojify-tests)
 ;;; emojify-tests.el ends here
