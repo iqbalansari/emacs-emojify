@@ -46,22 +46,23 @@ Helps isolate tests from each other's customizations."
   (declare (indent 1))
   ;; Run tests in a new buffer
   `(let ((test-buffer (get-buffer-create " *emojify-test-buffer*")))
-     (with-current-buffer test-buffer
-       ;; Rename it uniquely so that subsequent buffers do not conflict with it
-       (rename-uniquely)
-       ;; Save all possible customizations
-       (emojify-tests-with-saved-custumizations
-         (setq emojify-point-entered-behaviour nil)
-         (insert ,str)
-         (emojify-mode +1)
-         ;; Force refontification since JIT does it lazily
-         (emojify-display-emojis-in-region (point-min) (point-max))
-         (goto-char (point-min))
-         ,@forms))
-     ;; Keep the buffer around for interactive tests, helps debugging failing
-     ;; tests
-     (when noninteractive
-       (kill-buffer test-buffer))))
+     (unwind-protect
+         (with-current-buffer test-buffer
+           ;; Rename it uniquely so that subsequent buffers do not conflict with it
+           (rename-uniquely)
+           ;; Save all possible customizations
+           (emojify-tests-with-saved-custumizations
+             (setq emojify-point-entered-behaviour nil)
+             (insert ,str)
+             (emojify-mode +1)
+             ;; Force refontification since JIT does it lazily
+             (emojify-display-emojis-in-region (point-min) (point-max))
+             (goto-char (point-min))
+             ,@forms))
+       ;; Keep the buffer around for interactive tests, helps debugging failing
+       ;; tests
+       (when noninteractive
+         (kill-buffer test-buffer)))))
 
 (defmacro emojify-tests-with-emojified-static-buffer (str &rest forms)
   (declare (indent 1))
