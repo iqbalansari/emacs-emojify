@@ -321,7 +321,8 @@ Does nothing if the value is anything else."
                                 match-beginning
                                 (list 'point-left (emojify--get-point-left-function buffer
                                                                                     match-beginning
-                                                                                    match-end))))))
+                                                                                    match-end)
+                                      'emojified t)))))
 
 (defun emojify-point-entered-function (old-point new-point)
   "Create a function to be executed when point enters an emojified text.
@@ -431,7 +432,8 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
 
-BEG and END are the beginning and end of the region respectively"
+BEG and END are the beginning and end of the region respectively.
+TODO: Skip emojifying if region is already emojified."
   (emojify-with-saved-buffer-state
     (goto-char beg)
     (while (and (> end (point))
@@ -528,12 +530,6 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
     (emojify-display-emojis-in-region region-start region-end)))
 
 
-
-;; Resize emojis on text resize
-;; (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
-;;   (font-lock-fontify-buffer))
-
-;; (ad-activate 'text-scale-increase)
 
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
