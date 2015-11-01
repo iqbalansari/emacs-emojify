@@ -292,6 +292,28 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-not-be-emojified (1- (line-end-position)))
     (emojify-tests-should-be-emojified (line-beginning-position 2)))
 
+  (emojify-tests-with-emojified-static-buffer "8)"
+    (org-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (point-min)))
+
+  (emojify-tests-with-emojified-static-buffer "* 8)"
+    (org-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-be-emojified (1- (point-max))))
+
+  (emojify-tests-with-emojified-static-buffer "#+BEGIN_SRC emacs-lisp\n:)\n#+END_SRC"
+    (org-mode)
+    (emojify-redisplay-emojis)
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2)))
+
+  ;; TODO: This does not work yet
+  ;; (emojify-tests-with-emojified-static-buffer "8) 8)"
+  ;;   (org-mode)
+  ;;   (emojify-redisplay-emojis)
+  ;;   (emojify-tests-should-be-emojified (1- (point-max)))
+  ;;   (emojify-tests-should-not-be-emojified (1+ (point-min))))
+
   (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
     (org-agenda-mode)
     (emojify-redisplay-emojis)
