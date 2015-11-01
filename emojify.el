@@ -275,6 +275,18 @@ since our mechanisms do not work in it."
       (goto-char point)
       (eq (org-element-type (org-element-at-point)) 'src-block))))
 
+(defun emojify-looking-at-end-of-list-maybe (point)
+  "Determine if POINT is end of a list."
+  (let ((list-start (ignore-errors (scan-sexps point -1))))
+    (when list-start
+      ;; If we got a list start make sure both start and end
+      ;; belong to same string/comment
+      (let ((syntax-beg (syntax-ppss list-start))
+            (syntax-end (syntax-ppss point)))
+        (and list-start
+             (eq (nth 8 syntax-beg)
+                 (nth 8 syntax-end)))))))
+
 (defun emojify-valid-text-context-p (beg end)
   "Determine if the okay to display for text between BEG and END."
   ;; The text is at the start of the buffer
@@ -474,10 +486,10 @@ TODO: Skip emojifying if region is already emojified."
                    (not (emojify-inside-org-src-p match-beginning))
 
                    ;; Inhibit possibly inside a list
-                   ;; 41 is ?) but packages get confused by the extra closing paren
+                   ;; 41 is ?) but packages get confused by the extra closing paren :)
                    ;; TODO Report bugs to such packages
                    (not (and (eq (char-syntax (char-before match-end)) 41)
-                             (ignore-errors (scan-sexps match-end -1))))
+                             (emojify-looking-at-end-of-list-maybe match-end)))
 
                    (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
