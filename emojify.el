@@ -510,6 +510,15 @@ BEG and END are the beginning and end of the region respectively"
         ;; Setup the next iteration
         (setq beg emoji-end)))))
 
+(defun emojify-redisplay-emojis (&optional beg end)
+  "Redisplay emojis in region between BEG and END.
+
+Redisplay emojis in the entire buffer if BEG and END are not specified"
+  (let ((beg (or beg (point-min)))
+        (end (or end (point-max))))
+    (emojify-undisplay-emojis-in-region beg end)
+    (emojify-display-emojis-in-region beg end)))
+
 (defun emojify-after-change-function (beg end len)
   "Redisplay emojis in region after change.
 
@@ -530,6 +539,13 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
     (emojify-display-emojis-in-region region-start region-end)))
 
 
+
+(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
+  "Advice `text-scale-increase' to trigger resizing of emojis on resize."
+  (when emojify-mode
+    (emojify-redisplay-emojis)))
+
+(ad-activate #'text-scale-increase)
 
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
