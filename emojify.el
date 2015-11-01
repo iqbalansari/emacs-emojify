@@ -179,7 +179,17 @@ VALUE is the value to be used as preferred style, see `emojify-preferred-style'"
                   value
                   '(all github ascii)))
     (setq-default emojify-preferred-style style)
-    (emojify-set-emoji-data)))
+
+    ;; Update emoji data
+    (emojify-set-emoji-data)
+
+    ;; If possible resize emojis
+    (when (fboundp 'emojify-redisplay-emojis)
+      (seq-each (lambda (buffer)
+                  (with-current-buffer buffer
+                    (when emojify-mode
+                      (emojify-redisplay-emojis))))
+                (buffer-list)))))
 
 (defcustom emojify-preferred-style
   'all
