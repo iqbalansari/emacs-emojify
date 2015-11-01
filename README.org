@@ -1,0 +1,15 @@
+* Emojify
+
+** Table of contents                                              :TOC_3_gh:
+ - [[#emojify][Emojify]]
+   - [[#what-is-this][What is this?]]
+   - [[#what-does-it-look-like][What does it look like?]]
+
+** What is this?
+   Emojify is an Emacs extension to display emojis. It can display github style
+   emojis like ':smile:' or plain ascii ones like ':)'.
+
+** What does it look like?
+   Here is how the commit log of this project looks with emojify mode enabled
+
+   [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/develop/screenshots/emojify-in-action.png][screenshots/emojify-in-action.png?raw=true]]
