@@ -578,13 +578,24 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 (ad-activate #'text-scale-increase)
 
 (defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (&rest ignored))
-  "Redisplay emojis after isearch."
+  "Advice `isearch-repeat' to run emojify's point motion hooks.
+
+By default isearch disables point-motion hooks while repeating breaking
+emojify's uncovering logic, this advice explicitly runs (only emojify's) point
+motion hooks."
   (when emojify-mode
-    (let ((start (line-beginning-position))
-          (end (line-end-position)))
+    (let ((old-pos (point)))
       (prog1 ad-do-it
-        (when (< (point) end)
-          (emojify-redisplay-emojis start end))))))
+        (let ((old-pos-props (text-properties-at old-pos))
+              (new-pos-props (text-properties-at (point))))
+          (unless (equal old-pos (point))
+            (when (and (plist-get old-pos-props 'emojified)
+                       (plist-get old-pos-props 'point-left))
+              (funcall (plist-get old-pos-props 'point-left) old-pos (point)))
+            (when (and (plist-get new-pos-props 'emojified)
+                       (plist-get new-pos-props 'point-entered))
+              (funcall (plist-get new-pos-props 'point-entered) old-pos (point)))))))))
+
 
 (ad-activate #'isearch-repeat)
 
