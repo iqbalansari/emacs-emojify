@@ -577,6 +577,15 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
 (ad-activate #'text-scale-increase)
 
+;; TODO: Backport to defadvice
+(defun emojify-redisplay-after-isearch-left (orig &rest args)
+  (let ((start (line-beginning-position))
+        (end (line-end-position)))
+    (prog1 (apply orig args)
+      (emojify-redisplay-emojis start end))))
+
+(advice-add 'isearch-repeat :around #'emojify-redisplay-after-isearch-left)
+
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
 
