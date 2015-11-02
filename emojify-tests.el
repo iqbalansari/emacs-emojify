@@ -334,6 +334,27 @@ Helps isolate tests from each other's customizations."
       (goto-char (point-min))
       (emojify-tests-should-be-emojified (line-beginning-position 2)))))
 
+(ert-deftest emojify-tests-uncover-on-isearch-multiple-matches ()
+  (emojify-tests-with-emojified-buffer "Testing isearch\n:book:\n:books:"
+    (let ((first-emoji-pos (line-beginning-position 2))
+          (second-emoji-pos (line-beginning-position 3)))
+      (with-mock
+        ;; We do not want to be bothered with isearch messages
+        (stub message => nil)
+        (emojify-tests-should-be-emojified first-emoji-pos)
+        (emojify-tests-should-be-emojified second-emoji-pos)
+
+        (isearch-mode +1)
+        (execute-kbd-macro ":book")
+        (isearch-repeat-forward)
+        ;; (emojify-tests-should-be-emojified first-emoji-pos)
+        (emojify-tests-should-be-uncovered second-emoji-pos)
+        (isearch-exit)
+        ;; Emoji should be restored on leaving the underlying text
+        (goto-char (point-min))
+        (emojify-tests-should-be-emojified first-emoji-pos)
+        (emojify-tests-should-be-emojified second-emoji-pos)))))
+
 ;; So that tests can be run simply by doing `eval-buffer'
 (unless noninteractive
   (ert "^emojify-"))
