@@ -319,6 +319,21 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-not-be-emojified (1- (line-end-position)))
     (emojify-tests-should-be-emojified (line-beginning-position 2))))
 
+(ert-deftest emojify-tests-uncover-on-isearch ()
+  (emojify-tests-with-emojified-buffer "Testing isearch\n:books:"
+    (with-mock
+      ;; We do not want to be bothered with isearch messages
+      (stub message => nil)
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
+      (isearch-mode +1)
+      (execute-kbd-macro ":book")
+      ;; Emoji should be uncovered when point enters it in isearch-mode
+      (emojify-tests-should-be-uncovered (line-beginning-position))
+      (isearch-exit)
+      ;; Emoji should be restored on leaving the underlying text
+      (goto-char (point-min))
+      (emojify-tests-should-be-emojified (line-beginning-position 2)))))
+
 ;; So that tests can be run simply by doing `eval-buffer'
 (unless noninteractive
   (ert "^emojify-"))
