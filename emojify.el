@@ -406,7 +406,7 @@ mark the start and end of region containing the text."
     (when (and (equal buffer (current-buffer))
                (or (< match-end new-point)
                    (< new-point match-beginning)))
-      (emojify-display-emojis-in-region match-beginning match-end))))
+      (emojify-redisplay-emojis match-beginning match-end))))
 
 (defun emojify--get-image-display (data)
   "Get the display text property to display the emoji specified in DATA as an image."
