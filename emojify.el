@@ -565,10 +565,8 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
         (region-start (save-excursion
                         (goto-char beg)
                         (line-beginning-position))))
-    ;; Remove previously added emojis
-    (emojify-undisplay-emojis-in-region region-start region-end)
-    ;; Add emojis to the region
-    (emojify-display-emojis-in-region region-start region-end)))
+
+    (emojify-redisplay-emojis region-start region-end)))
 
 
 
@@ -588,7 +586,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
   (when (emojify-buffer-p (current-buffer))
     ;; Install our jit-lock function
-    (jit-lock-register #'emojify-display-emojis-in-region)
+    (jit-lock-register #'emojify-redisplay-emojis)
 
     ;; Add an after change hook to emojify regions on change
     (add-hook 'after-change-functions #'emojify-after-change-function t t)))
@@ -601,7 +599,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
     (emojify-undisplay-emojis-in-region (point-min) (point-max)))
 
   ;; Uninstall our jit-lock function
-  (jit-lock-unregister #'emojify-display-emojis-in-region)
+  (jit-lock-unregister #'emojify-redisplay-emojis)
 
   ;; Uninstall our after change function
   (remove-hook 'after-change-functions #'emojify-after-change-function t))
