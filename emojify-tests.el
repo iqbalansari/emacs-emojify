@@ -108,6 +108,7 @@ Helps isolate tests from each other's customizations."
      (should-not (get-text-property ,point 'point-entered))))
 
 (ert-deftest emojify-tests-simple-ascii-emoji-test ()
+  :tags '(ascii simple)
   (emojify-tests-with-emojified-static-buffer ":)"
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point-min) 'emojify-buffer) (current-buffer)))
@@ -116,6 +117,7 @@ Helps isolate tests from each other's customizations."
     (should (equal (get-text-property (point-min) 'emojify-text)  ":)"))))
 
 (ert-deftest emojify-tests-simple-github-emoji-test ()
+  :tags '(github simple)
   (emojify-tests-with-emojified-static-buffer ":smile:"
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
@@ -124,12 +126,14 @@ Helps isolate tests from each other's customizations."
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
 (ert-deftest emojify-tests-emoji-uncovering ()
+  :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
     (setq emojify-point-entered-behaviour 'uncover)
     (goto-char (1+ (point-min)))
     (emojify-tests-should-be-uncovered (point))))
 
 (ert-deftest emojify-tests-emoji-echoing ()
+  :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
     (with-mock
       (mock (message ":)"))
@@ -138,6 +142,7 @@ Helps isolate tests from each other's customizations."
       (emojify-tests-should-be-emojified (point)))))
 
 (ert-deftest emojify-tests-custom-point-entered-function ()
+  :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
     (setq emojify-point-entered-behaviour (lambda (buffer emoji-text emoji-start emoji-end)
                                             (should (equal buffer (current-buffer)))
@@ -148,6 +153,7 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-be-emojified (point))))
 
 (ert-deftest emojify-tests-emojify-setting-styles ()
+  :tags '(styles github ascii)
   (emojify-tests-with-emojified-static-buffer ":) :smile:"
     (let ((ascii-emoji-pos (point-min))
           (github-emoji-pos (+ (point-min) (length ":) "))))
@@ -176,6 +182,7 @@ Helps isolate tests from each other's customizations."
       (emojify-tests-should-be-emojified github-emoji-pos))))
 
 (ert-deftest emojify-tests-prog-contexts ()
+  :tags '(prog contextual)
   (emojify-tests-with-emojified-static-buffer ";; :) :smile:\n\":smile:\"\n8)"
     (let* ((comment-ascii-emoji-pos (+ 3 (point-min)))
            (comment-github-emoji-pos (+ comment-ascii-emoji-pos (length ":) ")))
@@ -211,6 +218,7 @@ Helps isolate tests from each other's customizations."
       (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos))))
 
 (ert-deftest emojify-tests-text-contexts ()
+  :tags '(text contextual)
   ;; At start of comment
   (emojify-tests-with-emojified-static-buffer ";:smile:"
     (emacs-lisp-mode)
@@ -270,6 +278,7 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-not-be-emojified (+ 2 (point-min)))))
 
 (ert-deftest emojify-tests-emojifying-lists ()
+  :tags '(contextual)
   (emojify-tests-with-emojified-static-buffer ":]"
     (emojify-tests-should-be-emojified (point-min)))
 
@@ -285,6 +294,7 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-not-be-emojified (+ 14 (point-min)))))
 
 (ert-deftest emojify-tests-emojifying-org-mode-buffers ()
+  :tags '(org-mode contextual)
   (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
     (org-mode)
     (emojify-redisplay-emojis)
@@ -320,6 +330,7 @@ Helps isolate tests from each other's customizations."
     (emojify-tests-should-be-emojified (line-beginning-position 2))))
 
 (ert-deftest emojify-tests-uncover-on-isearch ()
+  :tags '(isearch)
   (emojify-tests-with-emojified-buffer "Testing isearch\n:books:"
     (with-mock
       ;; We do not want to be bothered with isearch messages
@@ -335,6 +346,7 @@ Helps isolate tests from each other's customizations."
       (emojify-tests-should-be-emojified (line-beginning-position 2)))))
 
 (ert-deftest emojify-tests-uncover-on-isearch-multiple-matches ()
+  :tags '(isearch)
   (emojify-tests-with-emojified-buffer "Testing isearch\n:book:\n:books:"
     (let ((first-emoji-pos (line-beginning-position 2))
           (second-emoji-pos (line-beginning-position 3)))
