@@ -345,9 +345,17 @@ Helps isolate tests from each other's customizations."
         (emojify-tests-should-be-emojified second-emoji-pos)
 
         (isearch-mode +1)
-        (execute-kbd-macro ":book")
-        (isearch-repeat-forward)
-        ;; (emojify-tests-should-be-emojified first-emoji-pos)
+        (isearch-printing-char ?b)
+        (isearch-printing-char ?o)
+
+        ;; TODO: For some reason first one actually repeats backwards when
+        ;; called non-interactively As such 2 more repeats are needed first to
+        ;; go back to first match and second to actually search forward
+        (isearch-repeat 'forward)
+        (isearch-repeat 'forward)
+        (isearch-repeat 'forward)
+
+        (emojify-tests-should-be-emojified first-emoji-pos)
         (emojify-tests-should-be-uncovered second-emoji-pos)
         (isearch-exit)
         ;; Emoji should be restored on leaving the underlying text
