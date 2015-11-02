@@ -615,7 +615,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
 ;; While this is convenient it is not really what we want
 (define-globalized-minor-mode global-emojify-mode
-  emojify-mode emojify-turn-on-emojify-mode
+  emojify-mode emojify-mode
   :init-value nil)
 
 (provide 'emojify)
