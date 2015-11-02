@@ -50,7 +50,8 @@ Helps isolate tests from each other's customizations."
   ;; Run tests in a new buffer
   `(let ((test-buffer (get-buffer-create " *emojify-test-buffer*")))
      (unwind-protect
-         (with-current-buffer test-buffer
+         (save-window-excursion
+           (switch-to-buffer test-buffer)
            ;; Rename it uniquely so that subsequent buffers do not conflict with it
            (rename-uniquely)
            ;; Save all possible customizations
