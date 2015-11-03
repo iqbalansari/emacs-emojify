@@ -129,6 +129,19 @@ Helps isolate tests from each other's customizations."
     (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
+(ert-deftest emojify-tests-emojifying-after-change ()
+  :tags '(github simple)
+  (emojify-tests-with-emojified-buffer ":smile:\n:)"
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis)
+    (emojify-mode +1)
+    (emojify-tests-should-not-be-emojified (line-beginning-position))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))
+
+    (comment-region (point-min) (point-max))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))))
+
 (ert-deftest emojify-tests-emoji-uncovering ()
   :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
