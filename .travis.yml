@@ -35,3 +35,10 @@ install:
 
 script:
   - cask exec ert-runner
+
+notifications:
+  email:
+    recipients:
+      - iqbalansari02@yahoo.com
+    on_success: never
+    on_failure: always
