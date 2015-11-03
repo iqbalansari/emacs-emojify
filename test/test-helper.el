@@ -122,5 +122,10 @@ Helps isolate tests from each other's customizations."
      (should-not (get-text-property ,point 'display))
      (should-not (get-text-property ,point 'point-entered))))
 
+(defun emojify-insert-string (string)
+  (mapc (lambda (character)
+          (insert character))
+        (string-to-vector string)))
+
 (provide 'test-helper)
 ;;; test-helper.el ends here

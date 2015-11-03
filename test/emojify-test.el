@@ -33,8 +33,8 @@
     (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
-(ert-deftest emojify-tests-emojifying-after-change ()
-  :tags '(github simple)
+(ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
+  :tags '(core after-change)
   (emojify-tests-with-emojified-buffer ":smile:\n:)"
     (emacs-lisp-mode)
     (emojify-redisplay-emojis)
@@ -44,7 +44,25 @@
 
     (comment-region (point-min) (point-max))
     (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
-    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
+
+    (uncomment-region (point-min) (point-max))
+    (emojify-tests-should-not-be-emojified (line-beginning-position))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
+
+(ert-deftest emojify-tests-emojifying-on-typing ()
+  :tags '(core after-change)
+  (emojify-tests-with-emojified-buffer ""
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis)
+    (emojify-mode +1)
+    (emojify-insert-string "; :)")
+    (emojify-tests-should-be-emojified 4)
+    (newline)
+    (emojify-insert-string "; :smile")
+    (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
+    (emojify-insert-string ":")
+    (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
 
 (ert-deftest emojify-tests-emoji-uncovering ()
   :tags '(behaviour point-motion)
@@ -103,7 +121,7 @@
       (emojify-tests-should-be-emojified github-emoji-pos))))
 
 (ert-deftest emojify-tests-prog-contexts ()
-  :tags '(prog contextual)
+  :tags '(core prog contextual)
   (emojify-tests-with-emojified-static-buffer ";; :) :smile:\n\":smile:\"\n8)"
     (let* ((comment-ascii-emoji-pos (+ 3 (point-min)))
            (comment-github-emoji-pos (+ comment-ascii-emoji-pos (length ":) ")))
@@ -139,7 +157,7 @@
       (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos))))
 
 (ert-deftest emojify-tests-text-contexts ()
-  :tags '(text contextual)
+  :tags '(core text contextual)
   ;; At start of comment
   (emojify-tests-with-emojified-static-buffer ";:smile:"
     (emacs-lisp-mode)
@@ -199,7 +217,7 @@
     (emojify-tests-should-not-be-emojified (+ 2 (point-min)))))
 
 (ert-deftest emojify-tests-emojifying-lists ()
-  :tags '(contextual)
+  :tags '(core contextual)
   (emojify-tests-with-emojified-static-buffer ":]"
     (emojify-tests-should-be-emojified (point-min)))
 
