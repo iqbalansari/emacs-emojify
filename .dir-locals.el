@@ -3,5 +3,4 @@
   (eval ignore-errors
         (push (quote ("Tests" "(\\(\\<ert-deftest\\)\\>\\s *\\(\\(?:\\sw\\|\\s_\\)+\\)?" 2)) imenu-generic-expression)
         (when (string-match-p "test" (buffer-file-name))
-          (emojify-mode +1)
-          (emojify-mode -1)))))
+          (setq emojify-inhibit-emojify-in-current-buffer-p t)))))
