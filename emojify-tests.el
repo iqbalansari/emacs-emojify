@@ -8,6 +8,7 @@
 (require 'ert)
 (require 'el-mock)
 (require 'cl)
+(require 'noflet)
 
 ;; Used for testing integration with programming modes
 (require 'org)
@@ -49,24 +50,27 @@ Helps isolate tests from each other's customizations."
   (declare (indent 1))
   ;; Run tests in a new buffer
   `(let ((test-buffer (get-buffer-create " *emojify-test-buffer*")))
-     (unwind-protect
-         (save-window-excursion
-           (switch-to-buffer test-buffer)
-           ;; Rename it uniquely so that subsequent buffers do not conflict with it
-           (rename-uniquely)
-           ;; Save all possible customizations
-           (emojify-tests-with-saved-customizations
-             (setq emojify-point-entered-behaviour nil)
-             (insert ,str)
-             (emojify-mode +1)
-             ;; Force refontification since JIT does it lazily
-             (emojify-display-emojis-in-region (point-min) (point-max))
-             (goto-char (point-min))
-             ,@forms))
-       ;; Keep the buffer around for interactive tests, helps debugging failing
-       ;; tests
-       (when noninteractive
-         (kill-buffer test-buffer)))))
+     (noflet ((emojify-buffer-p (buffer)
+                                (or (string-match-p "^ \\*emojify-test-buffer\\*" (buffer-name buffer))
+                                    (funcall this-fn buffer))))
+       (unwind-protect
+           (save-window-excursion
+             (switch-to-buffer test-buffer)
+             ;; Rename it uniquely so that subsequent buffers do not conflict with it
+             (rename-uniquely)
+             ;; Save all possible customizations
+             (emojify-tests-with-saved-customizations
+               (setq emojify-point-entered-behaviour nil)
+               (insert ,str)
+               (emojify-mode +1)
+               ;; Force refontification since JIT does it lazily
+               (emojify-display-emojis-in-region (point-min) (point-max))
+               (goto-char (point-min))
+               ,@forms))
+         ;; Keep the buffer around for interactive tests, helps debugging failing
+         ;; tests
+         (when noninteractive
+           (kill-buffer test-buffer))))))
 
 (defmacro emojify-tests-with-emojified-static-buffer (str &rest forms)
   (declare (indent 1))
