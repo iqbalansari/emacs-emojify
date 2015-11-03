@@ -1,5 +1,7 @@
 * Emojify
 
+  [[https://travis-ci.org/iqbalansari/emacs-emojify][https://travis-ci.org/iqbalansari/emacs-emojify.svg?branch=develop]]
+
 ** Table of contents                                              :TOC_3_gh:
  - [[#emojify][Emojify]]
    - [[#what-is-this][What is this?]]
