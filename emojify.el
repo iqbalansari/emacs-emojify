@@ -116,6 +116,13 @@ a non-nil value."
   :type 'hook
   :group 'emojify)
 
+(defvar emojify-inhibit-emojify-in-current-buffer-p nil
+  "Should emojify be inhibited in current buffer
+
+This is a buffer local variable that can be set to inhibit enabling of
+emojify in a buffer.")
+(make-variable-buffer-local 'emojify-inhibit-emojify-in-current-buffer-p)
+
 (defun emojify-ephemeral-buffer-p (buffer)
   "Determine if BUFFER is an ephemeral/temporary buffer."
   (string-match-p "^ " (buffer-name buffer)))
@@ -137,7 +144,8 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
 `emojify-mode' mode is not enabled in temporary buffers.  Additionally user
 can customize `emojify-inhibit-major-modes' and
 `emojify-inhibit-in-buffer-functions' to disabled emojify in additional buffers."
-  (not (or (emojify-ephemeral-buffer-p (current-buffer))
+  (not (or emojify-inhibit-emojify-in-current-buffer-p
+           (emojify-ephemeral-buffer-p (current-buffer))
            (emojify-inhibit-major-mode-p (current-buffer))
            (buffer-base-buffer buffer)
            (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
