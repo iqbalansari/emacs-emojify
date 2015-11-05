@@ -117,7 +117,7 @@ a non-nil value."
   :group 'emojify)
 
 (defvar emojify-inhibit-emojify-in-current-buffer-p nil
-  "Should emojify be inhibited in current buffer
+  "Should emojify be inhibited in current buffer.
 
 This is a buffer local variable that can be set to inhibit enabling of
 emojify in a buffer.")
@@ -168,7 +168,7 @@ can customize `emojify-inhibit-major-modes' and
 
   (unless (eq emojify-preferred-style 'all)
     (let ((style (symbol-name emojify-preferred-style)))
-      (ht-reject! (lambda (key value)
+      (ht-reject! (lambda (_key value)
                     (not (string= style (ht-get value "style"))))
                   emojify-emojis)))
 
@@ -236,7 +236,7 @@ buffer where emojis are going to be displayed selected."
   :type 'hook
   :group 'emojify)
 
-(defun emojify-in-org-tags-p (match beg end)
+(defun emojify-in-org-tags-p (match _beg _end)
   "Determine whether the point is on `org-mode' tag.
 
 MATCH, BEG and END are the text currently matched emoji and the start position
@@ -364,7 +364,7 @@ Does nothing if the value is anything else."
                                                                                     match-end)
                                       'emojified t)))))
 
-(defun emojify-point-entered-function (old-point new-point)
+(defun emojify-point-entered-function (_old-point new-point)
   "Create a function to be executed when point enters an emojified text.
 
 OLD-POINT and NEW-POINT are the point before entering and after entering."
@@ -390,7 +390,7 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
                  (not (eq emojify-point-entered-behaviour 'uncover)))
         (emojify--uncover-emoji buffer match-beginning match-end)))))
 
-(defun emojify-help-function (window string pos)
+(defun emojify-help-function (_window _string pos)
   "Function to get help string to be echoed when point/mouse into the point.
 
 To understand WINDOW, STRING and POS see the function documentation for
@@ -410,7 +410,7 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 BUFFER is the buffer where the text is from, MATCH-BEGINNING and MATCH-END.
 mark the start and end of region containing the text."
-  (lambda (old-point new-point)
+  (lambda (_old-point new-point)
     (when (and (equal buffer (current-buffer))
                (or (< match-end new-point)
                    (< new-point match-beginning)))
@@ -559,7 +559,7 @@ Redisplay emojis in the entire buffer if BEG and END are not specified"
     (emojify-undisplay-emojis-in-region beg end)
     (emojify-display-emojis-in-region beg end)))
 
-(defun emojify-after-change-function (beg end len)
+(defun emojify-after-change-function (beg end _len)
   "Redisplay emojis in region after change.
 
 This functions is added to `after-change-functions'.  See documentation
