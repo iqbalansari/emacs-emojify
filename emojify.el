@@ -51,6 +51,27 @@
 
 
 
+;; Compatibility functions
+
+(defun emojify-default-font-height ()
+  "Return the height in pixels of the current buffer's default face font.
+
+`default-font-height' seems to be available only on Emacs versions after 24.3.
+This provides a compatibility version for previous versions."
+  (if (fboundp 'default-font-height)
+      (default-font-height)
+    (let ((default-font (face-font 'default)))
+      (cond
+       ((and (display-multi-font-p)
+             ;; Avoid calling font-info if the frame's default font was
+             ;; not changed since the frame was created.  That's because
+             ;; font-info is expensive for some fonts, see bug #14838.
+             (not (string= (frame-parameter nil 'font) default-font)))
+        (aref (font-info default-font) 3))
+       (t (frame-char-height))))))
+
+
+
 ;; Customizations for control how emojis are displayed
 
 (defgroup emojify nil
@@ -428,7 +449,7 @@ mark the start and end of region containing the text."
                     nil
                     :ascent 'center
                     ;; no-op if imagemagick is not available
-                    :height (default-font-height)))))
+                    :height (emojify-default-font-height)))))
 
 (defun emojify--get-unicode-display (data)
   "Get the display text property to display the emoji specified in DATA as unicode characters."

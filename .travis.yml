@@ -1,7 +1,6 @@
 language: emacs-lisp
 sudo: false
 env:
-  - EVM_EMACS=emacs-git-snapshot
   - EVM_EMACS=emacs-24.5
   - EVM_EMACS=emacs-24.5
   - EVM_EMACS=emacs-24.4
