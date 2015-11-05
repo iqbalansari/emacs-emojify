@@ -7,6 +7,7 @@ cache:
   apt: true
   directories:
   - $HOME/emacsen
+  - $HOME/.cask
 
 addons:
   apt:
