@@ -241,7 +241,10 @@
     (emojify-tests-should-be-emojified (line-beginning-position 2)))
 
   (emojify-tests-with-emojified-static-buffer "8)"
-    (org-mode)
+    ;; org-mode in Emacs v24.3 failed in read only buffers
+    ;; if first item was not a headline
+    (with-mock (stub org-set-startup-visibility => nil)
+               (org-mode))
     (emojify-redisplay-emojis)
     (emojify-tests-should-not-be-emojified (point-min)))
 
@@ -296,8 +299,10 @@
         (emojify-tests-should-be-emojified second-emoji-pos)
 
         (isearch-mode +1)
-        (isearch-printing-char ?b)
-        (isearch-printing-char ?o)
+        ;; isearch-printing-char in Emacs 24.3 did not accept
+        ;; any arguments
+        (let ((last-command-event ?b)) (isearch-printing-char))
+        (let ((last-command-event ?o)) (isearch-printing-char))
 
         ;; TODO: For some reason first one actually repeats backwards when
         ;; called non-interactively As such 2 more repeats are needed first to
