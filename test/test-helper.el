@@ -33,7 +33,7 @@ Helps isolate tests from each other's customizations."
   (declare (indent 0))
   `(let ((emojify-saved-emoji-json emojify-emoji-json)
          (emojify-saved-image-dir emojify-image-dir)
-         (emojify-saved-substitution-style emojify-substitution-style)
+         (emojify-saved-display-style emojify-display-style)
          (emojify-saved-inhibit-major-modes emojify-inhibit-major-modes)
          (emojify-saved-inhibit-in-buffer-functions emojify-inhibit-in-buffer-functions)
          (emojify-saved-preferred-style emojify-preferred-style)
@@ -46,7 +46,7 @@ Helps isolate tests from each other's customizations."
            ,@forms)
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-image-dir emojify-saved-image-dir
-             emojify-substitution-style emojify-saved-substitution-style
+             emojify-display-style emojify-saved-display-style
              emojify-inhibit-major-modes emojify-saved-inhibit-major-modes
              emojify-inhibit-in-buffer-functions emojify-saved-inhibit-in-buffer-functions
              emojify-prog-contexts emojify-saved-prog-contexts

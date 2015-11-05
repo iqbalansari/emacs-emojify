@@ -95,7 +95,7 @@ This provides a compatibility version for previous versions."
   :type 'directory
   :group 'emojify)
 
-(defcustom emojify-substitution-style
+(defcustom emojify-display-style
   'image
   "How the emoji's be displayed.
 
@@ -469,7 +469,7 @@ mark the start and end of region containing the text."
   "The the display property for an emoji named NAME."
   (let* ((emoji-data (ht-get emojify-emojis name))
          (display (when emoji-data
-                    (pcase emojify-substitution-style
+                    (pcase emojify-display-style
                       (`image (emojify--get-image-display emoji-data))
                       (`unicode (emojify--get-unicode-display emoji-data))
                       (`ascii (emojify--get-ascii-display emoji-data))))))
