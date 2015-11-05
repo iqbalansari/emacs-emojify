@@ -36,7 +36,7 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-display-style emojify-display-style)
          (emojify-saved-inhibit-major-modes emojify-inhibit-major-modes)
          (emojify-saved-inhibit-in-buffer-functions emojify-inhibit-in-buffer-functions)
-         (emojify-saved-preferred-style emojify-preferred-style)
+         (emojify-saved-emoji-style emojify-emoji-style)
          (emojify-saved-prog-contexts emojify-prog-contexts)
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
@@ -55,7 +55,7 @@ Helps isolate tests from each other's customizations."
              emojify-show-help emojify-saved-show-help)
        ;; This as a side-effect also re-reads JSON data so no need to
        ;; re-adjust changes to emojify-emoji-json
-       (emojify-set-preferred-style emojify-saved-preferred-style))))
+       (emojify-set-emoji-style emojify-saved-emoji-style))))
 
 (defmacro emojify-tests-with-emojified-buffer (str &rest forms)
   (declare (indent 1))

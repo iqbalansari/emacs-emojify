@@ -96,7 +96,7 @@
   (emojify-tests-with-emojified-static-buffer ":) :smile:"
     (let ((ascii-emoji-pos (point-min))
           (github-emoji-pos (+ (point-min) (length ":) "))))
-      (emojify-set-preferred-style 'github)
+      (emojify-set-emoji-style 'github)
 
       ;; Ascii emoji should not be displayed
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
@@ -104,7 +104,7 @@
       ;; Github emojis should be displayed
       (emojify-tests-should-be-emojified github-emoji-pos)
 
-      (emojify-set-preferred-style 'ascii)
+      (emojify-set-emoji-style 'ascii)
 
       ;; Ascii emoji should be displayed
       (emojify-tests-should-be-emojified ascii-emoji-pos)
@@ -112,7 +112,7 @@
       ;; Github emojis should not be displayed
       (emojify-tests-should-not-be-emojified github-emoji-pos)
 
-      (emojify-set-preferred-style 'all)
+      (emojify-set-emoji-style 'all)
 
       ;; Ascii emoji should not be displayed
       (emojify-tests-should-be-emojified ascii-emoji-pos)

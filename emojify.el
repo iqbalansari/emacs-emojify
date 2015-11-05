@@ -187,8 +187,8 @@ can customize `emojify-inhibit-major-modes' and
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
 
-  (unless (eq emojify-preferred-style 'all)
-    (let ((style (symbol-name emojify-preferred-style)))
+  (unless (eq emojify-emoji-style 'all)
+    (let ((style (symbol-name emojify-emoji-style)))
       (ht-reject! (lambda (_key value)
                     (not (string= style (ht-get value "style"))))
                   emojify-emojis)))
@@ -197,10 +197,10 @@ can customize `emojify-inhibit-major-modes' and
                           (regexp-opt emojis))))
 
 ;;;###autoload
-(defun emojify-set-preferred-style (value)
+(defun emojify-set-emoji-style (value)
   "Set the type of emojis that should be displayed.
 
-VALUE is the value to be used as preferred style, see `emojify-preferred-style'"
+VALUE is the value to be used as preferred style, see `emojify-emoji-style'"
   (let ((style (if (consp value)
                    (eval value)
                  value)))
@@ -208,7 +208,7 @@ VALUE is the value to be used as preferred style, see `emojify-preferred-style'"
       (user-error "[emojify] Do not know how to use `%s' style, please set to one of %s"
                   value
                   '(all github ascii)))
-    (setq-default emojify-preferred-style style)
+    (setq-default emojify-emoji-style style)
 
     ;; Update emoji data
     (emojify-set-emoji-data)
@@ -221,7 +221,7 @@ VALUE is the value to be used as preferred style, see `emojify-preferred-style'"
                       (emojify-redisplay-emojis))))
                 (buffer-list)))))
 
-(defcustom emojify-preferred-style
+(defcustom emojify-emoji-style
   'all
   "The type of emojis that should be displayed.
 
@@ -234,7 +234,8 @@ These can have one of the following values
                 (const :tag "Display only ascii emojis" ascii)
                 (const :tag "Display only github emojis" github)
                 (const :tag "Display all emojis" all))
-  :set (lambda (_ value) (emojify-set-preferred-style value)))
+  :set (lambda (_ value) (emojify-set-emoji-style value))
+  :group 'emojify)
 
 (defcustom emojify-prog-contexts
   'both
