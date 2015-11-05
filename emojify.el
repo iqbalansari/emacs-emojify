@@ -91,7 +91,7 @@ This provides a compatibility version for previous versions."
   (expand-file-name "images" (if load-file-name
                                  (file-name-directory load-file-name)
                                default-directory))
-  "Path to the directory containing the image."
+  "Path to the directory containing the emoji images."
   :type 'directory
   :group 'emojify)
 
@@ -108,6 +108,10 @@ Possible values are
 `ascii'   - Display emojis as ascii charcters, this is simplest and does not
             require any external dependencies.  In this cases emoji text like
             ':wink:' are substituted with ascii equivalents like ';)'"
+  :type '(radio :tag "Emoji display style"
+                (const :tag "Display emojis as images" image)
+                (const :tag "Display emojis as unicode characters" unicode)
+                (const :tag "Display emojis as ascii string" ascii))
   :group 'emojify)
 
 
@@ -122,14 +126,15 @@ Possible values are
     help-mode
     magit-popup-mode
     ert-results-mode
-    compilation-mode)
+    compilation-mode
+    proced-mode)
   "Major modes where emojify mode should not be enabled."
   :type '(repeat symbol)
   :group 'emojify)
 
 (defcustom emojify-inhibit-in-buffer-functions
   '(minibufferp emojify-helm-buffer-p)
-  "Functions used to determine emojify-mode should be enabled in a buffer.
+  "Functions used inhibit emojify-mode in a buffer.
 
 These functions are called with one argument, the buffer where emojify-mode
 is about to be enabled, emojify is not enabled if any of the functions return
@@ -246,6 +251,11 @@ Possible values are
 `string'   - Display emojis only in strings
 `both'     - Display emojis in comments and strings
 `none'     - Do not display emojis in programming modes"
+  :type '(radio :tag "Contexts where emojis should be displayed in programming modes"
+                (const :tag "Only in comments" comments)
+                (const :tag "Only in string" string)
+                (const :tag "Both in comments and string" both)
+                (const :tag "Do not display emojis in programming modes" none))
   :group 'emojify)
 
 (defcustom emojify-inhibit-functions
@@ -369,10 +379,15 @@ function  - It is called with 4 arguments
             4) ending position of emoji text
 
 Does nothing if the value is anything else."
+  ;; TODO: Mention custom function
+  :type '(radio :tag "Behaviour when point enters an emoji"
+                (const :tag "Echo the underlying emoji text in the minibuffer" echo)
+                (const :tag "Uncover (undisplay) the underlying emoji text" uncover))
   :group 'emojify)
 
 (defcustom emojify-show-help t
   "If non-nil the underlying text is displayed in a popup when mouse moves over it."
+  :type 'boolean
   :group 'emojify)
 
 (defun emojify--uncover-emoji (buffer match-beginning match-end)
