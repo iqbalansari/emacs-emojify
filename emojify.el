@@ -588,12 +588,12 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 (defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (&rest ignored))
   "Advice `isearch-repeat' to run emojify's point motion hooks.
 
-By default isearch disables point-motion hooks while repeating breaking
-emojify's uncovering logic, this advice explicitly runs (only emojify's) point
-motion hooks."
-  (when emojify-mode
-    (let ((old-pos (point)))
-      (prog1 ad-do-it
+By default isearch disables point-motion hooks while repeating (see
+`isearch-invisible') breaking emojify's uncovering logic, this advice explicitly
+runs (only emojify's) point motion hooks."
+  (let ((old-pos (point)))
+    (prog1 ad-do-it
+      (when emojify-mode
         (let ((old-pos-props (text-properties-at old-pos))
               (new-pos-props (text-properties-at (point))))
           (unless (equal old-pos (point))
