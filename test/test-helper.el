@@ -11,7 +11,7 @@
                                            ".cask")))
   (if (not project-dir)
       (user-error "Could not locate project root")
-    (let ((default-directory (expand-file-name ".cask/" project-dir)))
+    (let ((default-directory (expand-file-name (concat ".cask/" emacs-version) project-dir)))
       (normal-top-level-add-subdirs-to-load-path))
 
     (add-to-list 'load-path project-dir)))
