@@ -6,12 +6,49 @@
  - [[#emojify][Emojify]]
    - [[#what-is-this][What is this?]]
    - [[#what-does-it-look-like][What does it look like?]]
+   - [[#requirements][Requirements]]
+   - [[#installation][Installation]]
+   - [[#usage][Usage]]
+   - [[#customizations][Customizations]]
+   - [[#known-issues-roadmap][Known issues, roadmap]]
 
 ** What is this?
    Emojify is an Emacs extension to display emojis. It can display github style
-   emojis like ':smile:' or plain ascii ones like ':)'.
+   emojis like ~:smile:~ or plain ascii ones like ~:)~.
 
 ** What does it look like?
    Here is how the commit log of this project looks with emojify mode enabled
 
    [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/develop/screenshots/emojify-in-action.png][screenshots/emojify-in-action.png?raw=true]]
+
+   If you prefer a GIF you can view one [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/develop/screenshots/emojify-in-action.gif][here]].
+
+** Requirements
+   This package requires Emacs *v24.3* and above. Emacs should be compiled with
+   support for *PNG* images. Additionally if Emacs is compiled with *ImageMagick*
+   support ~emojify~ will use it to resize emojis if needed, however this is
+   *completely optional*.
+
+   PNG support might require some additional steps to on Windows, you might find
+   [[http://stackoverflow.com/questions/2650041/emacs-under-windows-and-png-files][this]] stackoverflow answer helpful.
+
+** Installation
+   WIP  :construction:
+
+** Usage
+   ~emojify-mode~ can be enabled/disabled separately for a buffer by using the
+   command ~emojify-mode~, to enable/disable it globally use the command
+   ~global-emojify-mode~.
+
+   To enable ~emojify-mode~ globally at startup add something like the following
+   to your ~init~ file
+
+   #+BEGIN_SRC emacs-lisp
+     (add-hook 'after-init-hook #'global-emojify-mode)
+   #+END_SRC
+
+** Customizations
+   WIP  :construction:
+
+** Known issues, roadmap
+   - Adding support for user specified images
