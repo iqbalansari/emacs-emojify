@@ -80,7 +80,7 @@ This provides a compatibility version for previous versions."
   :prefix "emojify-")
 
 (defcustom emojify-emoji-json
-  (expand-file-name "emoji.json" (if load-file-name
+  (expand-file-name "data/emoji.json" (if load-file-name
                                      (file-name-directory load-file-name)
                                    default-directory))
   "The path to JSON file containing the configuration for displaying emojis."
