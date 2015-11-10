@@ -218,7 +218,7 @@ VALUE is the value to be used as preferred style, see `emojify-emoji-style'"
     ;; Update emoji data
     (emojify-set-emoji-data)
 
-    ;; If possible resize emojis
+    ;; If possible resize emojis, TODO: This should be done in a hook
     (when (fboundp 'emojify-redisplay-emojis)
       (seq-each (lambda (buffer)
                   (with-current-buffer buffer
@@ -590,9 +590,9 @@ BEG and END are the beginning and end of the region respectively"
 (defun emojify-redisplay-emojis (&optional beg end)
   "Redisplay emojis in region between BEG and END.
 
-Redisplay emojis in the entire buffer if BEG and END are not specified"
-  (let ((beg (or beg (point-min)))
-        (end (or end (point-max))))
+Redisplay emojis in the visible region if BEG and END are not specified"
+  (let ((beg (or beg (window-start)))
+        (end (or end (window-end))))
     (emojify-undisplay-emojis-in-region beg end)
     (emojify-display-emojis-in-region beg end)))
 
