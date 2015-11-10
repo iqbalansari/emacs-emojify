@@ -10,6 +10,16 @@
    - [[#installation][Installation]]
    - [[#usage][Usage]]
    - [[#customizations][Customizations]]
+     - [[#emojify-emoji-json][emojify-emoji-json]]
+     - [[#emojify-image-dir][emojify-image-dir]]
+     - [[#emojify-display-style][emojify-display-style]]
+     - [[#emojify-inhibit-major-modes][emojify-inhibit-major-modes]]
+     - [[#emojify-inhibit-in-buffer-functions][emojify-inhibit-in-buffer-functions]]
+     - [[#emojify-emoji-style][emojify-emoji-style]]
+     - [[#emojify-prog-contexts][emojify-prog-contexts]]
+     - [[#emojify-inhibit-functions][emojify-inhibit-functions]]
+     - [[#emojify-point-entered-behaviour][emojify-point-entered-behaviour]]
+     - [[#emojify-show-help][emojify-show-help]]
    - [[#known-issues-roadmap][Known issues, roadmap]]
 
 ** What is this?
@@ -49,6 +59,16 @@
 
 ** Customizations
    WIP  :construction:
+*** emojify-emoji-json
+*** emojify-image-dir
+*** emojify-display-style
+*** emojify-inhibit-major-modes
+*** emojify-inhibit-in-buffer-functions
+*** emojify-emoji-style
+*** emojify-prog-contexts
+*** emojify-inhibit-functions
+*** emojify-point-entered-behaviour
+*** emojify-show-help
 
 ** Known issues, roadmap
    - Adding support for user specified images
