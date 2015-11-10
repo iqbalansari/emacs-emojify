@@ -10,17 +10,13 @@
    - [[#installation][Installation]]
    - [[#usage][Usage]]
    - [[#customizations][Customizations]]
-     - [[#emojify-emoji-json][emojify-emoji-json]]
-     - [[#emojify-image-dir][emojify-image-dir]]
-     - [[#emojify-display-style][emojify-display-style]]
-     - [[#emojify-inhibit-major-modes][emojify-inhibit-major-modes]]
-     - [[#emojify-inhibit-in-buffer-functions][emojify-inhibit-in-buffer-functions]]
-     - [[#emojify-emoji-style][emojify-emoji-style]]
-     - [[#emojify-prog-contexts][emojify-prog-contexts]]
-     - [[#emojify-inhibit-functions][emojify-inhibit-functions]]
-     - [[#emojify-point-entered-behaviour][emojify-point-entered-behaviour]]
-     - [[#emojify-show-help][emojify-show-help]]
-   - [[#known-issues-roadmap][Known issues, roadmap]]
+     - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
+     - [[#configuring-how-emojis-are-displayed][Configuring how emojis are displayed]]
+     - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
+     - [[#configuring-the-texts-that-are-displayed-as-emojis][Configuring the texts that are displayed as emojis]]
+     - [[#controlling-behaviour-when-point-enters-an-emoji][Controlling behaviour when point enters an emoji]]
+     - [[#controlling-behaviour-when-mouse-hovers-over-an-emoji][Controlling behaviour when mouse hovers over an emoji]]
+   - [[#known-issues][Known issues]]
 
 ** What is this?
    Emojify is an Emacs extension to display emojis. It can display github style
@@ -57,18 +53,108 @@
      (add-hook 'after-init-hook #'global-emojify-mode)
    #+END_SRC
 
-** Customizations
-   WIP  :construction:
-*** emojify-emoji-json
-*** emojify-image-dir
-*** emojify-display-style
-*** emojify-inhibit-major-modes
-*** emojify-inhibit-in-buffer-functions
-*** emojify-emoji-style
-*** emojify-prog-contexts
-*** emojify-inhibit-functions
-*** emojify-point-entered-behaviour
-*** emojify-show-help
+   In programming modes only emojis in string and comments are displayed.
 
-** Known issues, roadmap
-   - Adding support for user specified images
+** Customizations
+*** Configuring the types of emojis displayed
+    Emojify by default displays plain text emojis like ~:)~ as well as github
+    style emojis ~:smile:~. However it can be instructed to display only one
+    type of emoji. You can do so by customizing ~emojify-emoji-style~ using the
+    customize interface. To change the value of the variable from Lisp using the
+    function ~emojify-set-emoji-style~ (or set it before loading ~emojify~),
+    call it with one parameter the style of emojis that you want to be
+    displayed. The possible values are
+
+    - ascii  - Display only plain ascii emojis
+    - github - Display github style emojis
+    - all    - Display all of the above styles
+
+*** Configuring how emojis are displayed
+    By default emojis are displayed using images. However you can instruct emojify
+    to display it using unicode characters or ascii characters. To do so customize
+    the variable ~emojify-display-style~.
+
+    You can set it one of the following values
+    - image   - Display emojis using images, obviously this requires the Emacs
+                instance to support image
+    - unicode - Display emojis using unicode characters, this might be a good
+                option on platforms with good emoji fonts
+    - ascii   - This is simplest and does not require any external dependencies
+                In this case emojify will display ascii equivalents of github
+                style emojis.
+
+*** Configuring the buffers where emojify mode is enabled
+    You can control the buffers where emojify is enabled using
+    ~emojify-inhibit-major-modes~ and ~emojify-inhibit-in-buffer-functions~.
+
+**** Major modes where emojify-mode should be not be enabled
+     As the names suggests ~emojify-inhibit-major-modes~ is a list of major-modes
+     where ~emojify~ should not be enabled.
+
+**** Inhibiting emojify-mode using custom functions
+     ~emojify-inhibit-in-buffer-functions~ is a list of functions that ~emojify~
+     calls before enabling ~emojify-mode~ in a buffer. If any of the functions
+     return a non-nil value ~emojify-mode~ is not enabled in the buffer. Users
+     can add custom functions to this list if they wish to inhibit ~emojify~ in
+     certain buffers. The functions are called with one argument the buffer
+     where ~emojify-mode~ is about to be enabled.
+
+*** Configuring the texts that are displayed as emojis
+    ~emojify~ offers two variables to inhibit the display of certain emojis.
+
+**** Controlling the display of emojis in programming modes
+     If enabled in programming modes ~emojify~ by default will display only emojis
+     in string and comments. This behaviour can be customized using the variable
+     ~emojify-prog-contexts~. The variable can be set to one of the following values
+
+     - comments - Display emojis only in comments
+     - string   - Display emojis only in string
+     - both     - Display emojis in comments as well as string
+     - none     - Do not display emojis in programming modes
+
+**** Inhibiting display of emojis using custom functions
+     ~emojify-inhibit-functions~ is a list of function ~emojify~ calls before
+     displaying certain text as emoji, if any of the functions return a non-nil
+     value the corresponding text is not displayed as emoji. Users can add
+     custom functions to this list, if they inhibit display of emojis in under
+     certain conditions. The functions are called with three arguments
+
+     - text - The text that is about to be displayed as an emoji
+     - beg  - The beginning point of text in the buffer
+     - end  - The ending point of text in the buffer
+
+     These functions are called with the buffer where emoji is being displayed
+     selected.
+
+*** Controlling behaviour when point enters an emoji
+    The behaviour when point enters an emoji can be customized using the
+    variable ~emojify-point-entered-behaviour~. It can have one of the following
+    values
+
+    - echo    - Display the emojified text in the minibuffer
+    - uncover - Temporary undisplay the emoji while point is in the emojified text
+
+    Additionally it can be set to a custom function, the function is called with
+    four parameters
+
+    - buffer - The buffer where the emoji is displayed
+    - text   - The text that is displayed as emoji
+    - beg    - The beginning position of the text displayed as emoji
+    - end    - The ending position of the text displayed as emoji
+
+    The return value of the function is ignored.
+
+    *Note:* The custom function will be called for once for each character in an
+    emoji as point moves through them. Avoid manipulating the buffer in these
+    functions
+
+*** Controlling behaviour when mouse hovers over an emoji
+    When mouse hovers over a emoji, the underlying text is displayed in a help
+    popup. This behaviour can be disabled by setting ~emojify-show-help~ to nil.
+
+** Known issues
+   - Emojis are not properly updated after customizing ~emojify-display-style~ or
+     ~emojify-prog-contexts~. This would be fixed in future. For time being you
+     will be fine as long as you set these variables before ~emojify~ has
+     loaded.
+   - There is currently no support for custom emojis/images. I plan to fix this in future.

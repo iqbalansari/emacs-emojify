@@ -22,7 +22,7 @@
 
 ;;; Commentary:
 
-;; Another plugin to waste time in Emacs :sweat: :worried: :unamused: :p :) :p
+;; Emacs package to display emojis :sweat: :worried: :unamused: :p :) :p
 
 
 
@@ -102,7 +102,7 @@ This provides a compatibility version for previous versions."
 Possible values are
 `image'   - Display emojis using images, this requires images are supported by
             user's Emacs installation
-`unicode' - Display emojis using unicode codepoints, this works well on
+`unicode' - Display emojis using unicode characters, this works well on
             platforms with good emoji fonts.  In this case the emoji text
             ':wink:' will be substituted with 😉.
 `ascii'   - Display emojis as ascii charcters, this is simplest and does not
