@@ -17,6 +17,8 @@
      - [[#controlling-behaviour-when-point-enters-an-emoji][Controlling behaviour when point enters an emoji]]
      - [[#controlling-behaviour-when-mouse-hovers-over-an-emoji][Controlling behaviour when mouse hovers over an emoji]]
    - [[#known-issues][Known issues]]
+   - [[#credits][Credits]]
+   - [[#licence][Licence]]
 
 ** What is this?
    Emojify is an Emacs extension to display emojis. It can display github style
@@ -158,3 +160,10 @@
      will be fine as long as you set these variables before ~emojify~ has
      loaded.
    - There is currently no support for custom emojis/images. I plan to fix this in future.
+
+** Credits
+   Emoji set designed and offered free by [[http://emojione.com][Emoji One]].
+
+** Licence
+   The emoji images are distributed under [[http://creativecommons.org/licenses/by-sa/4.0/][Creative Commons License]] (CC-BY-SA).
+   The source code itself is distributed under [[http://www.gnu.org/licenses/quick-guide-gplv3.html][GNU General Public License v3]]. See [[LICENSE][LICENSE]].
