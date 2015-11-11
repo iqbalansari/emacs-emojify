@@ -675,6 +675,7 @@ runs (only emojify's) point motion hooks."
   ;; Uninstall our after change function
   (remove-hook 'after-change-functions #'emojify-after-change-function t))
 
+;;;###autoload
 (define-minor-mode emojify-mode
   "Emojify mode"
   :init-value nil
@@ -684,7 +685,7 @@ runs (only emojify's) point motion hooks."
     ;; Turn off
     (emojify-turn-off-emojify-mode)))
 
-;; While this is convenient it is not really what we want
+;;;###autoload
 (define-globalized-minor-mode global-emojify-mode
   emojify-mode emojify-mode
   :init-value nil)
