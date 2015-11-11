@@ -4,6 +4,7 @@
 
 ;; Author: Iqbal Ansari <iqbalansari02@yahoo.com>
 ;; Keywords: multimedia, convenience
+;; URL: https://github.com/iqbalansari/emacs-emojify
 ;; Version: 0.1
 ;; Package-Requires: ((seq "1.12") (ht "2.0") (emacs "24.3"))
 
@@ -22,7 +23,14 @@
 
 ;;; Commentary:
 
-;; Emacs package to display emojis :sweat: :worried: :unamused: :p :) :p
+;; This package displays emojis in Emacs similar to how Github, Slack etc do. It
+;; can display plain ascii like ':)' as well as Github style emojis like ':smile:'
+;;
+;; It provides a minor mode `emojify-mode' to enable display of emojis in a buffer.
+;; To enable emojify mode globally use `global-emojify-mode'
+;;
+;; For detailed documentation see the projects README file at
+;; https://github.com/iqbalansari/emacs-emojify
 
 
 
