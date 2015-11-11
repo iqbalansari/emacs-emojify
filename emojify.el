@@ -455,14 +455,15 @@ mark the start and end of region containing the text."
 
 (defun emojify--get-image-display (data)
   "Get the display text property to display the emoji specified in DATA as an image."
-  (let ((image-file (expand-file-name (ht-get data "image")
-                                      emojify-image-dir)))
+  (let* ((image-file (expand-file-name (ht-get data "image")
+                                       emojify-image-dir))
+         (image-type (intern (upcase (file-name-extension image-file)))))
     (when (file-exists-p image-file)
       (create-image image-file
                     ;; use imagemagick if available and supports PNG images
                     ;; (allows resizing images)
                     (when (and (fboundp 'imagemagick-types)
-                               (memq 'PNG (imagemagick-types)))
+                               (memq image-type (imagemagick-types)))
                       'imagemagick)
                     nil
                     :ascent 'center
