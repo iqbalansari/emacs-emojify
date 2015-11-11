@@ -506,7 +506,9 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
      (with-silent-modifications
        (save-match-data
          (save-excursion
-           ,@forms)))))
+           (save-restriction
+             (widen)
+             ,@forms))))))
 
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
