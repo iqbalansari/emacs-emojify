@@ -624,7 +624,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
 (ad-activate #'text-scale-increase)
 
-(defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (&rest ignored))
+(defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (direction))
   "Advice `isearch-repeat' to run emojify's point motion hooks.
 
 By default isearch disables point-motion hooks while repeating (see
