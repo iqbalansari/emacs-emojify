@@ -459,8 +459,10 @@ mark the start and end of region containing the text."
                                       emojify-image-dir)))
     (when (file-exists-p image-file)
       (create-image image-file
-                    ;; use imagemagick if available (allows resizing images
-                    (when (fboundp 'imagemagick-types)
+                    ;; use imagemagick if available and supports PNG images
+                    ;; (allows resizing images)
+                    (when (and (fboundp 'imagemagick-types)
+                               (memq 'PNG (imagemagick-types)))
                       'imagemagick)
                     nil
                     :ascent 'center
