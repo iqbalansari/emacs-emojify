@@ -113,7 +113,7 @@ Possible values are
 `unicode' - Display emojis using unicode characters, this works well on
             platforms with good emoji fonts.  In this case the emoji text
             ':wink:' will be substituted with 😉.
-`ascii'   - Display emojis as ascii charcters, this is simplest and does not
+`ascii'   - Display emojis as ascii characters, this is simplest and does not
             require any external dependencies.  In this cases emoji text like
             ':wink:' are substituted with ascii equivalents like ';)'"
   :type '(radio :tag "Emoji display style"
