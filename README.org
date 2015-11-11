@@ -27,9 +27,9 @@
 ** What does it look like?
    Here is how the commit log of this project looks with emojify mode enabled
 
-   [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/develop/screenshots/emojify-in-action.png][screenshots/emojify-in-action.png?raw=true]]
+   [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/master/screenshots/emojify-in-action.png][screenshots/emojify-in-action.png?raw=true]]
 
-   If you prefer a GIF you can view one [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/develop/screenshots/emojify-in-action.gif][here]].
+   If you prefer a GIF you can view one [[https://raw.githubusercontent.com/iqbalansari/emacs-emojify/master/screenshots/emojify-in-action.gif][here]].
 
 ** Requirements
    This package requires Emacs *v24.3* and above. Emacs should be compiled with
