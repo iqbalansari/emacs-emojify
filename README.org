@@ -1,6 +1,6 @@
 * Emojify
 
-  [[https://melpa.org/#/emojify][file:https://melpa.org/packages/emojify-badge.svg]]  [[https://travis-ci.org/iqbalansari/emacs-emojify][https://travis-ci.org/iqbalansari/emacs-emojify.svg?branch=master]]
+  [[https://melpa.org/#/emojify][file:https://melpa.org/packages/emojify-badge.svg]] [[http://stable.melpa.org/#/emojify][file:http://stable.melpa.org/packages/emojify-badge.svg]] [[https://travis-ci.org/iqbalansari/emacs-emojify][https://travis-ci.org/iqbalansari/emacs-emojify.svg?branch=master]]
 
 ** Table of contents                                              :TOC_3_gh:
  - [[#emojify][Emojify]]
@@ -43,7 +43,7 @@
 
 ** Installation
 *** ELPA
-    ~emojify~ is available on [[http://melpa.org/#/restart-emacs][MELPA]]. Please follow the instructions on MELPA
+    ~emojify~ is available on [[http://melpa.org/#/emojify][MELPA]] and [[http://stable.melpa.org/#/emojify][MELPA Stable]]. Please follow the instructions on MELPA
     [[http://melpa.org/#/getting-started][website]] to enable it, if you haven't already.
 
     You can then install ~emojify~ from the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Menu.html][package menu]]. Alternatively install it by doing the following
