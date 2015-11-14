@@ -1,6 +1,6 @@
 * Emojify
 
-  [[https://travis-ci.org/iqbalansari/emacs-emojify][https://travis-ci.org/iqbalansari/emacs-emojify.svg?branch=develop]]
+  [[https://melpa.org/#/emojify][file:https://melpa.org/packages/emojify-badge.svg]]  [[https://travis-ci.org/iqbalansari/emacs-emojify][https://travis-ci.org/iqbalansari/emacs-emojify.svg?branch=master]]
 
 ** Table of contents                                              :TOC_3_gh:
  - [[#emojify][Emojify]]
@@ -8,6 +8,7 @@
    - [[#what-does-it-look-like][What does it look like?]]
    - [[#requirements][Requirements]]
    - [[#installation][Installation]]
+     - [[#elpa][ELPA]]
    - [[#usage][Usage]]
    - [[#customizations][Customizations]]
      - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
@@ -41,7 +42,21 @@
    [[http://stackoverflow.com/questions/2650041/emacs-under-windows-and-png-files][this]] stackoverflow answer helpful.
 
 ** Installation
-   WIP  :construction:
+*** ELPA
+    ~emojify~ is available on [[http://melpa.org/#/restart-emacs][MELPA]]. Please follow the instructions on MELPA
+    [[http://melpa.org/#/getting-started][website]] to enable it, if you haven't already.
+
+    You can then install ~emojify~ from the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Menu.html][package menu]]. Alternatively install it by doing the following
+
+    Refresh the package index
+    #+BEGIN_QUOTE
+    M-x package-refresh-contents RET
+    #+END_QUOTE
+
+    And then install it by doing
+    #+BEGIN_QUOTE
+    M-x package-install RET emojify
+    #+END_QUOTE
 
 ** Usage
    ~emojify-mode~ can be enabled/disabled separately for a buffer by using the
