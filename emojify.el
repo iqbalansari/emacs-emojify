@@ -200,53 +200,46 @@ can customize `emojify-inhibit-major-modes' and
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
 
-  (unless (eq emojify-emoji-style 'all)
-    (let ((style (symbol-name emojify-emoji-style)))
-      (ht-reject! (lambda (_key value)
-                    (not (string= style (ht-get value "style"))))
-                  emojify-emojis)))
+  (ht-reject! (lambda (_key value)
+                (not (memq (intern (ht-get value "style")) emojify-emoji-style)))
+              emojify-emojis)
 
-  (setq emojify-regexps (let ((emojis (ht-keys emojify-emojis)))
-                          (regexp-opt emojis))))
+  (setq emojify-regexps (when (ht-keys emojify-emojis)
+                          (let ((emojis (ht-keys emojify-emojis)))
+                            (regexp-opt emojis)))))
 
 ;;;###autoload
-(defun emojify-set-emoji-style (value)
+(defun emojify-set-emoji-style (styles)
   "Set the type of emojis that should be displayed.
 
 VALUE is the value to be used as preferred style, see `emojify-emoji-style'"
-  (let ((style (if (consp value)
-                   (eval value)
-                 value)))
-    (unless (memq style '(all github ascii))
-      (user-error "[emojify] Do not know how to use `%s' style, please set to one of %s"
-                  value
-                  '(all github ascii)))
-    (setq-default emojify-emoji-style style)
+  (setq-default emojify-emoji-style styles)
 
-    ;; Update emoji data
-    (emojify-set-emoji-data)
+  ;; Update emoji data
+  (emojify-set-emoji-data)
 
-    ;; If possible resize emojis, TODO: This should be done in a hook
-    (when (fboundp 'emojify-redisplay-emojis)
-      (seq-each (lambda (buffer)
-                  (with-current-buffer buffer
-                    (when emojify-mode
-                      (emojify-redisplay-emojis))))
-                (buffer-list)))))
+  ;; If possible resize emojis, TODO: This should be done in a hook
+  (when (fboundp 'emojify-redisplay-emojis)
+    (seq-each (lambda (buffer)
+                (with-current-buffer buffer
+                  (when emojify-mode
+                    (emojify-redisplay-emojis))))
+              (buffer-list))))
 
+;; TODO: Make this a list
 (defcustom emojify-emoji-style
-  'all
+  '(ascii unicode github)
   "The type of emojis that should be displayed.
 
 These can have one of the following values
 
-`ascii'  - Display only ascii emojis for example ';)'
-`github' - Display only github style emojis for example ':wink:'
-`all'    - Display all of the above"
-  :type '(radio :tag "Emoji Style"
-                (const :tag "Display only ascii emojis" ascii)
-                (const :tag "Display only github emojis" github)
-                (const :tag "Display all emojis" all))
+`ascii'   - Display only ascii emojis for example ';)'
+`unicode' - Display only unicode emojis for example '😉'
+`github'  - Display only github style emojis for example ':wink:'"
+  :type '(set
+          (const :tag "Display only ascii emojis" ascii)
+          (const :tag "Display only github emojis" github)
+          (const :tag "Display only unicode codepoints" unicode))
   :set (lambda (_ value) (emojify-set-emoji-style value))
   :group 'emojify)
 
@@ -524,43 +517,44 @@ BEG and END are the beginning and end of the region respectively.
 TODO: Skip emojifying if region is already emojified."
   (emojify-with-saved-buffer-state
     (goto-char beg)
-    (while (and (> end (point))
-                (search-forward-regexp emojify-regexps end t))
-      (let ((match-beginning (match-beginning 0))
-            (match-end (match-end 0))
-            (match (match-string-no-properties 0))
-            (buffer (current-buffer)))
+    (when emojify-regexps
+      (while (and (> end (point))
+                  (search-forward-regexp emojify-regexps end t))
+        (let ((match-beginning (match-beginning 0))
+              (match-end (match-end 0))
+              (match (match-string-no-properties 0))
+              (buffer (current-buffer)))
 
-        ;; Display unconditionally in non-prog mode
-        (when (and (or (not (derived-mode-p 'prog-mode))
-                       ;; In prog mode enable respecting `emojify-prog-contexts'
-                       (emojify-valid-prog-context-p match-beginning match-end))
+          ;; Display unconditionally in non-prog mode
+          (when (and (or (not (derived-mode-p 'prog-mode))
+                         ;; In prog mode enable respecting `emojify-prog-contexts'
+                         (emojify-valid-prog-context-p match-beginning match-end))
 
-                   ;; The text is at the beginning of the buffer
-                   (emojify-valid-text-context-p match-beginning match-end)
+                     ;; The text is at the beginning of the buffer
+                     (emojify-valid-text-context-p match-beginning match-end)
 
-                   (not (emojify-inside-org-src-p match-beginning))
+                     (not (emojify-inside-org-src-p match-beginning))
 
-                   ;; Inhibit possibly inside a list
-                   ;; 41 is ?) but packages get confused by the extra closing paren :)
-                   ;; TODO Report bugs to such packages
-                   (not (and (eq (char-syntax (char-before match-end)) 41)
-                             (emojify-looking-at-end-of-list-maybe match-end)))
+                     ;; Inhibit possibly inside a list
+                     ;; 41 is ?) but packages get confused by the extra closing paren :)
+                     ;; TODO Report bugs to such packages
+                     (not (and (eq (char-syntax (char-before match-end)) 41)
+                               (emojify-looking-at-end-of-list-maybe match-end)))
 
-                   (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
+                     (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-          (let ((display-props (emojify--get-text-display-props match)))
-            (when display-props
-              (add-text-properties match-beginning
-                                   match-end
-                                   (append display-props
-                                           (list 'emojified t
-                                                 'emojify-buffer buffer
-                                                 'emojify-text match
-                                                 'emojify-start match-beginning
-                                                 'emojify-end match-end
-                                                 'point-entered #'emojify-point-entered-function
-                                                 'help-echo #'emojify-help-function))))))))))
+            (let ((display-props (emojify--get-text-display-props match)))
+              (when display-props
+                (add-text-properties match-beginning
+                                     match-end
+                                     (append display-props
+                                             (list 'emojified t
+                                                   'emojify-buffer buffer
+                                                   'emojify-text match
+                                                   'emojify-start match-beginning
+                                                   'emojify-end match-end
+                                                   'point-entered #'emojify-point-entered-function
+                                                   'help-echo #'emojify-help-function)))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
@@ -659,7 +653,7 @@ runs (only emojify's) point motion hooks."
   "Turn on `emojify-mode' in current buffer."
 
   ;; Calculate emoji data if needed
-  (unless (and emojify-emojis emojify-regexps)
+  (unless emojify-emojis
     (emojify-set-emoji-data))
 
   (when (emojify-buffer-p (current-buffer))
