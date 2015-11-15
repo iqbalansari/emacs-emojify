@@ -83,7 +83,7 @@ This provides a compatibility version for previous versions."
 ;; Customizations for control how emojis are displayed
 
 (defgroup emojify nil
-  "Customization options for mu4e-alert"
+  "Customization options for emojify"
   :group 'display
   :prefix "emojify-")
 
