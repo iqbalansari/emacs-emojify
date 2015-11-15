@@ -76,9 +76,9 @@
 *** Configuring the types of emojis displayed
     Emojify by default displays plain text emojis (~:)~), unicode emojis (~😄~)
     and github style emojis ~:smile:~. However this is customizable. You can do
-    so by changing the value of ~emojify-emoji-style~ using the customize
+    so by changing the value of ~emojify-emoji-styles~ using the customize
     interface. To change the value of the variable from Lisp using the function
-    ~emojify-set-emoji-style~ (or set it before loading ~emojify~), call it with
+    ~emojify-set-emoji-styles~ (or set it before loading ~emojify~), call it with
     one parameter the list of styles that you want to be displayed. The possible
     styles are
 

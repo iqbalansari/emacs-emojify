@@ -98,27 +98,27 @@
           (unicode-emoji-pos (+ (point-min) (length ":) ")))
           (github-emoji-pos (+ (point-min) (length ":) 😄 "))))
 
-      (emojify-set-emoji-style '(ascii))
+      (emojify-set-emoji-styles '(ascii))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
       (emojify-tests-should-not-be-emojified github-emoji-pos)
 
-      (emojify-set-emoji-style '(unicode))
+      (emojify-set-emoji-styles '(unicode))
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-be-emojified unicode-emoji-pos)
       (emojify-tests-should-not-be-emojified github-emoji-pos)
 
-      (emojify-set-emoji-style '(github))
+      (emojify-set-emoji-styles '(github))
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
       (emojify-tests-should-be-emojified github-emoji-pos)
 
-      (emojify-set-emoji-style '(ascii unicode github))
+      (emojify-set-emoji-styles '(ascii unicode github))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
       (emojify-tests-should-be-emojified unicode-emoji-pos)
       (emojify-tests-should-be-emojified github-emoji-pos)
 
-      (emojify-set-emoji-style nil)
+      (emojify-set-emoji-styles nil)
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
       (emojify-tests-should-not-be-emojified github-emoji-pos))))

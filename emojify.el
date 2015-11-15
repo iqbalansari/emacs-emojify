@@ -201,7 +201,7 @@ can customize `emojify-inhibit-major-modes' and
                          (json-read-file emojify-emoji-json)))
 
   (ht-reject! (lambda (_key value)
-                (not (memq (intern (ht-get value "style")) emojify-emoji-style)))
+                (not (memq (intern (ht-get value "style")) emojify-emoji-styles)))
               emojify-emojis)
 
   (setq emojify-regexps (when (ht-keys emojify-emojis)
@@ -209,11 +209,15 @@ can customize `emojify-inhibit-major-modes' and
                             (regexp-opt emojis)))))
 
 ;;;###autoload
-(defun emojify-set-emoji-style (styles)
+(defun emojify-set-emoji-styles (styles)
   "Set the type of emojis that should be displayed.
 
-VALUE is the value to be used as preferred style, see `emojify-emoji-style'"
-  (setq-default emojify-emoji-style styles)
+VALUE is the value to be used as preferred style, see `emojify-emoji-styles'"
+  (when (not (listp styles))
+    (setq styles (list styles))
+    (warn "`emojify-emoji-style' has been deprecated use `emojify-emoji-styles' instead!"))
+
+  (setq-default emojify-emoji-styles styles)
 
   ;; Update emoji data
   (emojify-set-emoji-data)
@@ -223,8 +227,7 @@ VALUE is the value to be used as preferred style, see `emojify-emoji-style'"
     (when emojify-mode
       (emojify-redisplay-emojis))))
 
-;; TODO: Make this a list
-(defcustom emojify-emoji-style
+(defcustom emojify-emoji-styles
   '(ascii unicode github)
   "The type of emojis that should be displayed.
 
@@ -237,8 +240,12 @@ These can have one of the following values
           (const :tag "Display only ascii emojis" ascii)
           (const :tag "Display only github emojis" github)
           (const :tag "Display only unicode codepoints" unicode))
-  :set (lambda (_ value) (emojify-set-emoji-style value))
+  :set (lambda (_ value) (emojify-set-emoji-styles value))
   :group 'emojify)
+
+;; Obsolete vars
+(define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
+(define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
 
 (defcustom emojify-prog-contexts
   'both
