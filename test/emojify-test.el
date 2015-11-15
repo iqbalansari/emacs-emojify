@@ -93,32 +93,35 @@
 
 (ert-deftest emojify-tests-emojify-setting-styles ()
   :tags '(styles github ascii)
-  (emojify-tests-with-emojified-static-buffer ":) :smile:"
+  (emojify-tests-with-emojified-static-buffer ":) 😄 :smile:"
     (let ((ascii-emoji-pos (point-min))
-          (github-emoji-pos (+ (point-min) (length ":) "))))
-      (emojify-set-emoji-style 'github)
+          (unicode-emoji-pos (+ (point-min) (length ":) ")))
+          (github-emoji-pos (+ (point-min) (length ":) 😄 "))))
 
-      ;; Ascii emoji should not be displayed
-      (emojify-tests-should-not-be-emojified ascii-emoji-pos)
-
-      ;; Github emojis should be displayed
-      (emojify-tests-should-be-emojified github-emoji-pos)
-
-      (emojify-set-emoji-style 'ascii)
-
-      ;; Ascii emoji should be displayed
+      (emojify-set-emoji-style '(ascii))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
-
-      ;; Github emojis should not be displayed
+      (emojify-tests-should-not-be-emojified unicode-emoji-pos)
       (emojify-tests-should-not-be-emojified github-emoji-pos)
 
-      (emojify-set-emoji-style 'all)
+      (emojify-set-emoji-style '(unicode))
+      (emojify-tests-should-not-be-emojified ascii-emoji-pos)
+      (emojify-tests-should-be-emojified unicode-emoji-pos)
+      (emojify-tests-should-not-be-emojified github-emoji-pos)
 
-      ;; Ascii emoji should not be displayed
+      (emojify-set-emoji-style '(github))
+      (emojify-tests-should-not-be-emojified ascii-emoji-pos)
+      (emojify-tests-should-not-be-emojified unicode-emoji-pos)
+      (emojify-tests-should-be-emojified github-emoji-pos)
+
+      (emojify-set-emoji-style '(ascii unicode github))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
+      (emojify-tests-should-be-emojified unicode-emoji-pos)
+      (emojify-tests-should-be-emojified github-emoji-pos)
 
-      ;; Github emojis should be displayed
-      (emojify-tests-should-be-emojified github-emoji-pos))))
+      (emojify-set-emoji-style nil)
+      (emojify-tests-should-not-be-emojified ascii-emoji-pos)
+      (emojify-tests-should-not-be-emojified unicode-emoji-pos)
+      (emojify-tests-should-not-be-emojified github-emoji-pos))))
 
 (ert-deftest emojify-tests-prog-contexts ()
   :tags '(core prog contextual)
