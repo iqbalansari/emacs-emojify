@@ -314,16 +314,21 @@ since our mechanisms do not work in it."
       (eq (org-element-type (org-element-at-point)) 'src-block))))
 
 (defun emojify-looking-at-end-of-list-maybe (point)
-  "Determine if POINT is end of a list."
-  (let ((list-start (ignore-errors (scan-sexps point -1))))
-    (when list-start
-      ;; If we got a list start make sure both start and end
-      ;; belong to same string/comment
-      (let ((syntax-beg (syntax-ppss list-start))
-            (syntax-end (syntax-ppss point)))
-        (and list-start
-             (eq (nth 8 syntax-beg)
-                 (nth 8 syntax-end)))))))
+  "Determine if POINT is end of a list.
+
+This is not accurate since it restricts the region to scan to
+the visible area."
+  (save-restriction
+    (narrow-to-region (window-start) (window-end))
+    (let ((list-start (ignore-errors (scan-sexps point -1))))
+      (when list-start
+        ;; If we got a list start make sure both start and end
+        ;; belong to same string/comment
+        (let ((syntax-beg (syntax-ppss list-start))
+              (syntax-end (syntax-ppss point)))
+          (and list-start
+               (eq (nth 8 syntax-beg)
+                   (nth 8 syntax-end))))))))
 
 (defun emojify-valid-text-context-p (beg end)
   "Determine if the okay to display for text between BEG and END."
