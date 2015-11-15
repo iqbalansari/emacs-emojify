@@ -482,11 +482,9 @@ mark the start and end of region containing the text."
   "Get the display text property to display the emoji specified in DATA as unicode characters."
   (let* ((unicode (ht-get data "unicode"))
          (characters (when unicode
-                       (seq-map (lambda (hex)
-                                  (string-to-number hex 16))
-                                (split-string unicode "-")))))
+                       (string-to-vector unicode))))
     (when (seq-every-p #'char-displayable-p characters)
-      (seq-mapcat #'char-to-string characters 'string))))
+      unicode)))
 
 (defun emojify--get-ascii-display (data)
   "Get the display text property to display the emoji specified in DATA as ascii characters."
