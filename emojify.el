@@ -220,11 +220,8 @@ VALUE is the value to be used as preferred style, see `emojify-emoji-style'"
 
   ;; If possible resize emojis, TODO: This should be done in a hook
   (when (fboundp 'emojify-redisplay-emojis)
-    (seq-each (lambda (buffer)
-                (with-current-buffer buffer
-                  (when emojify-mode
-                    (emojify-redisplay-emojis))))
-              (buffer-list))))
+    (when emojify-mode
+      (emojify-redisplay-emojis))))
 
 ;; TODO: Make this a list
 (defcustom emojify-emoji-style
