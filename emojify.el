@@ -196,17 +196,17 @@ can customize `emojify-inhibit-major-modes' and
 (defvar emojify-regexps nil
   "Regexp to match text to emojified.")
 
-(defun emojify-set-emoji-data ()
-  "Read the emoji data and set the regexp required to search them."
 (defvar emojify-emoji-style-change-hooks nil
   "Hooks run when emoji style changes.")
 
+(defun emojify-set-emoji-data (styles)
+  "Read the emoji data for STYLES and set the regexp required to search them."
   (setq emojify-emojis (let ((json-array-type 'list)
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
 
   (ht-reject! (lambda (_key value)
-                (not (memq (intern (ht-get value "style")) emojify-emoji-styles)))
+                (not (memq (intern (ht-get value "style")) styles)))
               emojify-emojis)
 
   (setq emojify-regexps (when (ht-keys emojify-emojis)
@@ -217,7 +217,7 @@ can customize `emojify-inhibit-major-modes' and
 (defun emojify-set-emoji-styles (styles)
   "Set the type of emojis that should be displayed.
 
-VALUE is the value to be used as preferred style, see `emojify-emoji-styles'"
+STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles'"
   (when (not (listp styles))
     (setq styles (list styles))
     (warn "`emojify-emoji-style' has been deprecated use `emojify-emoji-styles' instead!"))
@@ -225,7 +225,7 @@ VALUE is the value to be used as preferred style, see `emojify-emoji-styles'"
   (setq-default emojify-emoji-styles styles)
 
   ;; Update emoji data
-  (emojify-set-emoji-data)
+  (emojify-set-emoji-data styles)
 
   (run-hooks 'emojify-emoji-style-change-hooks))
 
@@ -665,7 +665,7 @@ runs (only emojify's) point motion hooks."
 
   ;; Calculate emoji data if needed
   (unless emojify-emojis
-    (emojify-set-emoji-data))
+    (emojify-set-emoji-data emojify-emoji-styles))
 
   (when (emojify-buffer-p (current-buffer))
     ;; Install our jit-lock function
