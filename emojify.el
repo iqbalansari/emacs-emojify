@@ -80,6 +80,17 @@ This provides a compatibility version for previous versions."
 
 
 
+;; Utility functions
+
+(defun emojify--get-relevant-region ()
+  "Try getting region in buffer that completely covers the current window."
+  (let* ((window-size (- (window-end) (window-start)))
+         (start (max (- (point) window-size) (point-min)))
+         (end (min (+ (point) window-size) (point-max))))
+    (cons start end)))
+
+
+
 ;; Customizations for control how emojis are displayed
 
 (defgroup emojify nil
@@ -327,11 +338,11 @@ since our mechanisms do not work in it."
 
 This is not accurate since it restricts the region to scan to
 the visible area."
-  (save-window-excursion
-    ;; So that we can determine window-start, window-end
-    (switch-to-buffer (current-buffer))
+  (let* ((area (emojify--get-relevant-region))
+         (beg (car area))
+         (end (cdr area)))
     (save-restriction
-      (narrow-to-region (window-start) (window-end))
+      (narrow-to-region beg end)
       (let ((list-start (ignore-errors (scan-sexps point -1))))
         (when list-start
           ;; If we got a list start make sure both start and end
@@ -610,13 +621,11 @@ BEG and END are the beginning and end of the region respectively"
   "Redisplay emojis in region between BEG and END.
 
 Redisplay emojis in the visible region if BEG and END are not specified"
-  (save-window-excursion
-    ;; So that we can determine window-start, window-end
-    (switch-to-buffer (current-buffer))
-    (let ((beg (or beg (window-start)))
-          (end (or end (window-end))))
-      (emojify-undisplay-emojis-in-region beg end)
-      (emojify-display-emojis-in-region beg end))))
+  (let* ((area (emojify--get-relevant-region))
+         (beg (or beg (car area)))
+         (end (or end (cdr area))))
+    (emojify-undisplay-emojis-in-region beg end)
+    (emojify-display-emojis-in-region beg end)))
 
 (defun emojify-after-change-function (beg end _len)
   "Redisplay emojis in region after change.
