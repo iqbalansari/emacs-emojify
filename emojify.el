@@ -198,6 +198,9 @@ can customize `emojify-inhibit-major-modes' and
 
 (defun emojify-set-emoji-data ()
   "Read the emoji data and set the regexp required to search them."
+(defvar emojify-emoji-style-change-hooks nil
+  "Hooks run when emoji style changes.")
+
   (setq emojify-emojis (let ((json-array-type 'list)
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
@@ -224,10 +227,7 @@ VALUE is the value to be used as preferred style, see `emojify-emoji-styles'"
   ;; Update emoji data
   (emojify-set-emoji-data)
 
-  ;; If possible resize emojis, TODO: This should be done in a hook
-  (when (fboundp 'emojify-redisplay-emojis)
-    (when emojify-mode
-      (emojify-redisplay-emojis))))
+  (run-hooks 'emojify-emoji-style-change-hooks))
 
 (defcustom emojify-emoji-styles
   '(ascii unicode github)
@@ -672,7 +672,10 @@ runs (only emojify's) point motion hooks."
     (jit-lock-register #'emojify-redisplay-emojis)
 
     ;; Add an after change hook to emojify regions on change
-    (add-hook 'after-change-functions #'emojify-after-change-function t t)))
+    (add-hook 'after-change-functions #'emojify-after-change-function t t)
+
+    ;; Redisplay visible emojis when emoji style changes
+    (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis)))
 
 (defun emojify-turn-off-emojify-mode ()
   "Turn off `emojify-mode' in current buffer."
@@ -685,7 +688,10 @@ runs (only emojify's) point motion hooks."
   (jit-lock-unregister #'emojify-redisplay-emojis)
 
   ;; Uninstall our after change function
-  (remove-hook 'after-change-functions #'emojify-after-change-function t))
+  (remove-hook 'after-change-functions #'emojify-after-change-function t)
+
+  ;; Remove style change hooks
+  (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis))
 
 ;;;###autoload
 (define-minor-mode emojify-mode
