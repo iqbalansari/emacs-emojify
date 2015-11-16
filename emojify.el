@@ -493,6 +493,7 @@ mark the start and end of region containing the text."
                       'imagemagick)
                     nil
                     :ascent 'center
+                    :heuristic-mask t
                     ;; no-op if imagemagick is not available
                     :height (emojify-default-font-height)))))
 
