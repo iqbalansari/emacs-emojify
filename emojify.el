@@ -647,35 +647,6 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
 
 
 
-(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
-  "Advice `text-scale-increase' to trigger resizing of emojis on resize."
-  (when emojify-mode
-    (emojify-redisplay-emojis)))
-
-(ad-activate #'text-scale-increase)
-
-(defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (direction))
-  "Advice `isearch-repeat' to run emojify's point motion hooks.
-
-By default isearch disables point-motion hooks while repeating (see
-`isearch-invisible') breaking emojify's uncovering logic, this advice explicitly
-runs (only emojify's) point motion hooks."
-  (let ((old-pos (point)))
-    (prog1 ad-do-it
-      (when emojify-mode
-        (let ((old-pos-props (text-properties-at old-pos))
-              (new-pos-props (text-properties-at (point))))
-          (unless (equal old-pos (point))
-            (when (and (plist-get old-pos-props 'emojified)
-                       (plist-get old-pos-props 'point-left))
-              (funcall (plist-get old-pos-props 'point-left) old-pos (point)))
-            (when (and (plist-get new-pos-props 'emojified)
-                       (plist-get new-pos-props 'point-entered))
-              (funcall (plist-get new-pos-props 'point-entered) old-pos (point)))))))))
-
-
-(ad-activate #'isearch-repeat)
-
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
 
@@ -723,6 +694,35 @@ runs (only emojify's) point motion hooks."
 (define-globalized-minor-mode global-emojify-mode
   emojify-mode emojify-mode
   :init-value nil)
+
+(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
+  "Advice `text-scale-increase' to trigger resizing of emojis on resize."
+  (when emojify-mode
+    (emojify-redisplay-emojis)))
+
+(ad-activate #'text-scale-increase)
+
+(defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (direction))
+  "Advice `isearch-repeat' to run emojify's point motion hooks.
+
+By default isearch disables point-motion hooks while repeating (see
+`isearch-invisible') breaking emojify's uncovering logic, this advice explicitly
+runs (only emojify's) point motion hooks."
+  (let ((old-pos (point)))
+    (prog1 ad-do-it
+      (when emojify-mode
+        (let ((old-pos-props (text-properties-at old-pos))
+              (new-pos-props (text-properties-at (point))))
+          (unless (equal old-pos (point))
+            (when (and (plist-get old-pos-props 'emojified)
+                       (plist-get old-pos-props 'point-left))
+              (funcall (plist-get old-pos-props 'point-left) old-pos (point)))
+            (when (and (plist-get new-pos-props 'emojified)
+                       (plist-get new-pos-props 'point-entered))
+              (funcall (plist-get new-pos-props 'point-entered) old-pos (point)))))))))
+
+
+(ad-activate #'isearch-repeat)
 
 (provide 'emojify)
 ;;; emojify.el ends here
