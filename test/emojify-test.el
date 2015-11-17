@@ -159,16 +159,16 @@
       (emojify-tests-should-not-be-emojified string-github-emoji-pos)
       (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos))))
 
-(ert-deftest emojify-tests-text-contexts ()
+(ert-deftest emojify-tests-ascii-emoji-contexts ()
   :tags '(core text contextual)
   ;; At start of comment
-  (emojify-tests-with-emojified-static-buffer ";:smile:"
+  (emojify-tests-with-emojified-static-buffer ";:)"
     (emacs-lisp-mode)
     (emojify-redisplay-emojis)
     (emojify-tests-should-be-emojified (1+ (point-min))))
 
   ;; In comment after space
-  (emojify-tests-with-emojified-static-buffer "; :smile:"
+  (emojify-tests-with-emojified-static-buffer "; :)"
     (emacs-lisp-mode)
     (emojify-redisplay-emojis)
     (emojify-tests-should-be-emojified (+ 2 (point-min))))
@@ -179,10 +179,6 @@
     (emojify-redisplay-emojis)
     (emojify-tests-should-be-emojified (line-beginning-position 2)))
 
-  ;; Immediately after a bracket
-  (emojify-tests-with-emojified-static-buffer "(:smile:"
-    (emojify-tests-should-not-be-emojified (1+ (point-min))))
-
   ;; Immediately after a word
   (emojify-tests-with-emojified-static-buffer "A:)"
     (emojify-tests-should-not-be-emojified (1+ (point-min))))
@@ -190,10 +186,6 @@
   ;; Immediately before a word
   (emojify-tests-with-emojified-static-buffer ":)A"
     (emojify-tests-should-not-be-emojified (1+ (point-min))))
-
-  ;; Immediately before a closing bracket
-  (emojify-tests-with-emojified-static-buffer ":))"
-    (emojify-tests-should-be-emojified (1+ (point-min))))
 
   ;; Immediately before a closing bracket
   (emojify-tests-with-emojified-static-buffer ":))"
@@ -218,6 +210,32 @@
     (c-mode)
     (emojify-redisplay-emojis)
     (emojify-tests-should-not-be-emojified (+ 2 (point-min)))))
+
+(ert-deftest emojify-tests-multiple-emojis-in-sequence ()
+  "See Github issue #6"
+  (emojify-tests-with-emojified-static-buffer ":100::smile:
+:100:a:smile:
+🎆😃
+🎆a😃
+:100:😃
+:100:a😃"
+    ;; Github emojis
+    (emojify-tests-should-be-emojified (point-min))
+    (emojify-tests-should-be-emojified (+ (point-min) 5))
+    (emojify-tests-should-be-emojified (line-beginning-position 1))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 1) 6))
+
+    ;; Unicode emojis
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 1))
+    (emojify-tests-should-be-emojified (line-beginning-position 3))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 3) 3))
+
+    ;; Mixed emojis
+    (emojify-tests-should-be-emojified (line-beginning-position 4))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
+    (emojify-tests-should-be-emojified (line-beginning-position 4))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 6))))
 
 (ert-deftest emojify-tests-emojifying-lists ()
   :tags '(core contextual)
