@@ -353,7 +353,7 @@ the visible area."
                  (eq (nth 8 syntax-beg)
                      (nth 8 syntax-end)))))))))
 
-(defun emojify-valid-text-context-p (beg end)
+(defun emojify-valid-ascii-emoji-context-p (beg end)
   "Determine if the okay to display for text between BEG and END."
   ;; The text is at the start of the buffer
   (and (or (not (char-before beg))
@@ -556,8 +556,10 @@ TODO: Skip emojifying if region is already emojified."
                          ;; In prog mode enable respecting `emojify-prog-contexts'
                          (emojify-valid-prog-context-p match-beginning match-end))
 
-                     ;; The text is at the beginning of the buffer
-                     (emojify-valid-text-context-p match-beginning match-end)
+                     ;; Display ascii emojis conservatively, since they have potential
+                     ;; to be annoying consider d: in head:
+                     (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
+                         (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
                      (not (emojify-inside-org-src-p match-beginning))
 
