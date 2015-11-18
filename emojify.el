@@ -551,8 +551,9 @@ TODO: Skip emojifying if region is already emojified."
               (match (match-string-no-properties 0))
               (buffer (current-buffer)))
 
-          ;; Display unconditionally in non-prog mode
-          (when (and (or (not (derived-mode-p 'prog-mode))
+          (when (and (ht-contains-p emojify-emojis match)
+                     ;; Display unconditionally in non-prog mode
+                     (or (not (derived-mode-p 'prog-mode))
                          ;; In prog mode enable respecting `emojify-prog-contexts'
                          (emojify-valid-prog-context-p match-beginning match-end))
 
