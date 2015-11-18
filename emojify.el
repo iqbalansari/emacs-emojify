@@ -82,6 +82,17 @@ This provides a compatibility version for previous versions."
 
 ;; Utility functions
 
+(defvar emojify-debug-mode nil
+  "Signal errors when emoji redisplay fails.
+
+By default emojify silences any errors during emoji redisplay.  This is done
+since emojis are redisplayed using jit-lock (the same mechanism used for
+font-lock) as such any bugs in the code can cause other important things to
+fail.
+
+Set `emojify-debug-mode' to non-nil to instruct emojify to not silence any
+errors during operation.")
+
 (defun emojify--get-relevant-region ()
   "Try getting region in buffer that completely covers the current window."
   (let* ((window-size (- (window-end) (window-start)))
@@ -628,8 +639,11 @@ Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
          (end (or end (cdr area))))
-    (emojify-undisplay-emojis-in-region beg end)
-    (emojify-display-emojis-in-region beg end)))
+    (if emojify-debug-mode
+        (progn (emojify-undisplay-emojis-in-region beg end)
+               (emojify-display-emojis-in-region beg end))
+      (ignore-errors (emojify-undisplay-emojis-in-region beg end)
+                     (emojify-display-emojis-in-region beg end)))))
 
 (defun emojify-after-change-function (beg end _len)
   "Redisplay emojis in region after change.
