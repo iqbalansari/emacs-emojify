@@ -531,6 +531,11 @@ mark the start and end of region containing the text."
     (when display
       (list 'display display))))
 
+(defvar emojify-emoji-keymap (let ((map (make-sparse-keymap)))
+                               (define-key map (kbd "C-d") #'emojify-delete-emoji-forward)
+                               (define-key map (kbd "DEL") #'emojify-delete-emoji-backward)
+                               map))
+
 (defmacro emojify-with-saved-buffer-state (&rest forms)
   "Execute FORMS saving current buffer state.
 
@@ -593,6 +598,7 @@ TODO: Skip emojifying if region is already emojified."
                                                    'emojify-text match
                                                    'emojify-start match-beginning
                                                    'emojify-end match-end
+                                                   'keymap emojify-emoji-keymap
                                                    'point-entered #'emojify-point-entered-function
                                                    'help-echo #'emojify-help-function)))))))))))
 
@@ -628,9 +634,20 @@ BEG and END are the beginning and end of the region respectively"
                                                                       'emojify-text t
                                                                       'emojify-start t
                                                                       'emojify-end t
+                                                                      'keymap t
                                                                       'help-echo t))))
         ;; Setup the next iteration
         (setq beg emoji-end)))))
+
+(defun emojify-delete-emoji-forward ()
+  (interactive)
+  (delete-region (get-text-property (point) 'emojify-start)
+                 (get-text-property (point) 'emojify-end)))
+
+(defun emojify-delete-emoji-backward ()
+  (interactive)
+  (delete-region (get-text-property (1- (point)) 'emojify-start)
+                 (get-text-property (1- (point)) 'emojify-end)))
 
 (defun emojify-redisplay-emojis (&optional beg end)
   "Redisplay emojis in region between BEG and END.
