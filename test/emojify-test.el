@@ -340,6 +340,29 @@
         (emojify-tests-should-be-emojified first-emoji-pos)
         (emojify-tests-should-be-emojified second-emoji-pos)))))
 
+(ert-deftest emojify-tests-electric-delete ()
+  :tags '(electric-delete)
+  (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
+    (goto-char (line-end-position))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+      (execute-kbd-macro [backspace])
+      (emojify-tests-should-not-be-emojified (line-end-position))
+      (should (equal (line-end-position) final-line-end))))
+
+  (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
+    (goto-char (line-end-position 2))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+      (execute-kbd-macro [backspace])
+      (emojify-tests-should-not-be-emojified (line-end-position))
+      (should (equal (line-end-position) final-line-end))))
+
+  (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
+    (goto-char (line-end-position 3))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+      (execute-kbd-macro [backspace])
+      (emojify-tests-should-not-be-emojified (line-end-position))
+      (should (equal (line-end-position) final-line-end)))))
+
 ;; So that tests can be run simply by doing `eval-buffer'
 (unless noninteractive
   (ert "^emojify-"))
