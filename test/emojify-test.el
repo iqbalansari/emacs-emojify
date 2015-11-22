@@ -213,6 +213,7 @@
 
 (ert-deftest emojify-tests-multiple-emojis-in-sequence ()
   "See Github issue #6"
+  :tags '(core contextual)
   (emojify-tests-with-emojified-static-buffer ":100::smile:
 :100:a:smile:
 🎆😃
