@@ -498,6 +498,25 @@ mark the start and end of region containing the text."
                    (< new-point match-beginning)))
       (emojify-redisplay-emojis match-beginning match-end))))
 
+(defun emojify--find-key-binding-ignoring-emojify-keymap (key)
+  "Find the binding for given KEY ignoring the text properties at point.
+
+This is needed since `key-binding' looks up in keymap text property as well
+which is not what we want when falling back in `emojify-delete-emoji'"
+  (let* ((minor-mode-binding (minor-mode-key-binding key))
+         (local-binding (local-key-binding key))
+         (global-binding (global-key-binding key))
+         (key-binding (or minor-mode-binding
+                          local-binding
+                          global-binding)))
+    (when key-binding
+      (or (command-remapping key-binding
+                             nil
+                             (seq-filter (lambda (keymap)
+                                           (not (equal keymap emojify-emoji-keymap)))
+                                         (current-active-maps)))
+          key-binding))))
+
 (defun emojify--get-image-display (data)
   "Get the display text property to display the emoji specified in DATA as an image."
   (let* ((image-file (expand-file-name (ht-get data "image")
@@ -638,19 +657,28 @@ BEG and END are the beginning and end of the region respectively"
                                                                       'emojify-start t
                                                                       'emojify-end t
                                                                       'keymap t
-                                                                      'help-echo t))))
+                                                                      'help-echo t
+                                                                      'rear-nonsticky t))))
         ;; Setup the next iteration
         (setq beg emoji-end)))))
 
+(defun emojify-delete-emoji (point)
+  "Delete emoji at POINT."
+  (if (get-text-property point 'emojified)
+      (delete-region (get-text-property point 'emojify-start)
+                     (get-text-property point 'emojify-end))
+    (call-interactively (emojify--find-key-binding-ignoring-emojify-keymap (this-command-keys)))))
+
 (defun emojify-delete-emoji-forward ()
+  "Delete emoji after point."
   (interactive)
-  (delete-region (get-text-property (point) 'emojify-start)
-                 (get-text-property (point) 'emojify-end)))
+  (emojify-delete-emoji (point)))
 
 (defun emojify-delete-emoji-backward ()
+  "Delete emoji before point."
   (interactive)
-  (delete-region (get-text-property (1- (point)) 'emojify-start)
-                 (get-text-property (1- (point)) 'emojify-end)))
+  (emojify-delete-emoji (1- (point))))
+
 
 (defun emojify-redisplay-emojis (&optional beg end)
   "Redisplay emojis in region between BEG and END.
