@@ -33,6 +33,23 @@
     (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
+(ert-deftest emojify-tests-simple-unicode-emoji-test ()
+  :tags '(unicode simple)
+  (emojify-tests-with-emojified-static-buffer "😉"
+    (emojify-tests-should-be-emojified (point-min))
+    (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
+    (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
+    (should (equal (get-text-property (point) 'emojify-end) (point-max)))
+    (should (equal (get-text-property (point) 'emojify-text)  "😉"))))
+
+(ert-deftest emojify-tests-mixed-emoji-test ()
+  :tags '(core mixed)
+  (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:"
+    (emojify-tests-should-be-emojified (point-min))
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+    (emojify-tests-should-be-emojified (line-beginning-position 4))))
+
 (ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
   :tags '(core after-change)
   (emojify-tests-with-emojified-buffer ":smile:\n:)"
@@ -213,6 +230,7 @@
 
 (ert-deftest emojify-tests-multiple-emojis-in-sequence ()
   "See Github issue #6"
+  :tags '(core contextual)
   (emojify-tests-with-emojified-static-buffer ":100::smile:
 :100:a:smile:
 🎆😃
@@ -339,6 +357,66 @@
         (goto-char (point-min))
         (emojify-tests-should-be-emojified first-emoji-pos)
         (emojify-tests-should-be-emojified second-emoji-pos)))))
+
+(ert-deftest emojify-tests-electric-delete ()
+  :tags '(electric-delete)
+  (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
+    (goto-char (line-end-position))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+      (execute-kbd-macro [backspace])
+      (emojify-tests-should-not-be-emojified (line-end-position))
+      (should (equal (line-end-position) final-line-end))))
+
+  (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
+    (goto-char (line-end-position 2))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+      (execute-kbd-macro [backspace])
+      (emojify-tests-should-not-be-emojified (line-end-position))
+      (should (equal (line-end-position) final-line-end))))
+
+  (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
+    (goto-char (line-end-position 3))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+      (execute-kbd-macro [backspace])
+      (emojify-tests-should-not-be-emojified (line-end-position))
+      (should (equal (line-end-position) final-line-end))))
+
+  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
+    (dotimes (_ 4)
+      (execute-kbd-macro (kbd "C-d")))
+    (should (equal (point-min) (point-max))))
+
+  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
+    (goto-char (point-max))
+    (dotimes (_ 4)
+      (execute-kbd-macro [backspace]))
+    (should (equal (point-min) (point-max))))
+
+  (emojify-tests-with-emojified-buffer "😉  :smile:"
+    (goto-char (1+ (point-min)))
+    (dotimes (_ 3)
+      (execute-kbd-macro (kbd "C-d")))
+    (should (equal (1+ (point-min)) (point-max))))
+
+  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
+    "Integration with delsel mode"
+    (with-mock
+      (stub message => nil)
+      (delete-selection-mode +1)
+      (set-mark-command nil)
+      (activate-mark)
+      (goto-char (point-max))
+      (exchange-point-and-mark)
+      (let ((this-command 'emojify-delete-emoji-forward))
+        (delete-selection-pre-hook))
+      (should (equal (point-min) (point-max))))))
+
+(ert-deftest emojify-tests-no-byte-compilation-errors ()
+  :tags '(byte-compilation)
+  (with-mock
+    (stub message => nil)
+    (stub byte-compile-dest-file => "/tmp/emojify.elc")
+    (should (byte-compile-file (locate-library "emojify.el")))))
 
 ;; So that tests can be run simply by doing `eval-buffer'
 (unless noninteractive

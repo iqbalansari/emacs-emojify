@@ -36,7 +36,7 @@ install:
   - cask install
 
 script:
-  - cask exec ert-runner --reporter ert
+  - cask exec ert-runner
 
 notifications:
   email:
