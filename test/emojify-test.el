@@ -33,6 +33,23 @@
     (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
+(ert-deftest emojify-tests-simple-unicode-emoji-test ()
+  :tags '(unicode simple)
+  (emojify-tests-with-emojified-static-buffer "😉"
+    (emojify-tests-should-be-emojified (point-min))
+    (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
+    (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
+    (should (equal (get-text-property (point) 'emojify-end) (point-max)))
+    (should (equal (get-text-property (point) 'emojify-text)  "😉"))))
+
+(ert-deftest emojify-tests-mixed-emoji-test ()
+  :tags '(core mixed)
+  (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:"
+    (emojify-tests-should-be-emojified (point-min))
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+    (emojify-tests-should-be-emojified (line-beginning-position 4))))
+
 (ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
   :tags '(core after-change)
   (emojify-tests-with-emojified-buffer ":smile:\n:)"
@@ -374,6 +391,12 @@
     (dotimes (_ 4)
       (execute-kbd-macro [backspace]))
     (should (equal (point-min) (point-max))))
+
+  (emojify-tests-with-emojified-buffer "😉  :smile:"
+    (goto-char (1+ (point-min)))
+    (dotimes (_ 3)
+      (execute-kbd-macro (kbd "C-d")))
+    (should (equal (1+ (point-min)) (point-max))))
 
   (emojify-tests-with-emojified-buffer "😉:wink: ;)"
     "Integration with delsel mode"
