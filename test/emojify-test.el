@@ -388,6 +388,13 @@
         (delete-selection-pre-hook))
       (should (equal (point-min) (point-max))))))
 
+(ert-deftest emojify-tests-no-byte-compilation-errors ()
+  :tags '(byte-compilation)
+  (with-mock
+    (stub message => nil)
+    (stub byte-compile-dest-file => "/tmp/emojify.elc")
+    (should (byte-compile-file (locate-library "emojify.el")))))
+
 ;; So that tests can be run simply by doing `eval-buffer'
 (unless noninteractive
   (ert "^emojify-"))
