@@ -362,7 +362,31 @@
     (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
       (execute-kbd-macro [backspace])
       (emojify-tests-should-not-be-emojified (line-end-position))
-      (should (equal (line-end-position) final-line-end)))))
+      (should (equal (line-end-position) final-line-end))))
+
+  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
+    (dotimes (_ 4)
+      (execute-kbd-macro (kbd "C-d")))
+    (should (equal (point-min) (point-max))))
+
+  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
+    (goto-char (point-max))
+    (dotimes (_ 4)
+      (execute-kbd-macro [backspace]))
+    (should (equal (point-min) (point-max))))
+
+  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
+    "Integration with delsel mode"
+    (with-mock
+      (stub message => nil)
+      (delete-selection-mode +1)
+      (set-mark-command nil)
+      (activate-mark)
+      (goto-char (point-max))
+      (exchange-point-and-mark)
+      (let ((this-command 'emojify-delete-emoji-forward))
+        (delete-selection-pre-hook))
+      (should (equal (point-min) (point-max))))))
 
 ;; So that tests can be run simply by doing `eval-buffer'
 (unless noninteractive
