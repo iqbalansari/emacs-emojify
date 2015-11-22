@@ -679,6 +679,9 @@ BEG and END are the beginning and end of the region respectively"
   (interactive)
   (emojify-delete-emoji (1- (point))))
 
+;; Integrate with delete-selection-mode
+(put 'emojify-delete-emoji-forward 'delete-selection 'supersede)
+(put 'emojify-delete-emoji-backward 'delete-selection 'supersede)
 
 (defun emojify-redisplay-emojis (&optional beg end)
   "Redisplay emojis in region between BEG and END.
