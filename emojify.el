@@ -479,6 +479,14 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
+(defvar emojify-emoji-keymap (let ((map (make-sparse-keymap)))
+                               (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
+                               (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
+                               (define-key map [remap backward-delete-char] #'emojify-delete-emoji-backward)
+                               (define-key map [remap delete-backward-char] #'emojify-delete-emoji-backward)
+                               (define-key map [remap backward-delete-char-untabify] #'emojify-delete-emoji-backward)
+                               map))
+
 (defun emojify--get-point-left-function (buffer match-beginning match-end)
   "Create a function that can be executed in point-left hook for emoji text.
 
@@ -530,11 +538,6 @@ mark the start and end of region containing the text."
                       (`ascii (emojify--get-ascii-display emoji-data))))))
     (when display
       (list 'display display))))
-
-(defvar emojify-emoji-keymap (let ((map (make-sparse-keymap)))
-                               (define-key map (kbd "C-d") #'emojify-delete-emoji-forward)
-                               (define-key map (kbd "DEL") #'emojify-delete-emoji-backward)
-                               map))
 
 (defmacro emojify-with-saved-buffer-state (&rest forms)
   "Execute FORMS saving current buffer state.
