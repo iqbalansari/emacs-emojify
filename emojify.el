@@ -483,6 +483,9 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
+(defvar emojify-region-beg nil)
+(defvar emojify-region-end nil)
+
 (defvar emojify-emoji-keymap (let ((map (make-sparse-keymap)))
                                (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
                                (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
@@ -518,7 +521,31 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                                          (current-active-maps)))
           key-binding))))
 
-(defun emojify--get-image-display (data)
+(defun emojify--inside-rectangle-selection-p (beg end)
+  (when (bound-and-true-p rectangle-mark-mode)
+    (let ((rect-beg (save-excursion
+                      (goto-char emojify-region-beg)
+                      (cons (current-column) (line-number-at-pos))))
+          (rect-end (save-excursion
+                      (goto-char emojify-region-end)
+                      (cons (current-column) (line-number-at-pos))))
+          (point-pos (save-excursion
+                       (goto-char beg)
+                       (cons (current-column) (line-number-at-pos)))))
+      (and (<= (car rect-beg) (car point-pos) (car rect-end))
+           (<= (cdr rect-beg) (cdr point-pos) (cdr rect-end))))))
+
+(defun emojify--inside-non-rectangle-selection-p (beg end)
+  (when (and (region-active-p)
+             (not (bound-and-true-p rectangle-mark-mode)))
+    (<= emojify-region-beg beg end emojify-region-end)))
+
+(defun emojify--get-image-background (beg end)
+  (when (or (emojify--inside-non-rectangle-selection-p beg end)
+            (emojify--inside-rectangle-selection-p beg end))
+    (face-background 'region)))
+
+(defun emojify--get-image-display (data beg end)
   "Get the display text property to display the emoji specified in DATA as an image."
   (let* ((image-file (expand-file-name (ht-get data "image")
                                        emojify-image-dir))
@@ -533,10 +560,11 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                     nil
                     :ascent 'center
                     :heuristic-mask t
+                    :background (emojify--get-image-background beg end)
                     ;; no-op if imagemagick is not available
                     :height (emojify-default-font-height)))))
 
-(defun emojify--get-unicode-display (data)
+(defun emojify--get-unicode-display (data _beg _end)
   "Get the display text property to display the emoji specified in DATA as unicode characters."
   (let* ((unicode (ht-get data "unicode"))
          (characters (when unicode
@@ -544,18 +572,21 @@ which is not what we want when falling back in `emojify-delete-emoji'"
     (when (seq-every-p #'char-displayable-p characters)
       unicode)))
 
-(defun emojify--get-ascii-display (data)
+(defun emojify--get-ascii-display (data _beg _end)
   "Get the display text property to display the emoji specified in DATA as ascii characters."
   (ht-get data "ascii"))
 
-(defun emojify--get-text-display-props (name)
+(defun emojify--get-text-display-props (name emoji-start emoji-end)
   "The the display property for an emoji named NAME."
   (let* ((emoji-data (ht-get emojify-emojis name))
          (display (when emoji-data
-                    (pcase emojify-display-style
-                      (`image (emojify--get-image-display emoji-data))
-                      (`unicode (emojify--get-unicode-display emoji-data))
-                      (`ascii (emojify--get-ascii-display emoji-data))))))
+                    (funcall (pcase emojify-display-style
+                               (`image #'emojify--get-image-display)
+                               (`unicode #'emojify--get-unicode-display)
+                               (`ascii #'emojify--get-ascii-display))
+                             emoji-data
+                             emoji-start
+                             emoji-end))))
     (when display
       (list 'display display))))
 
@@ -567,7 +598,9 @@ inhibits buffer change, point motion hooks.
 
 Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-region'"
   (declare (debug t) (indent 0))
-  `(let ((inhibit-point-motion-hooks t))
+  `(let ((inhibit-point-motion-hooks t)
+         (emojify-region-beg (when (region-active-p) (region-beginning)))
+         (emojify-region-end (when (region-active-p) (region-end))))
      (with-silent-modifications
        (save-match-data
          (save-excursion
@@ -617,7 +650,7 @@ TODO: Skip emojifying if region is already emojified."
 
                      (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-            (let ((display-props (emojify--get-text-display-props match)))
+            (let ((display-props (emojify--get-text-display-props match match-beginning match-end)))
               (when display-props
                 (add-text-properties match-beginning
                                      match-end
@@ -697,6 +730,7 @@ Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
          (end (or end (cdr area))))
+    (message "Redisplaying in %d => %d" beg end)
     (if emojify-debug-mode
         (progn (emojify-undisplay-emojis-in-region beg end)
                (emojify-display-emojis-in-region beg end))
