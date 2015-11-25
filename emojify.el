@@ -694,29 +694,21 @@ BEG and END are the beginning and end of the region respectively"
 
 Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
-         (beg (if beg
-                  (save-excursion
-                    (goto-char beg)
-                    (line-beginning-position))
-                (car area)))
-         (end (if end
-                  (save-excursion
-                    (goto-char end)
-                    (line-end-position))
-                (cdr area))))
+         (beg (or beg (car area)))
+         (end (or end (cdr area))))
     (if emojify-debug-mode
         (progn (emojify-undisplay-emojis-in-region beg end)
                (emojify-display-emojis-in-region beg end))
       (ignore-errors (emojify-undisplay-emojis-in-region beg end)
                      (emojify-display-emojis-in-region beg end)))))
 
-(defun emojify-after-change-function (beg end _len)
-  "Redisplay emojis in region after change.
-
-This functions is added to `after-change-functions'.  See documentation
-of `after-change-functions' to understand the meaning of BEG, END and LEN."
-  (let ((inhibit-read-only t))
-    (emojify-redisplay-emojis beg end)))
+(defun emojify-after-change-extend-region-function (beg end _len)
+  (setq jit-lock-start (save-excursion
+                         (goto-char beg)
+                         (line-beginning-position))
+        jit-lock-end (save-excursion
+                       (goto-char end)
+                       (line-end-position))))
 
 
 
@@ -731,8 +723,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
     ;; Install our jit-lock function
     (jit-lock-register #'emojify-redisplay-emojis)
 
-    ;; Add an after change hook to emojify regions on change
-    (add-hook 'after-change-functions #'emojify-after-change-function t t)
+    (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
     ;; Redisplay visible emojis when emoji style changes
     (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis)))
@@ -747,8 +738,7 @@ of `after-change-functions' to understand the meaning of BEG, END and LEN."
   ;; Uninstall our jit-lock function
   (jit-lock-unregister #'emojify-redisplay-emojis)
 
-  ;; Uninstall our after change function
-  (remove-hook 'after-change-functions #'emojify-after-change-function t)
+  (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
 
   ;; Remove style change hooks
   (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis))
