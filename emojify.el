@@ -574,6 +574,12 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
              (widen)
              ,@forms))))))
 
+(defun emojify-message (format-string &rest args)
+  (when emojify-debug-mode
+    (with-current-buffer (get-buffer-create "emojify-log")
+      (insert (apply #'format format-string args))
+      (insert "\n"))))
+
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
 
