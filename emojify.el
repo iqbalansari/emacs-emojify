@@ -694,8 +694,16 @@ BEG and END are the beginning and end of the region respectively"
 
 Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
-         (beg (or beg (car area)))
-         (end (or end (cdr area))))
+         (beg (if beg
+                  (save-excursion
+                    (goto-char beg)
+                    (line-beginning-position))
+                (car area)))
+         (end (if end
+                  (save-excursion
+                    (goto-char end)
+                    (line-end-position))
+                (cdr area))))
     (if emojify-debug-mode
         (progn (emojify-undisplay-emojis-in-region beg end)
                (emojify-display-emojis-in-region beg end))
@@ -707,17 +715,8 @@ Redisplay emojis in the visible region if BEG and END are not specified"
 
 This functions is added to `after-change-functions'.  See documentation
 of `after-change-functions' to understand the meaning of BEG, END and LEN."
-  (let ((inhibit-read-only t)
-        ;; Extend the region to match the beginning of line where change began
-        (region-end (save-excursion
-                      (goto-char end)
-                      (line-end-position)))
-        ;; Extend the region to match the end of line where change ended
-        (region-start (save-excursion
-                        (goto-char beg)
-                        (line-beginning-position))))
-
-    (emojify-redisplay-emojis region-start region-end)))
+  (let ((inhibit-read-only t))
+    (emojify-redisplay-emojis beg end)))
 
 
 
