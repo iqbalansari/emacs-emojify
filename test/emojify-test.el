@@ -381,9 +381,10 @@
       (emojify-tests-should-not-be-emojified (line-end-position))
       (should (equal (line-end-position) final-line-end))))
 
-  (emojify-tests-with-emojified-buffer "😉:wink: ;)"
-    (dotimes (_ 4)
-      (execute-kbd-macro (kbd "C-d")))
+  (emojify-tests-with-emojified-buffer ";) 😉:wink:"
+    (dotimes (n 4)
+      (execute-kbd-macro (kbd "C-d"))
+      (emojify-redisplay-emojis))
     (should (equal (point-min) (point-max))))
 
   (emojify-tests-with-emojified-buffer "😉:wink: ;)"
@@ -395,7 +396,8 @@
   (emojify-tests-with-emojified-buffer "😉  :smile:"
     (goto-char (1+ (point-min)))
     (dotimes (_ 3)
-      (execute-kbd-macro (kbd "C-d")))
+      (execute-kbd-macro (kbd "C-d"))
+      (emojify-redisplay-emojis))
     (should (equal (1+ (point-min)) (point-max))))
 
   (emojify-tests-with-emojified-buffer "😉:wink: ;)"
