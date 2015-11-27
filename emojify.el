@@ -522,7 +522,8 @@ which is not what we want when falling back in `emojify-delete-emoji'"
           key-binding))))
 
 (defun emojify--inside-rectangle-selection-p (beg end)
-  (when (bound-and-true-p rectangle-mark-mode)
+  (when (and emojify-region-beg
+             (bound-and-true-p rectangle-mark-mode))
     (let ((rect-beg (save-excursion
                       (goto-char emojify-region-beg)
                       (cons (current-column) (line-number-at-pos))))
@@ -536,7 +537,8 @@ which is not what we want when falling back in `emojify-delete-emoji'"
            (<= (cdr rect-beg) (cdr point-pos) (cdr rect-end))))))
 
 (defun emojify--inside-non-rectangle-selection-p (beg end)
-  (when (and (region-active-p)
+  (when (and emojify-region-beg
+             (region-active-p)
              (not (bound-and-true-p rectangle-mark-mode)))
     (<= emojify-region-beg beg end emojify-region-end)))
 
