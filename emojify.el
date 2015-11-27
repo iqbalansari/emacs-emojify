@@ -745,11 +745,8 @@ Redisplay emojis in the visible region if BEG and END are not specified"
                        (goto-char end)
                        (line-end-position))))
 
-(defun emojify-update-visible-emojis ()
-  (emojify-update-emojis-in-region (window-start) (window-end)))
-
 (defun emojify-setup-emoji-update-on-selection-change ()
-  (emojify-update-visible-emojis)
+  (emojify-update-emojis-in-region (window-start) (window-end))
   (add-hook 'post-command-hook #'emojify-update-visible-emojis))
 
 (defun emojify-teardown-emoji-update-on-selection-change ()
