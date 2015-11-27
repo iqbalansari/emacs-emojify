@@ -528,6 +528,7 @@ which is not what we want when falling back in `emojify-delete-emoji'"
     (cons (current-column) (line-number-at-pos))))
 
 (defun emojify--inside-rectangle-selection-p (beg end)
+  "Check if region marked by BEG and END is inside a rectangular selection."
   (when (and emojify-region-beg
              (bound-and-true-p rectangle-mark-mode))
     (let ((rect-beg (emojify--get-point-col-and-line emojify-region-beg))
@@ -540,6 +541,7 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                (<= (cdr rect-beg) (cdr emoji-end-pos) (cdr rect-end)))))))
 
 (defun emojify--inside-non-rectangle-selection-p (beg end)
+  "Check if region marked by BEG and END is inside a regular selection."
   (when (and emojify-region-beg
              (region-active-p)
              (not (bound-and-true-p rectangle-mark-mode)))
@@ -547,12 +549,14 @@ which is not what we want when falling back in `emojify-delete-emoji'"
         (<= emojify-region-beg end emojify-region-end))))
 
 (defun emojify--get-image-background (beg end)
+  "Get the color to be used as background for emoji in region"
   (when (or (emojify--inside-non-rectangle-selection-p beg end)
             (emojify--inside-rectangle-selection-p beg end))
     (face-background 'region)))
 
 (defun emojify--get-image-display (data beg end)
-  "Get the display text property to display the emoji specified in DATA as an image."
+  "Get the display text property to display the emoji specified in DATA as an image
+in region delimited by BEG and END."
   (let* ((image-file (expand-file-name (ht-get data "image")
                                        emojify-image-dir))
          (image-type (intern (upcase (file-name-extension image-file)))))
@@ -572,7 +576,8 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                     :height (emojify-default-font-height)))))
 
 (defun emojify--get-unicode-display (data _beg _end)
-  "Get the display text property to display the emoji specified in DATA as unicode characters."
+  "Get the display text property to display the emoji specified in DATA as unicode characters.
+_BEG and _END are ignored."
   (let* ((unicode (ht-get data "unicode"))
          (characters (when unicode
                        (string-to-vector unicode))))
@@ -580,7 +585,8 @@ which is not what we want when falling back in `emojify-delete-emoji'"
       unicode)))
 
 (defun emojify--get-ascii-display (data _beg _end)
-  "Get the display text property to display the emoji specified in DATA as ascii characters."
+  "Get the display text property to display the emoji specified in DATA as ascii characters.
+_BEG and _END are ignored."
   (ht-get data "ascii"))
 
 (defun emojify--get-text-display-props (name emoji-start emoji-end)
@@ -614,6 +620,10 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
              ,@forms))))))
 
 (defun emojify-message (format-string &rest args)
+  "Log debugging messages to buffer named 'emojify-log'.
+
+This is a substitute to `message' since using it during redisplay causes errors.
+FORMAT-STRING and ARGS are same as the arguments to `message'."
   (when emojify-debug-mode
     (with-current-buffer (get-buffer-create "emojify-log")
       (insert (apply #'format format-string args))
