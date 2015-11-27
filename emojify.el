@@ -503,7 +503,7 @@ mark the start and end of region containing the text."
     (when (and (equal buffer (current-buffer))
                (or (< match-end new-point)
                    (< new-point match-beginning)))
-      (emojify-redisplay-emojis match-beginning match-end))))
+      (emojify-redisplay-emojis-in-region match-beginning match-end))))
 
 (defun emojify--find-key-binding-ignoring-emojify-keymap (key)
   "Find the binding for given KEY ignoring the text properties at point.
@@ -551,6 +551,7 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                                        emojify-image-dir))
          (image-type (intern (upcase (file-name-extension image-file)))))
     (when (file-exists-p image-file)
+      (emojify-message "Color is (%s) %d => %d" (emojify--get-image-background beg end) beg end)
       (create-image image-file
                     ;; use imagemagick if available and supports PNG images
                     ;; (allows resizing images)
@@ -598,9 +599,7 @@ inhibits buffer change, point motion hooks.
 
 Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-region'"
   (declare (debug t) (indent 0))
-  `(let ((inhibit-point-motion-hooks t)
-         (emojify-region-beg (when (region-active-p) (region-beginning)))
-         (emojify-region-end (when (region-active-p) (region-end))))
+  `(let ((inhibit-point-motion-hooks t))
      (with-silent-modifications
        (save-match-data
          (save-excursion
@@ -723,14 +722,13 @@ BEG and END are the beginning and end of the region respectively"
 (put 'emojify-delete-emoji-forward 'delete-selection 'supersede)
 (put 'emojify-delete-emoji-backward 'delete-selection 'supersede)
 
-(defun emojify-redisplay-emojis (&optional beg end)
+(defun emojify-redisplay-emojis-in-region (&optional beg end)
   "Redisplay emojis in region between BEG and END.
 
 Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
          (end (or end (cdr area))))
-    (message "Redisplaying in %d => %d" beg end)
     (if emojify-debug-mode
         (progn (emojify-undisplay-emojis-in-region beg end)
                (emojify-display-emojis-in-region beg end))
@@ -745,6 +743,36 @@ Redisplay emojis in the visible region if BEG and END are not specified"
                        (goto-char end)
                        (line-end-position))))
 
+(defun emojify-update-visible-emojis ()
+  (emojify-update-emojis-in-region (window-start) (window-end)))
+
+(defun emojify-setup-emoji-update-on-selection-change ()
+  (emojify-update-visible-emojis)
+  (add-hook 'post-command-hook #'emojify-update-visible-emojis))
+
+(defun emojify-teardown-emoji-update-on-selection-change ()
+  (emojify-update-emojis-in-region (point-min) (point-max))
+  (remove-hook 'post-command-hook #'emojify-update-visible-emojis))
+
+(defun emojify-update-emojis-in-region (&optional beg end)
+  (interactive "r")
+  (when (equal emojify-display-style 'image)
+    (emojify-with-saved-buffer-state
+      (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
+            (emojify-region-end (when (region-active-p) (region-end))))
+        (while (and (> end beg)
+                    (setq emoji-start (text-property-any beg end 'emojified t)))
+          (let* ((emoji-end (get-text-property emoji-start 'emojify-end))
+                 (current-disp (get-text-property emoji-start 'display)))
+            (plist-put (cdr current-disp)
+                       :background (emojify--get-image-background emoji-start
+                                                                  emoji-end))
+            (setq beg emoji-end)))))))
+
+(add-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change)
+(add-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change)
+
+
 
 
 (defun emojify-turn-on-emojify-mode ()
@@ -756,12 +784,12 @@ Redisplay emojis in the visible region if BEG and END are not specified"
 
   (when (emojify-buffer-p (current-buffer))
     ;; Install our jit-lock function
-    (jit-lock-register #'emojify-redisplay-emojis)
+    (jit-lock-register #'emojify-redisplay-emojis-in-region)
 
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
     ;; Redisplay visible emojis when emoji style changes
-    (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis)))
+    (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
 
 (defun emojify-turn-off-emojify-mode ()
   "Turn off `emojify-mode' in current buffer."
@@ -771,12 +799,12 @@ Redisplay emojis in the visible region if BEG and END are not specified"
     (emojify-undisplay-emojis-in-region (point-min) (point-max)))
 
   ;; Uninstall our jit-lock function
-  (jit-lock-unregister #'emojify-redisplay-emojis)
+  (jit-lock-unregister #'emojify-redisplay-emojis-in-region)
 
   (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
 
   ;; Remove style change hooks
-  (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis))
+  (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region))
 
 ;;;###autoload
 (define-minor-mode emojify-mode
@@ -796,7 +824,7 @@ Redisplay emojis in the visible region if BEG and END are not specified"
 (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
   "Advice `text-scale-increase' to trigger resizing of emojis on resize."
   (when emojify-mode
-    (emojify-redisplay-emojis)))
+    (emojify-redisplay-emojis-in-region)))
 
 (ad-activate #'text-scale-increase)
 
