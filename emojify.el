@@ -521,26 +521,30 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                                          (current-active-maps)))
           key-binding))))
 
+(defun emojify--get-point-col-and-line (point)
+  "Return a cons of containing the column number and line at POINT."
+  (save-excursion
+    (goto-char point)
+    (cons (current-column) (line-number-at-pos))))
+
 (defun emojify--inside-rectangle-selection-p (beg end)
   (when (and emojify-region-beg
              (bound-and-true-p rectangle-mark-mode))
-    (let ((rect-beg (save-excursion
-                      (goto-char emojify-region-beg)
-                      (cons (current-column) (line-number-at-pos))))
-          (rect-end (save-excursion
-                      (goto-char emojify-region-end)
-                      (cons (current-column) (line-number-at-pos))))
-          (point-pos (save-excursion
-                       (goto-char beg)
-                       (cons (current-column) (line-number-at-pos)))))
-      (and (<= (car rect-beg) (car point-pos) (car rect-end))
-           (<= (cdr rect-beg) (cdr point-pos) (cdr rect-end))))))
+    (let ((rect-beg (emojify--get-point-col-and-line emojify-region-beg))
+          (rect-end (emojify--get-point-col-and-line emojify-region-end))
+          (emoji-start-pos (emojify--get-point-col-and-line beg))
+          (emoji-end-pos (emojify--get-point-col-and-line end)))
+      (or (and (<= (car rect-beg) (car emoji-start-pos) (car rect-end))
+               (<= (cdr rect-beg) (cdr emoji-start-pos) (cdr rect-end)))
+          (and (<= (car rect-beg) (car emoji-end-pos) (car rect-end))
+               (<= (cdr rect-beg) (cdr emoji-end-pos) (cdr rect-end)))))))
 
 (defun emojify--inside-non-rectangle-selection-p (beg end)
   (when (and emojify-region-beg
              (region-active-p)
              (not (bound-and-true-p rectangle-mark-mode)))
-    (<= emojify-region-beg beg end emojify-region-end)))
+    (or (<= emojify-region-beg beg emojify-region-end)
+        (<= emojify-region-beg end emojify-region-end))))
 
 (defun emojify--get-image-background (beg end)
   (when (or (emojify--inside-non-rectangle-selection-p beg end)
