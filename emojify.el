@@ -97,6 +97,16 @@ fail.
 Set `emojify-debug-mode' to non-nil to instruct emojify to not silence any
 errors during operation.")
 
+(defun emojify-message (format-string &rest args)
+  "Log debugging messages to buffer named 'emojify-log'.
+
+This is a substitute to `message' since using it during redisplay causes errors.
+FORMAT-STRING and ARGS are same as the arguments to `message'."
+  (when emojify-debug-mode
+    (with-current-buffer (get-buffer-create "emojify-log")
+      (insert (apply #'format format-string args))
+      (insert "\n"))))
+
 (defun emojify--get-relevant-region ()
   "Try getting region in buffer that completely covers the current window."
   (let* ((window-size (- (window-end) (window-start)))
@@ -619,16 +629,6 @@ Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-regi
              (widen)
              ,@forms))))))
 
-(defun emojify-message (format-string &rest args)
-  "Log debugging messages to buffer named 'emojify-log'.
-
-This is a substitute to `message' since using it during redisplay causes errors.
-FORMAT-STRING and ARGS are same as the arguments to `message'."
-  (when emojify-debug-mode
-    (with-current-buffer (get-buffer-create "emojify-log")
-      (insert (apply #'format format-string args))
-      (insert "\n"))))
-
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
 
@@ -717,6 +717,38 @@ BEG and END are the beginning and end of the region respectively"
         ;; Setup the next iteration
         (setq beg emoji-end)))))
 
+(defun emojify-redisplay-emojis-in-region (&optional beg end)
+  "Redisplay emojis in region between BEG and END.
+
+Redisplay emojis in the visible region if BEG and END are not specified"
+  (let* ((area (emojify--get-relevant-region))
+         (beg (or beg (car area)))
+         (end (or end (cdr area))))
+    (if emojify-debug-mode
+        (progn (emojify-undisplay-emojis-in-region beg end)
+               (emojify-display-emojis-in-region beg end))
+      (ignore-errors (emojify-undisplay-emojis-in-region beg end)
+                     (emojify-display-emojis-in-region beg end)))))
+
+(defun emojify-after-change-extend-region-function (beg end _len)
+  "Extend the region to be emojified.
+
+This simply extends the region to be fontified to the start of line at BEG and
+end of line at END.  _LEN is ignored.
+
+The idea is since an emoji cannot span multiple lines, redisplaying complete
+lines ensures that all the possibly affected emojis are redisplayed."
+  (setq jit-lock-start (save-excursion
+                         (goto-char beg)
+                         (line-beginning-position))
+        jit-lock-end (save-excursion
+                       (goto-char end)
+                       (line-end-position))))
+
+
+
+;; Electric delete functionality
+
 (defun emojify-delete-emoji (point)
   "Delete emoji at POINT."
   (if (get-text-property point 'emojified)
@@ -738,26 +770,9 @@ BEG and END are the beginning and end of the region respectively"
 (put 'emojify-delete-emoji-forward 'delete-selection 'supersede)
 (put 'emojify-delete-emoji-backward 'delete-selection 'supersede)
 
-(defun emojify-redisplay-emojis-in-region (&optional beg end)
-  "Redisplay emojis in region between BEG and END.
+
 
-Redisplay emojis in the visible region if BEG and END are not specified"
-  (let* ((area (emojify--get-relevant-region))
-         (beg (or beg (car area)))
-         (end (or end (cdr area))))
-    (if emojify-debug-mode
-        (progn (emojify-undisplay-emojis-in-region beg end)
-               (emojify-display-emojis-in-region beg end))
-      (ignore-errors (emojify-undisplay-emojis-in-region beg end)
-                     (emojify-display-emojis-in-region beg end)))))
-
-(defun emojify-after-change-extend-region-function (beg end _len)
-  (setq jit-lock-start (save-excursion
-                         (goto-char beg)
-                         (line-beginning-position))
-        jit-lock-end (save-excursion
-                       (goto-char end)
-                       (line-end-position))))
+;; Updating background color on selection
 
 (defun emojify-setup-emoji-update-on-selection-change ()
   (emojify-update-emojis-in-region (window-start) (window-end))
