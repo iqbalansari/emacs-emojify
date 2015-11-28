@@ -790,7 +790,12 @@ lines ensures that all the possibly affected emojis are redisplayed."
             (setq beg emoji-end)))))))
 
 (defun emojify-update-visible-emojis-background-after-command ()
-  (emojify-update-emojis-background-in-region (window-start) (window-end)))
+  ;; Window end is not reliable in post-command hook
+  (let ((window-end (min (+ (window-start) (* (window-text-height)
+                                              (window-text-width)))
+                         (point-max))))
+    (emojify-message "Updating emoji backgrounds in %d %d " (window-start) window-end)
+    (emojify-update-emojis-background-in-region (window-start) window-end)))
 
 (defun emojify-setup-emoji-update-on-selection-change ()
   (emojify-update-visible-emojis-background-after-command)
