@@ -780,7 +780,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
   (when (equal emojify-display-style 'image)
     (emojify-with-saved-buffer-state
       (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
-            (emojify-region-end (when (region-active-p) (region-end))))
+            (emojify-region-end (when (region-active-p) (region-end)))
+            emoji-start)
         (while (and (> end beg)
                     (setq emoji-start (text-property-any beg end 'emojified t)))
           (let* ((emoji-end (get-text-property emoji-start 'emojify-end))
