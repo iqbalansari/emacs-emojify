@@ -105,6 +105,7 @@ FORMAT-STRING and ARGS are same as the arguments to `message'."
   (when emojify-debug-mode
     (emojify-with-saved-buffer-state
       (with-current-buffer (get-buffer-create "emojify-log")
+        (goto-char (point-max))
         (insert (apply #'format format-string args))
         (insert "\n")))))
 
