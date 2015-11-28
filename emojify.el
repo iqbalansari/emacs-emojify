@@ -833,8 +833,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
     ;; Update emoji backgrounds when region is selected
-    (add-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change)
-    (add-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change)
+    (add-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change t t)
+    (add-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change t t)
 
     ;; Redisplay visible emojis when emoji style changes
     (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
@@ -851,8 +851,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
   (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
 
   ;; Update emoji backgrounds when region is selected
-  (remove-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change)
-  (remove-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change)
+  (remove-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change t)
+  (remove-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change t)
 
   ;; Remove style change hooks
   (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region))
