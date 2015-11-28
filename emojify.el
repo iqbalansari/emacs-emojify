@@ -774,16 +774,7 @@ lines ensures that all the possibly affected emojis are redisplayed."
 
 ;; Updating background color on selection
 
-(defun emojify-setup-emoji-update-on-selection-change ()
-  (emojify-update-emojis-in-region (window-start) (window-end))
-  (add-hook 'post-command-hook #'emojify-update-visible-emojis))
-
-(defun emojify-teardown-emoji-update-on-selection-change ()
-  (emojify-update-emojis-in-region (point-min) (point-max))
-  (remove-hook 'post-command-hook #'emojify-update-visible-emojis))
-
-(defun emojify-update-emojis-in-region (&optional beg end)
-  (interactive "r")
+(defun emojify-update-emojis-background-in-region (&optional beg end)
   (when (equal emojify-display-style 'image)
     (emojify-with-saved-buffer-state
       (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
@@ -797,9 +788,16 @@ lines ensures that all the possibly affected emojis are redisplayed."
                                                                   emoji-end))
             (setq beg emoji-end)))))))
 
-(add-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change)
-(add-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change)
+(defun emojify-update-visible-emojis-background-after-command ()
+  (emojify-update-emojis-background-in-region (window-start) (window-end)))
 
+(defun emojify-setup-emoji-update-on-selection-change ()
+  (emojify-update-visible-emojis-background-after-command)
+  (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command))
+
+(defun emojify-teardown-emoji-update-on-selection-change ()
+  (emojify-update-emojis-background-in-region (point-min) (point-max))
+  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command))
 
 
 
