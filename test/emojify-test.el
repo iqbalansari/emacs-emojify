@@ -55,7 +55,7 @@
 ;;   :tags '(core after-change)
 ;;   (emojify-tests-with-emojified-buffer ":smile:\n:)"
 ;;     (emacs-lisp-mode)
-;;     (emojify-redisplay-emojis)
+;;     (emojify-redisplay-emojis-in-region)
 ;;     (emojify-mode +1)
 ;;     (emojify-tests-should-not-be-emojified (line-beginning-position))
 ;;     (emojify-tests-should-not-be-emojified (line-beginning-position 2))
@@ -72,7 +72,7 @@
 ;;   :tags '(core after-change)
 ;;   (emojify-tests-with-emojified-buffer ""
 ;;     (emacs-lisp-mode)
-;;     (emojify-redisplay-emojis)
+;;     (emojify-redisplay-emojis-in-region)
 ;;     (emojify-mode +1)
 ;;     (emojify-insert-string "; :)")
 ;;     (emojify-tests-should-be-emojified 4)
@@ -150,28 +150,28 @@
            (prog-ascii-emoji-pos (1+ (line-beginning-position 3))))
       (emacs-lisp-mode)
       (setq emojify-prog-contexts 'both)
-      (emojify-redisplay-emojis)
+      (emojify-redisplay-emojis-in-region)
       (emojify-tests-should-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-be-emojified string-github-emoji-pos)
       (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos)
 
       (setq emojify-prog-contexts 'comments)
-      (emojify-redisplay-emojis)
+      (emojify-redisplay-emojis-in-region)
       (emojify-tests-should-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-not-be-emojified string-github-emoji-pos)
       (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos)
 
       (setq emojify-prog-contexts 'string)
-      (emojify-redisplay-emojis)
+      (emojify-redisplay-emojis-in-region)
       (emojify-tests-should-not-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-be-emojified string-github-emoji-pos)
       (emojify-tests-should-not-be-emojified prog-ascii-emoji-pos)
 
       (setq emojify-prog-contexts 'none)
-      (emojify-redisplay-emojis)
+      (emojify-redisplay-emojis-in-region)
       (emojify-tests-should-not-be-emojified comment-ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified comment-github-emoji-pos)
       (emojify-tests-should-not-be-emojified string-github-emoji-pos)
@@ -182,19 +182,19 @@
   ;; At start of comment
   (emojify-tests-with-emojified-static-buffer ";:)"
     (emacs-lisp-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-be-emojified (1+ (point-min))))
 
   ;; In comment after space
   (emojify-tests-with-emojified-static-buffer "; :)"
     (emacs-lisp-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-be-emojified (+ 2 (point-min))))
 
   ;; Inside a comment
   (emojify-tests-with-emojified-static-buffer "/**\n:)"
     (c-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-be-emojified (line-beginning-position 2)))
 
   ;; Immediately after a word
@@ -220,13 +220,13 @@
   ;; Outside a comment
   (emojify-tests-with-emojified-static-buffer "/**/:)"
     (c-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (+ 4 (point-min))))
 
   ;; Surrounded by comments
   (emojify-tests-with-emojified-static-buffer "/*:)*/"
     (c-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (+ 2 (point-min)))))
 
 (ert-deftest emojify-tests-multiple-emojis-in-sequence ()
@@ -269,14 +269,14 @@
 
   (emojify-tests-with-emojified-static-buffer ";; (lambda () 8)"
     (emacs-lisp-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (+ 14 (point-min)))))
 
 (ert-deftest emojify-tests-emojifying-org-mode-buffers ()
   :tags '(org-mode contextual)
   (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
     (org-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (1- (line-end-position)))
     (emojify-tests-should-be-emojified (line-beginning-position 2)))
 
@@ -285,29 +285,29 @@
     ;; if first item was not a headline
     (with-mock (stub org-set-startup-visibility => nil)
                (org-mode))
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (point-min)))
 
   (emojify-tests-with-emojified-static-buffer "* 8)"
     (org-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-be-emojified (1- (point-max))))
 
   (emojify-tests-with-emojified-static-buffer "#+BEGIN_SRC emacs-lisp\n:)\n#+END_SRC"
     (org-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (line-beginning-position 2)))
 
   ;; TODO: This does not work yet
   ;; (emojify-tests-with-emojified-static-buffer "8) 8)"
   ;;   (org-mode)
-  ;;   (emojify-redisplay-emojis)
+  ;;   (emojify-redisplay-emojis-in-region)
   ;;   (emojify-tests-should-be-emojified (1- (point-max)))
   ;;   (emojify-tests-should-not-be-emojified (1+ (point-min))))
 
   (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
     (org-agenda-mode)
-    (emojify-redisplay-emojis)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (1- (line-end-position)))
     (emojify-tests-should-be-emojified (line-beginning-position 2))))
 
@@ -385,7 +385,7 @@
   (emojify-tests-with-emojified-buffer ";) 😉:wink:"
     (dotimes (n 4)
       (execute-kbd-macro (kbd "C-d"))
-      (emojify-redisplay-emojis))
+      (emojify-redisplay-emojis-in-region))
     (should (equal (point-min) (point-max))))
 
   (emojify-tests-with-emojified-buffer "😉:wink: ;)"
@@ -398,7 +398,7 @@
     (goto-char (1+ (point-min)))
     (dotimes (_ 3)
       (execute-kbd-macro (kbd "C-d"))
-      (emojify-redisplay-emojis))
+      (emojify-redisplay-emojis-in-region))
     (should (equal (1+ (point-min)) (point-max))))
 
   (emojify-tests-with-emojified-buffer "😉:wink: ;)"
