@@ -103,9 +103,10 @@ errors during operation.")
 This is a substitute to `message' since using it during redisplay causes errors.
 FORMAT-STRING and ARGS are same as the arguments to `message'."
   (when emojify-debug-mode
-    (with-current-buffer (get-buffer-create "emojify-log")
-      (insert (apply #'format format-string args))
-      (insert "\n"))))
+    (emojify-with-saved-buffer-state
+      (with-current-buffer (get-buffer-create "emojify-log")
+        (insert (apply #'format format-string args))
+        (insert "\n")))))
 
 (defun emojify--get-relevant-region ()
   "Try getting region in buffer that completely covers the current window."
