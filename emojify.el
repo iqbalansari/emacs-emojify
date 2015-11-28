@@ -628,8 +628,8 @@ TODO: Skip emojifying if region is already emojified."
                                              (list 'emojified t
                                                    'emojify-buffer buffer
                                                    'emojify-text match
-                                                   'emojify-beginning match-beginning
-                                                   'emojify-end match-end
+                                                   'emojify-beginning (copy-marker match-beginning)
+                                                   'emojify-end (copy-marker match-end)
                                                    'keymap emojify-emoji-keymap
                                                    'point-entered #'emojify-point-entered-function
                                                    'help-echo #'emojify-help-function)))))))))))
