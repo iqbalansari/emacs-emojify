@@ -507,12 +507,9 @@ mark the start and end of region containing the text."
 
 This is needed since `key-binding' looks up in keymap text property as well
 which is not what we want when falling back in `emojify-delete-emoji'"
-  (let* ((minor-mode-binding (minor-mode-key-binding key))
-         (local-binding (local-key-binding key))
-         (global-binding (global-key-binding key))
-         (key-binding (or minor-mode-binding
-                          local-binding
-                          global-binding)))
+  (let* ((key-binding (or (minor-mode-key-binding key)
+                          (local-key-binding key)
+                          (global-key-binding key))))
     (when key-binding
       (or (command-remapping key-binding
                              nil
