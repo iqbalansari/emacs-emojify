@@ -97,6 +97,14 @@ fail.
 Set `emojify-debug-mode' to non-nil to instruct emojify to not silence any
 errors during operation.")
 
+(defmacro emojify-execute-ignoring-errors-unless-debug (&rest forms)
+  (declare (debug t) (indent 0))
+  `(if emojify-debug-mode
+       (progn
+         ,@forms)
+     (ignore-errors
+       ,@forms)))
+
 (defun emojify-message (format-string &rest args)
   "Log debugging messages to buffer named 'emojify-log'.
 
@@ -731,11 +739,9 @@ Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
          (end (or end (cdr area))))
-    (if emojify-debug-mode
-        (progn (emojify-undisplay-emojis-in-region beg end)
-               (emojify-display-emojis-in-region beg end))
-      (ignore-errors (emojify-undisplay-emojis-in-region beg end)
-                     (emojify-display-emojis-in-region beg end)))))
+    (emojify-execute-ignoring-errors-unless-debug
+      (emojify-undisplay-emojis-in-region beg end)
+      (emojify-display-emojis-in-region beg end))))
 
 (defun emojify-after-change-extend-region-function (beg end _len)
   "Extend the region to be emojified.
