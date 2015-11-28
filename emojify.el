@@ -788,7 +788,7 @@ lines ensures that all the possibly affected emojis are redisplayed."
             (plist-put (cdr current-disp)
                        :background (emojify--get-image-background emoji-start
                                                                   emoji-end))
-            (setq beg emoji-end)))))))
+            (setq beg (1+ emoji-end))))))))
 
 (defun emojify-record-window-scroll (window display-start)
   (let* ((window-start display-start)
