@@ -449,7 +449,7 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
   (let* ((text-props (text-properties-at new-point))
          (buffer (plist-get text-props 'emojify-buffer))
          (match (plist-get text-props 'emojify-text))
-         (match-beginning (plist-get text-props 'emojify-start))
+         (match-beginning (plist-get text-props 'emojify-beginning))
          (match-end (plist-get text-props 'emojify-end)))
     (when (eq buffer (current-buffer))
       (cond ((and (eq emojify-point-entered-behaviour 'echo)
@@ -628,7 +628,7 @@ TODO: Skip emojifying if region is already emojified."
                                              (list 'emojified t
                                                    'emojify-buffer buffer
                                                    'emojify-text match
-                                                   'emojify-start match-beginning
+                                                   'emojify-beginning match-beginning
                                                    'emojify-end match-end
                                                    'keymap emojify-emoji-keymap
                                                    'point-entered #'emojify-point-entered-function
@@ -664,7 +664,7 @@ BEG and END are the beginning and end of the region respectively"
                                                                       'point-left t
                                                                       'emojify-buffer t
                                                                       'emojify-text t
-                                                                      'emojify-start t
+                                                                      'emojify-beginning t
                                                                       'emojify-end t
                                                                       'keymap t
                                                                       'help-echo t
@@ -675,7 +675,7 @@ BEG and END are the beginning and end of the region respectively"
 (defun emojify-delete-emoji (point)
   "Delete emoji at POINT."
   (if (get-text-property point 'emojified)
-      (delete-region (get-text-property point 'emojify-start)
+      (delete-region (get-text-property point 'emojify-beginning)
                      (get-text-property point 'emojify-end))
     (call-interactively (emojify--find-key-binding-ignoring-emojify-keymap (this-command-keys)))))
 

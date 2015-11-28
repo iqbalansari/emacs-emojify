@@ -20,7 +20,7 @@
   (emojify-tests-with-emojified-static-buffer ":)"
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point-min) 'emojify-buffer) (current-buffer)))
-    (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
+    (should (equal (get-text-property (point-min) 'emojify-beginning) (point-min)))
     (should (equal (get-text-property (point-min) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point-min) 'emojify-text)  ":)"))))
 
@@ -29,7 +29,7 @@
   (emojify-tests-with-emojified-static-buffer ":smile:"
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
-    (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
+    (should (equal (get-text-property (point-min) 'emojify-beginning) (point-min)))
     (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  ":smile:"))))
 
@@ -38,7 +38,7 @@
   (emojify-tests-with-emojified-static-buffer "😉"
     (emojify-tests-should-be-emojified (point-min))
     (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
-    (should (equal (get-text-property (point-min) 'emojify-start) (point-min)))
+    (should (equal (get-text-property (point-min) 'emojify-beginning) (point-min)))
     (should (equal (get-text-property (point) 'emojify-end) (point-max)))
     (should (equal (get-text-property (point) 'emojify-text)  "😉"))))
 
@@ -363,21 +363,21 @@
   :tags '(electric-delete)
   (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
     (goto-char (line-end-position))
-    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-beginning)))
       (execute-kbd-macro [backspace])
       (emojify-tests-should-not-be-emojified (line-end-position))
       (should (equal (line-end-position) final-line-end))))
 
   (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
     (goto-char (line-end-position 2))
-    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-beginning)))
       (execute-kbd-macro [backspace])
       (emojify-tests-should-not-be-emojified (line-end-position))
       (should (equal (line-end-position) final-line-end))))
 
   (emojify-tests-with-emojified-buffer "Unicode emoji 😉\nGithub emoji :wink:\nAscii emoji ;)"
     (goto-char (line-end-position 3))
-    (let ((final-line-end (get-text-property (1- (point)) 'emojify-start)))
+    (let ((final-line-end (get-text-property (1- (point)) 'emojify-beginning)))
       (execute-kbd-macro [backspace])
       (emojify-tests-should-not-be-emojified (line-end-position))
       (should (equal (line-end-position) final-line-end))))
