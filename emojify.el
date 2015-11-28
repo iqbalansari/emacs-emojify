@@ -110,7 +110,12 @@ FORMAT-STRING and ARGS are same as the arguments to `message'."
         (insert "\n")))))
 
 (defun emojify--get-relevant-region ()
-  "Try getting region in buffer that completely covers the current window."
+  "Try getting region in buffer that completely covers the current window.
+
+This is used instead of directly using `window-start' and `window-end', since they
+return the values corresponding buffer in currently selected window, which is
+incorrect if the buffer where there are called is not actually the buffer visible
+in the selected window."
   (let* ((window-size (- (window-end) (window-start)))
          (start (max (- (point) window-size) (point-min)))
          (end (min (+ (point) window-size) (point-max))))
