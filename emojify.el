@@ -790,21 +790,32 @@ lines ensures that all the possibly affected emojis are redisplayed."
                                                                   emoji-end))
             (setq beg emoji-end)))))))
 
+(defun emojify-record-window-scroll (window display-start)
+  (let* ((window-start display-start)
+         (window-end (min (+ window-start (* (window-text-height)
+                                             (window-text-width)))
+                          (point-max))))
+    (emojify-message "Updating emoji backgrounds in %d %d " window-start window-end)
+    (emojify-update-emojis-background-in-region window-start window-end)))
+
 (defun emojify-update-visible-emojis-background-after-command ()
-  ;; Window end is not reliable in post-command hook
-  (let ((window-end (min (+ (window-start) (* (window-text-height)
-                                              (window-text-width)))
-                         (point-max))))
-    (emojify-message "Updating emoji backgrounds in %d %d " (window-start) window-end)
-    (emojify-update-emojis-background-in-region (window-start) window-end)))
+  ;; The function window-end is not reliable in post-command hook
+  (let* ((window-start (window-start))
+         (window-end (min (+ window-start (* (window-text-height)
+                                               (window-text-width)))
+                          (point-max))))
+    (emojify-message "Updating emoji backgrounds in %d %d" window-start window-end)
+    (emojify-update-emojis-background-in-region window-start window-end)))
 
 (defun emojify-setup-emoji-update-on-selection-change ()
   (emojify-update-visible-emojis-background-after-command)
-  (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command))
+  (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command)
+  (add-hook 'window-scroll-functions #'emojify-record-window-scroll))
 
 (defun emojify-teardown-emoji-update-on-selection-change ()
   (emojify-update-emojis-background-in-region (point-min) (point-max))
-  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command))
+  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command)
+  (remove-hook 'window-scroll-functions #'emojify-record-window-scroll))
 
 
 
