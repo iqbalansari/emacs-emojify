@@ -98,6 +98,7 @@ Set `emojify-debug-mode' to non-nil to instruct emojify to not silence any
 errors during operation.")
 
 (defmacro emojify-execute-ignoring-errors-unless-debug (&rest forms)
+  "Execute FORMS ignoring errors unless `emojify-debug-mode' is non-nil."
   (declare (debug t) (indent 0))
   `(if emojify-debug-mode
        (progn
@@ -120,10 +121,10 @@ FORMAT-STRING and ARGS are same as the arguments to `message'."
 (defun emojify--get-relevant-region ()
   "Try getting region in buffer that completely covers the current window.
 
-This is used instead of directly using `window-start' and `window-end', since they
-return the values corresponding buffer in currently selected window, which is
-incorrect if the buffer where there are called is not actually the buffer visible
-in the selected window."
+This is used instead of directly using `window-start' and `window-end', since
+they return the values corresponding buffer in currently selected window, which
+is incorrect if the buffer where there are called is not actually the buffer
+visible in the selected window."
   (let* ((window-size (- (window-end) (window-start)))
          (start (max (- (point) window-size) (point-min)))
          (end (min (+ (point) window-size) (point-max))))
@@ -508,9 +509,6 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
-(defvar emojify-region-beg nil)
-(defvar emojify-region-end nil)
-
 (defvar emojify-emoji-keymap (let ((map (make-sparse-keymap)))
                                (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
                                (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
@@ -530,30 +528,26 @@ mark the start and end of region containing the text."
                    (< new-point match-beginning)))
       (emojify-redisplay-emojis-in-region match-beginning match-end))))
 
-(defun emojify--find-key-binding-ignoring-emojify-keymap (key)
-  "Find the binding for given KEY ignoring the text properties at point.
-
-This is needed since `key-binding' looks up in keymap text property as well
-which is not what we want when falling back in `emojify-delete-emoji'"
-  (let* ((key-binding (or (minor-mode-key-binding key)
-                          (local-key-binding key)
-                          (global-key-binding key))))
-    (when key-binding
-      (or (command-remapping key-binding
-                             nil
-                             (seq-filter (lambda (keymap)
-                                           (not (equal keymap emojify-emoji-keymap)))
-                                         (current-active-maps)))
-          key-binding))))
-
 (defun emojify--get-point-col-and-line (point)
   "Return a cons of containing the column number and line at POINT."
   (save-excursion
     (goto-char point)
     (cons (current-column) (line-number-at-pos))))
 
+;; These should be bound dynamically by functions calling
+;; `emojify--inside-rectangle-selection-p' and
+;; `emojify--inside-non-rectangle-selection-p' to region-beginning and
+;; region-end respectively. This is needed mark the original region which is
+;; impossible to get after point moves during processing.
+(defvar emojify-region-beg nil)
+(defvar emojify-region-end nil)
+
 (defun emojify--inside-rectangle-selection-p (beg end)
-  "Check if region marked by BEG and END is inside a rectangular selection."
+  "Check if region marked by BEG and END is inside a rectangular selection.
+
+In addition to explicit the parameters BEG and END, calling functions should
+also dynamically bind `emojify-region-beg' and `emojify-region-end' to beginning
+and end of region respectively."
   (when (and emojify-region-beg
              (bound-and-true-p rectangle-mark-mode))
     (let ((rect-beg (emojify--get-point-col-and-line emojify-region-beg))
@@ -566,7 +560,11 @@ which is not what we want when falling back in `emojify-delete-emoji'"
                (<= (cdr rect-beg) (cdr emoji-end-pos) (cdr rect-end)))))))
 
 (defun emojify--inside-non-rectangle-selection-p (beg end)
-  "Check if region marked by BEG and END is inside a regular selection."
+  "Check if region marked by BEG and END is inside a regular selection.
+
+In addition to the explicit parameters BEG and END, calling functions should
+also dynamically bind `emojify-region-beg' and `emojify-region-end' to beginning
+and end of region respectively."
   (when (and emojify-region-beg
              (region-active-p)
              (not (bound-and-true-p rectangle-mark-mode)))
@@ -574,14 +572,16 @@ which is not what we want when falling back in `emojify-delete-emoji'"
         (<= emojify-region-beg end emojify-region-end))))
 
 (defun emojify--get-image-background (beg end)
-  "Get the color to be used as background for emoji in region"
+  "Get the color to be used as background for emoji between BEG and END."
   (when (or (emojify--inside-non-rectangle-selection-p beg end)
             (emojify--inside-rectangle-selection-p beg end))
     (face-background 'region)))
 
 (defun emojify--get-image-display (data beg end)
-  "Get the display text property to display the emoji specified in DATA as an image
-in region delimited by BEG and END."
+  "Get the display text property to display the emoji as an image.
+
+DATA holds the emoji data, BEG and END delimit the region where emoji will
+be displayed."
   (let* ((image-file (expand-file-name (ht-get data "image")
                                        emojify-image-dir))
          (image-type (intern (upcase (file-name-extension image-file)))))
@@ -601,8 +601,10 @@ in region delimited by BEG and END."
                     :height (emojify-default-font-height)))))
 
 (defun emojify--get-unicode-display (data _beg _end)
-  "Get the display text property to display the emoji specified in DATA as unicode characters.
-_BEG and _END are ignored."
+  "Get the display text property to display the emoji as an unicode character.
+
+DATA holds the emoji data, _BEG and _END delimit the region where emoji will
+be displayed."
   (let* ((unicode (ht-get data "unicode"))
          (characters (when unicode
                        (string-to-vector unicode))))
@@ -610,21 +612,26 @@ _BEG and _END are ignored."
       unicode)))
 
 (defun emojify--get-ascii-display (data _beg _end)
-  "Get the display text property to display the emoji specified in DATA as ascii characters.
-_BEG and _END are ignored."
+  "Get the display text property to display the emoji as an ascii characters.
+
+DATA holds the emoji data, _BEG and _END delimit the region where emoji will
+be displayed."
   (ht-get data "ascii"))
 
-(defun emojify--get-text-display-props (name emoji-start emoji-end)
-  "The the display property for an emoji named NAME."
-  (let* ((emoji-data (ht-get emojify-emojis name))
+(defun emojify--get-text-display-props (text beg end)
+  "Get the display property for an emoji.
+
+TEXT is the text to be displayed as emoji, BEG and END delimit the
+region containing the emoji."
+  (let* ((emoji-data (ht-get emojify-emojis text))
          (display (when emoji-data
                     (funcall (pcase emojify-display-style
                                (`image #'emojify--get-image-display)
                                (`unicode #'emojify--get-unicode-display)
                                (`ascii #'emojify--get-ascii-display))
                              emoji-data
-                             emoji-start
-                             emoji-end))))
+                             beg
+                             end))))
     (when display
       (list 'display display))))
 
@@ -762,6 +769,22 @@ lines ensures that all the possibly affected emojis are redisplayed."
 
 ;; Electric delete functionality
 
+(defun emojify--find-key-binding-ignoring-emojify-keymap (key)
+  "Find the binding for given KEY ignoring the text properties at point.
+
+This is needed since `key-binding' looks up in keymap text property as well
+which is not what we want when falling back in `emojify-delete-emoji'"
+  (let* ((key-binding (or (minor-mode-key-binding key)
+                          (local-key-binding key)
+                          (global-key-binding key))))
+    (when key-binding
+      (or (command-remapping key-binding
+                             nil
+                             (seq-filter (lambda (keymap)
+                                           (not (equal keymap emojify-emoji-keymap)))
+                                         (current-active-maps)))
+          key-binding))))
+
 (defun emojify-delete-emoji (point)
   "Delete emoji at POINT."
   (if (get-text-property point 'emojified)
@@ -780,6 +803,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
   (emojify-delete-emoji (1- (point))))
 
 ;; Integrate with delete-selection-mode
+;; Basically instruct delete-selection mode to override our commands
+;; if the region is active.
 (put 'emojify-delete-emoji-forward 'delete-selection 'supersede)
 (put 'emojify-delete-emoji-backward 'delete-selection 'supersede)
 
@@ -787,7 +812,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
 
 ;; Updating background color on selection
 
-(defun emojify-update-emojis-background-in-region (&optional beg end)
+(defun emojify--update-emojis-background-in-region (&optional beg end)
+  "Update the background color for emojis between BEG and END."
   (when (equal emojify-display-style 'image)
     (emojify-with-saved-buffer-state
       (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
@@ -802,32 +828,65 @@ lines ensures that all the possibly affected emojis are redisplayed."
                                                                   emoji-end))
             (setq beg (1+ emoji-end))))))))
 
-(defun emojify-record-window-scroll (window display-start)
-  (let* ((window-start display-start)
-         (window-end (min (+ window-start (* (window-text-height)
-                                             (window-text-width)))
+(defun emojify--update-emojis-background-in-region-starting-at (point)
+  "Update background color for emojis in buffer starting at POINT.
+
+This updates the emojis in the region starting from POINT, the end of region is
+determined by product of `frame-height' and `frame-width' which roughly
+corresponds to the visible area.  POINT usually corresponds to the starting
+position of the window, see
+`emojify-update-visible-emojis-background-after-command' and
+`emojify-update-visible-emojis-background-after-window-scroll'
+
+NOTE: `window-text-height' and `window-text-width' would have been more
+appropriate here however they were not defined in Emacs v24.3 and below."
+  (let* ((region-beginning point)
+         (region-end (min (+ region-beginning (* (frame-height)
+                                                 (frame-width)))
                           (point-max))))
-    (emojify-message "Updating emoji backgrounds in %d %d " window-start window-end)
-    (emojify-update-emojis-background-in-region window-start window-end)))
+    (emojify--update-emojis-background-in-region region-beginning
+                                                 region-end)))
 
 (defun emojify-update-visible-emojis-background-after-command ()
-  ;; The function window-end is not reliable in post-command hook
-  (let* ((window-start (window-start))
-         (window-end (min (+ window-start (* (window-text-height)
-                                               (window-text-width)))
-                          (point-max))))
-    (emojify-message "Updating emoji backgrounds in %d %d" window-start window-end)
-    (emojify-update-emojis-background-in-region window-start window-end)))
+  "Function added to `post-command-hook' when region is active.
 
-(defun emojify-setup-emoji-update-on-selection-change ()
+This function updates the backgrounds of the emojis in the region changed after
+the command.
+
+Ideally this would have been good enough to update emoji backgounds after region
+changes, unfortunately this does not work well with commands that scroll the
+window specifically `window-start' and `window-end' (sometimes only `window-end')
+report incorrect values.
+
+To work around this
+`emojify-update-visible-emojis-background-after-window-scroll' is added to
+`window-scroll-functions' to update emojis on window scroll."
+  (emojify--update-emojis-background-in-region-starting-at (window-start)))
+
+(defun emojify-update-visible-emojis-background-after-window-scroll (_window display-start)
+  "Function added to `window-scroll-functions' when region is active.
+
+This function updates the backgrounds of the emojis in the newly displayed area
+of the window.  DISPLAY-START corresponds to the new start of the window."
+  (emojify--update-emojis-background-in-region-starting-at display-start))
+
+(defun emojify-update-emojis-on-mark-activation ()
+  "Executed in `activate-mark-hook'.
+
+Updates emoji backgrounds on activation of mark as well setup update of emojis
+when region changes."
   (emojify-update-visible-emojis-background-after-command)
-  (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command)
-  (add-hook 'window-scroll-functions #'emojify-record-window-scroll))
+  (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t t)
+  (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t))
 
-(defun emojify-teardown-emoji-update-on-selection-change ()
-  (emojify-update-emojis-background-in-region (point-min) (point-max))
-  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command)
-  (remove-hook 'window-scroll-functions #'emojify-record-window-scroll))
+(defun emojify-update-emojis-on-mark-deactivation ()
+  "Executed in `deactivate-mark-hook'.
+
+Updates emoji backgrounds of emojis in buffer on deactivation of mark as well
+disables update of emojis when region changes."
+  (emojify--update-emojis-background-in-region (point-min) (point-max))
+  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t)
+  (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t))
 
 
 
@@ -844,8 +903,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
     ;; Update emoji backgrounds when region is selected
-    (add-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change t t)
-    (add-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change t t)
+    (add-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t t)
+    (add-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t t)
 
     ;; Redisplay visible emojis when emoji style changes
     (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
@@ -862,8 +921,8 @@ lines ensures that all the possibly affected emojis are redisplayed."
   (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
 
   ;; Update emoji backgrounds when region is selected
-  (remove-hook 'activate-mark-hook #'emojify-setup-emoji-update-on-selection-change t)
-  (remove-hook 'deactivate-mark-hook #'emojify-teardown-emoji-update-on-selection-change t)
+  (remove-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t)
+  (remove-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t)
 
   ;; Remove style change hooks
   (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region))
