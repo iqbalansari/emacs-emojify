@@ -554,10 +554,14 @@ and end of region respectively."
           (rect-end (emojify--get-point-col-and-line emojify-region-end))
           (emoji-start-pos (emojify--get-point-col-and-line beg))
           (emoji-end-pos (emojify--get-point-col-and-line end)))
-      (or (and (<= (car rect-beg) (car emoji-start-pos) (car rect-end))
-               (<= (cdr rect-beg) (cdr emoji-start-pos) (cdr rect-end)))
-          (and (<= (car rect-beg) (car emoji-end-pos) (car rect-end))
-               (<= (cdr rect-beg) (cdr emoji-end-pos) (cdr rect-end)))))))
+      (or (and (<= (car rect-beg) (car emoji-start-pos))
+               (<= (car emoji-start-pos) (car rect-end))
+               (<= (cdr rect-beg) (cdr emoji-start-pos))
+               (<= (cdr emoji-start-pos) (cdr rect-end)))
+          (and (<= (car rect-beg) (car emoji-end-pos))
+               (<= (car emoji-end-pos) (car rect-end))
+               (<= (cdr rect-beg) (cdr emoji-end-pos))
+               (<= (cdr emoji-end-pos) (cdr rect-end)))))))
 
 (defun emojify--inside-non-rectangle-selection-p (beg end)
   "Check if region marked by BEG and END is inside a regular selection.
@@ -568,8 +572,10 @@ and end of region respectively."
   (when (and emojify-region-beg
              (region-active-p)
              (not (bound-and-true-p rectangle-mark-mode)))
-    (or (<= emojify-region-beg beg emojify-region-end)
-        (<= emojify-region-beg end emojify-region-end))))
+    (or (and (<= emojify-region-beg beg)
+             (<= beg emojify-region-end))
+        (and (<= emojify-region-beg end)
+             (<= end emojify-region-end)))))
 
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END."
