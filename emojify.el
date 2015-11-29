@@ -577,11 +577,30 @@ and end of region respectively."
         (and (<= emojify-region-beg end)
              (<= end emojify-region-end)))))
 
-(defun emojify--get-image-background (beg end)
-  "Get the color to be used as background for emoji between BEG and END."
+(defun emojify--region-face (beg end)
   (when (or (emojify--inside-non-rectangle-selection-p beg end)
             (emojify--inside-rectangle-selection-p beg end))
     (face-background 'region)))
+
+(defun emojify--overlay-face (beg)
+  (let* ((overlays-with-face (seq-filter (lambda (overlay)
+                                           (and (overlay-get overlay 'face)
+                                                (face-background (overlay-get overlay 'face))))
+                                         (overlays-at beg)))
+         (top-overlay (car (seq-sort (lambda (overlay1 overlay2)
+                                       (cond ((not (overlay-get overlay2 'priority)) t)
+                                             ((not (overlay-get overlay1 'priority)) nil)
+                                             (t (< (overlay-get overlay1 'priority)
+                                                   (overlay-get overlay2 'priority)))))
+                                     overlays-with-face))))
+    (when top-overlay
+      (face-background (overlay-get top-overlay 'face)))))
+
+(defun emojify--get-image-background (beg end)
+  "Get the color to be used as background for emoji between BEG and END."
+  (or (emojify--region-face beg end)
+      (emojify--overlay-face beg)
+      (face-background 'default)))
 
 (defun emojify--get-image-display (data beg end)
   "Get the display text property to display the emoji as an image.
@@ -910,9 +929,11 @@ disables update of emojis when region changes."
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
     ;; Update emoji backgrounds when region is selected
-    (add-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t t)
-    (add-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t t)
-
+    ;; (add-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t t)
+    ;; (add-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t t)
+    (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t t)
+    (add-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t t)
+    (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t)
     ;; Redisplay visible emojis when emoji style changes
     (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
 
@@ -929,6 +950,7 @@ disables update of emojis when region changes."
 
   ;; Update emoji backgrounds when region is selected
   (remove-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t)
+  (remove-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t)
   (remove-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t)
 
   ;; Remove style change hooks
