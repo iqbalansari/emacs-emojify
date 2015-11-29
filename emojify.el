@@ -827,12 +827,13 @@ which is not what we want when falling back in `emojify-delete-emoji'"
             emoji-start)
         (while (and (> end beg)
                     (setq emoji-start (text-property-any beg end 'emojified t)))
-          (let* ((emoji-end (marker-position (get-text-property emoji-start 'emojify-end)))
+          (let* ((emoji-end (+ emoji-start
+                               (length (get-text-property emoji-start 'emojify-text))))
                  (current-disp (get-text-property emoji-start 'display)))
             (plist-put (cdr current-disp)
                        :background (emojify--get-image-background emoji-start
                                                                   emoji-end))
-            (setq beg (1+ emoji-end))))))))
+            (setq beg emoji-end)))))))
 
 (defun emojify--update-emojis-background-in-region-starting-at (point)
   "Update background color for emojis in buffer starting at POINT.
