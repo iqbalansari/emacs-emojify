@@ -827,7 +827,7 @@ which is not what we want when falling back in `emojify-delete-emoji'"
             emoji-start)
         (while (and (> end beg)
                     (setq emoji-start (text-property-any beg end 'emojified t)))
-          (let* ((emoji-end (get-text-property emoji-start 'emojify-end))
+          (let* ((emoji-end (marker-position (get-text-property emoji-start 'emojify-end)))
                  (current-disp (get-text-property emoji-start 'display)))
             (plist-put (cdr current-disp)
                        :background (emojify--get-image-background emoji-start
