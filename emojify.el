@@ -585,7 +585,7 @@ and end of region respectively."
 (defun emojify--overlay-face (beg)
   (let* ((overlays-with-face (seq-filter (lambda (overlay)
                                            (and (overlay-get overlay 'face)
-                                                (face-background (overlay-get overlay 'face))))
+                                                (face-background (overlay-get overlay 'face) nil 'default)))
                                          (overlays-at beg)))
          (top-overlay (car (seq-sort (lambda (overlay1 overlay2)
                                        (cond ((not (overlay-get overlay2 'priority)) t)
@@ -594,7 +594,7 @@ and end of region respectively."
                                                    (overlay-get overlay2 'priority)))))
                                      overlays-with-face))))
     (when top-overlay
-      (face-background (overlay-get top-overlay 'face)))))
+      (face-background (overlay-get top-overlay 'face) nil 'default))))
 
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END."
