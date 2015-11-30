@@ -595,6 +595,11 @@ and end of region respectively."
         (and (<= emojify-region-beg end)
              (<= end emojify-region-end)))))
 
+(defun emojify--region-face (beg end)
+  (when (or (emojify--inside-non-rectangle-selection-p beg end)
+            (emojify--inside-rectangle-selection-p beg end))
+    (face-background 'region)))
+
 (defun emojify--overlay-face (beg)
   (let* ((overlays-with-face (seq-filter (lambda (overlay)
                                            (and (overlay-get overlay 'face)
@@ -605,7 +610,8 @@ and end of region respectively."
 
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END."
-  (or (emojify--overlay-face beg)
+  (or (emojify--region-face beg end)
+      (emojify--overlay-face beg)
       (face-background 'default)))
 
 (defun emojify--get-image-display (data beg end)
