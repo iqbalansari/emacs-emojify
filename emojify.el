@@ -120,6 +120,22 @@ inhibits buffer change, point motion hooks."
              (widen)
              ,@forms))))))
 
+(defmacro emojify-do-for-emojis-in-region (beg end &rest forms)
+  "Execute the given FORMS for all emojis between BEG and END.
+
+During the execution `emoji-start' and `emoji-end' are bound to the start
+and end of the emoji for which the form is being executed."
+  (declare (debug t) (indent 2))
+  `(let ((--emojify-loop-current-pos ,beg)
+         (--emojify-loop-end ,end)
+         emoji-start)
+     (while (and (> --emojify-loop-end --emojify-loop-current-pos)
+                 (setq emoji-start (text-property-any --emojify-loop-current-pos --emojify-loop-end 'emojified t)))
+       (let ((emoji-end (+ emoji-start
+                           (length (get-text-property emoji-start 'emojify-text)))))
+         ,@forms
+         (setq --emojify-loop-current-pos emoji-end)))))
+
 (defun emojify-message (format-string &rest args)
   "Log debugging messages to buffer named 'emojify-log'.
 
@@ -839,17 +855,12 @@ which is not what we want when falling back in `emojify-delete-emoji'"
   (when (equal emojify-display-style 'image)
     (emojify-with-saved-buffer-state
       (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
-            (emojify-region-end (when (region-active-p) (region-end)))
-            emoji-start)
-        (while (and (> end beg)
-                    (setq emoji-start (text-property-any beg end 'emojified t)))
-          (let* ((emoji-end (+ emoji-start
-                               (length (get-text-property emoji-start 'emojify-text))))
-                 (current-disp (get-text-property emoji-start 'display)))
+            (emojify-region-end (when (region-active-p) (region-end))))
+        (emojify-do-for-emojis-in-region beg end
+          (let ((current-disp (get-text-property emoji-start 'display)))
             (plist-put (cdr current-disp)
                        :background (emojify--get-image-background emoji-start
-                                                                  emoji-end))
-            (setq beg emoji-end)))))))
+                                                                  emoji-end))))))))
 
 (defun emojify--update-emojis-background-in-region-starting-at (point)
   "Update background color for emojis in buffer starting at POINT.
