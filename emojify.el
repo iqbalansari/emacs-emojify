@@ -473,14 +473,14 @@ Does nothing if the value is anything else."
 
 (defun emojify--uncover-emoji (buffer match-beginning match-end)
   "Uncover emoji in BUFFER between MATCH-BEGINNING and MATCH-END."
-  (progn (emojify-undisplay-emojis-in-region match-beginning match-end)
-         (with-silent-modifications
-           (add-text-properties match-end
-                                match-beginning
-                                (list 'point-left (emojify--get-point-left-function buffer
-                                                                                    match-beginning
-                                                                                    match-end)
-                                      'emojified t)))))
+  (emojify-with-saved-buffer-state
+    (add-text-properties match-end
+                         match-beginning
+                         (list 'display nil
+                               'point-left (emojify--get-point-left-function buffer
+                                                                             match-beginning
+                                                                             match-end)
+                               'point-entered nil))))
 
 (defun emojify-point-entered-function (_old-point new-point)
   "Create a function to be executed when point enters an emojified text.
@@ -540,7 +540,11 @@ mark the start and end of region containing the text."
     (when (and (equal buffer (current-buffer))
                (or (< match-end new-point)
                    (< new-point match-beginning)))
-      (emojify-redisplay-emojis-in-region match-beginning match-end))))
+      (emojify-with-saved-buffer-state
+        (let ((current-display (get-text-property match-beginning 'emojify-display)))
+          (add-text-properties match-beginning match-end (list 'display current-display
+                                                               'point-left nil
+                                                               'point-entered #'emojify-point-entered-function)))))))
 
 (defun emojify--get-point-col-and-line (point)
   "Return a cons of containing the column number and line at POINT."
@@ -650,17 +654,15 @@ be displayed."
 
 TEXT is the text to be displayed as emoji, BEG and END delimit the
 region containing the emoji."
-  (let* ((emoji-data (ht-get emojify-emojis text))
-         (display (when emoji-data
-                    (funcall (pcase emojify-display-style
-                               (`image #'emojify--get-image-display)
-                               (`unicode #'emojify--get-unicode-display)
-                               (`ascii #'emojify--get-ascii-display))
-                             emoji-data
-                             beg
-                             end))))
-    (when display
-      (list 'display display))))
+  (let ((emoji-data (ht-get emojify-emojis text)))
+    (when emoji-data
+      (funcall (pcase emojify-display-style
+                 (`image #'emojify--get-image-display)
+                 (`unicode #'emojify--get-unicode-display)
+                 (`ascii #'emojify--get-ascii-display))
+               emoji-data
+               beg
+               end))))
 
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
@@ -698,19 +700,20 @@ TODO: Skip emojifying if region is already emojified."
 
                      (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-            (let ((display-props (emojify--get-text-display-props match match-beginning match-end)))
-              (when display-props
+            (let ((display-prop (emojify--get-text-display-props match match-beginning match-end)))
+              (when display-prop
                 (add-text-properties match-beginning
                                      match-end
-                                     (append display-props
-                                             (list 'emojified t
-                                                   'emojify-buffer buffer
-                                                   'emojify-text match
-                                                   'emojify-beginning (copy-marker match-beginning)
-                                                   'emojify-end (copy-marker match-end)
-                                                   'keymap emojify-emoji-keymap
-                                                   'point-entered #'emojify-point-entered-function
-                                                   'help-echo #'emojify-help-function)))))))))))
+                                     (list 'emojified t
+                                           'emojify-display display-prop
+                                           'display display-prop
+                                           'emojify-buffer buffer
+                                           'emojify-text match
+                                           'emojify-beginning (copy-marker match-beginning)
+                                           'emojify-end (copy-marker match-end)
+                                           'keymap emojify-emoji-keymap
+                                           'point-entered #'emojify-point-entered-function
+                                           'help-echo #'emojify-help-function))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
@@ -738,6 +741,7 @@ BEG and END are the beginning and end of the region respectively"
           ;; Remove the properties
           (remove-text-properties emoji-start emoji-end (append (list 'emojified t
                                                                       'display t
+                                                                      'emojify-display t
                                                                       'point-entered t
                                                                       'point-left t
                                                                       'emojify-buffer t

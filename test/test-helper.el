@@ -93,6 +93,7 @@ Helps isolate tests from each other's customizations."
   `(progn
      (should-not (get-text-property ,point 'point-left))
      (should (get-text-property ,point 'emojified))
+     (should (get-text-property ,point 'emojify-display))
      (should (get-text-property ,point 'emojify-buffer))
      (should (get-text-property ,point 'emojify-beginning))
      (should (get-text-property ,point 'emojify-end))
@@ -104,6 +105,7 @@ Helps isolate tests from each other's customizations."
   `(progn
      (should-not (get-text-property ,point 'point-left))
      (should-not (get-text-property ,point 'emojified))
+     (should-not (get-text-property ,point 'emojify-display))
      (should-not (get-text-property ,point 'emojify-buffer))
      (should-not (get-text-property ,point 'emojify-beginning))
      (should-not (get-text-property ,point 'emojify-end))
@@ -115,12 +117,12 @@ Helps isolate tests from each other's customizations."
   `(progn
      (should (get-text-property ,point 'point-left))
      (should (get-text-property ,point 'emojified))
-     (should-not (get-text-property ,point 'emojify-buffer))
-     (should-not (get-text-property ,point 'emojify-beginning))
-     (should-not (get-text-property ,point 'emojify-end))
-     (should-not (get-text-property ,point 'emojify-text))
-     (should-not (get-text-property ,point 'display))
-     (should-not (get-text-property ,point 'point-entered))))
+     (should (get-text-property ,point 'emojify-buffer))
+     (should (get-text-property ,point 'emojify-beginning))
+     (should (get-text-property ,point 'emojify-end))
+     (should (get-text-property ,point 'emojify-text))
+     (should-not (get-text-property ,point 'point-entered))
+     (should-not (get-text-property ,point 'display))))
 
 (defun emojify-insert-string (string)
   (mapc (lambda (character)
