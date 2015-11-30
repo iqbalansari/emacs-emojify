@@ -596,8 +596,9 @@ and end of region respectively."
              (<= end emojify-region-end)))))
 
 (defun emojify--region-face (beg end)
-  (when (or (emojify--inside-non-rectangle-selection-p beg end)
-            (emojify--inside-rectangle-selection-p beg end))
+  (when (and (equal (default-value 'redisplay-highlight-region-function) redisplay-highlight-region-function)
+             (or (emojify--inside-non-rectangle-selection-p beg end)
+                 (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
 (defun emojify--overlay-face (beg)
