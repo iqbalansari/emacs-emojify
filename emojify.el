@@ -106,6 +106,20 @@ errors during operation.")
      (ignore-errors
        ,@forms)))
 
+(defmacro emojify-with-saved-buffer-state (&rest forms)
+  "Execute FORMS saving current buffer state.
+
+This saves point and mark, `match-data' and buffer modification state it also
+inhibits buffer change, point motion hooks."
+  (declare (debug t) (indent 0))
+  `(let ((inhibit-point-motion-hooks t))
+     (with-silent-modifications
+       (save-match-data
+         (save-excursion
+           (save-restriction
+             (widen)
+             ,@forms))))))
+
 (defun emojify-message (format-string &rest args)
   "Log debugging messages to buffer named 'emojify-log'.
 
@@ -647,22 +661,6 @@ region containing the emoji."
                              end))))
     (when display
       (list 'display display))))
-
-(defmacro emojify-with-saved-buffer-state (&rest forms)
-  "Execute FORMS saving current buffer state.
-
-This saves point and mark, `match-data' and buffer modification state it also
-inhibits buffer change, point motion hooks.
-
-Used by `emojify-display-emojis-in-region' and `emojify-undisplay-emojis-in-region'"
-  (declare (debug t) (indent 0))
-  `(let ((inhibit-point-motion-hooks t))
-     (with-silent-modifications
-       (save-match-data
-         (save-excursion
-           (save-restriction
-             (widen)
-             ,@forms))))))
 
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
