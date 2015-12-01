@@ -858,8 +858,9 @@ which is not what we want when falling back in `emojify-delete-emoji'"
             (emojify-region-end (when (region-active-p) (region-end))))
         (emojify-do-for-emojis-in-region beg end
           (plist-put (cdr (get-text-property emoji-start 'display))
-                     :background (emojify--get-image-background emoji-start
-                                                                emoji-end)))))))
+                     :background
+                     (emojify--get-image-background emoji-start
+                                                    emoji-end)))))))
 
 (defun emojify--update-emojis-background-in-region-starting-at (point)
   "Update background color for emojis in buffer starting at POINT.
@@ -978,15 +979,15 @@ disables update of emojis when region changes."
   emojify-mode emojify-mode
   :init-value nil)
 
-(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
-  "Advice `text-scale-increase' to resize emojis on text resize."
-  (when emojify-mode
-    (let ((new-font-height (emojify-default-font-height)))
-      (emojify-do-for-emojis-in-region (point-min) (point-max)
-        (plist-put (cdr (get-text-property emoji-start 'display))
-                   :height new-font-height)))))
+(defadvice mouse--drag-set-mark-and-point (after emojify-update-emoji-background (&rest ignored))
+  "Advice to update emoji backgrounds after selection is changed using mouse.
 
-(ad-activate #'text-scale-increase)
+Currently there are no hooks run after mouse movements, as such the emoji
+backgrounds are updated only after the mouse button is released.  This advices
+`mouse--drag-set-mark-and-point' which is run after selection changes to trigger
+an update of emoji backgrounds.  Not the cleanest but the only way I can think of."
+  (when emojify-mode
+    (emojify-update-visible-emojis-background-after-command)))
 
 (defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (direction))
   "Advice `isearch-repeat' to run emojify's point motion hooks.
@@ -1009,6 +1010,17 @@ runs (only emojify's) point motion hooks."
 
 
 (ad-activate #'isearch-repeat)
+
+(defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
+  "Advice `text-scale-increase' to resize emojis on text resize."
+  (when emojify-mode
+    (let ((new-font-height (emojify-default-font-height)))
+      (emojify-do-for-emojis-in-region (point-min) (point-max)
+        (plist-put (cdr (get-text-property emoji-start 'display))
+                   :height
+                   new-font-height)))))
+
+(ad-activate #'text-scale-increase)
 
 (provide 'emojify)
 ;;; emojify.el ends here
