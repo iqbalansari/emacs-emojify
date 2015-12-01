@@ -82,6 +82,31 @@ This provides a compatibility version for previous versions."
         (aref (font-info default-font) 3))
        (t (frame-char-height))))))
 
+(defun emojify-overlays-at (pos &optional sorted)
+  "Return a list of the overlays that contain the character at POS.
+If SORTED is non-nil, then sort them by decreasing priority.
+
+The SORTED argument was introduced in Emacs 24.4, along with the incompatible
+change that overlay priorities can be any Lisp object (earlier they were
+restricted to integer and nil). This version uses the SORTED argument of
+`overlays-at' on Emacs version 24.4 onwards and manually sorts the overlays by
+priority on lower versions."
+  (if (version< emacs-version "24.4")
+      (let ((overlays-at-pos (overlays-at pos)))
+        (if sorted
+            (seq-sort (lambda (overlay1 overlay2)
+                        (if (and (overlay-get overlay2 'priority)
+                                 (overlay-get overlay1 'priority))
+                            ;; If both overlays have priorities compare them
+                            (< (overlay-get overlay1 'priority)
+                               (overlay-get overlay2 'priority))
+                          ;; Otherwise overlay with nil priority is sorted below
+                          ;; the one with integer value otherwise preserve order
+                          (not (overlay-get overlay1 'priority))))
+                      overlays-at-pos)
+          overlays-at-pos))
+    (overlays-at pos sorted)))
+
 
 
 ;; Utility functions
@@ -621,7 +646,7 @@ and end of region respectively."
   (let* ((overlays-with-face (seq-filter (lambda (overlay)
                                            (and (overlay-get overlay 'face)
                                                 (face-background (overlay-get overlay 'face) nil 'default)))
-                                         (overlays-at beg t))))
+                                         (emojify-overlays-at beg t))))
     (when overlays-with-face
       (face-background (overlay-get (car (last overlays-with-face)) 'face) nil 'default))))
 
