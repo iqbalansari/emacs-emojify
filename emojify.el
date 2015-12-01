@@ -857,10 +857,9 @@ which is not what we want when falling back in `emojify-delete-emoji'"
       (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
             (emojify-region-end (when (region-active-p) (region-end))))
         (emojify-do-for-emojis-in-region beg end
-          (let ((current-disp (get-text-property emoji-start 'display)))
-            (plist-put (cdr current-disp)
-                       :background (emojify--get-image-background emoji-start
-                                                                  emoji-end))))))))
+          (plist-put (cdr (get-text-property emoji-start 'display))
+                     :background (emojify--get-image-background emoji-start
+                                                                emoji-end)))))))
 
 (defun emojify--update-emojis-background-in-region-starting-at (point)
   "Update background color for emojis in buffer starting at POINT.
@@ -980,9 +979,12 @@ disables update of emojis when region changes."
   :init-value nil)
 
 (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
-  "Advice `text-scale-increase' to trigger resizing of emojis on resize."
+  "Advice `text-scale-increase' to resize emojis on text resize."
   (when emojify-mode
-    (emojify-redisplay-emojis-in-region)))
+    (let ((new-font-height (emojify-default-font-height)))
+      (emojify-do-for-emojis-in-region (point-min) (point-max)
+        (plist-put (cdr (get-text-property emoji-start 'display))
+                   :height new-font-height)))))
 
 (ad-activate #'text-scale-increase)
 
