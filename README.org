@@ -34,9 +34,11 @@
 
 ** Requirements
    This package requires Emacs *v24.3* and above. Emacs should be compiled with
-   support for *PNG* images. Additionally if Emacs is compiled with *ImageMagick*
-   support ~emojify~ will use it to resize emojis if needed, however this is
-   *completely optional*.
+   support for *PNG* images to display emojis as images. It is *recommended*
+   that Emacs is compiled with *ImageMagick* support. ~emojify~ will use it to
+   resize emojis if needed, additionally imagemagick is used to set background
+   color for emojis to workaround the bug described in [[https://github.com/iqbalansari/emacs-emojify/issues/7][issue 7]]. However these
+   are *completely optional*.
 
    PNG support might require some additional steps to on Windows, you might find
    [[http://stackoverflow.com/questions/2650041/emacs-under-windows-and-png-files][this]] stackoverflow answer helpful.
