@@ -88,7 +88,7 @@ If SORTED is non-nil, then sort them by decreasing priority.
 
 The SORTED argument was introduced in Emacs 24.4, along with the incompatible
 change that overlay priorities can be any Lisp object (earlier they were
-restricted to integer and nil). This version uses the SORTED argument of
+restricted to integer and nil).  This version uses the SORTED argument of
 `overlays-at' on Emacs version 24.4 onwards and manually sorts the overlays by
 priority on lower versions."
   (if (version< emacs-version "24.4")
@@ -146,7 +146,7 @@ inhibits buffer change, point motion hooks."
              ,@forms))))))
 
 (defmacro emojify-do-for-emojis-in-region (beg end &rest forms)
-  "Execute the given FORMS for all emojis between BEG and END.
+  "For all emojis between BEG and END, execute the given FORMS.
 
 During the execution `emoji-start' and `emoji-end' are bound to the start
 and end of the emoji for which the form is being executed."
@@ -636,7 +636,10 @@ and end of region respectively."
         (and (<= emojify-region-beg end)
              (<= end emojify-region-end)))))
 
-(defun emojify--region-face (beg end)
+(defun emojify--region-face-maybe (beg end)
+  "Get the region for emoji between BEG and END.
+
+This returns nil if the emojis between BEG and END do not fall in region."
   ;; `redisplay-highlight-region-function' was not defined in Emacs 24.3
   (when (and (or (not (boundp 'redisplay-highlight-region-function))
                  (equal (default-value 'redisplay-highlight-region-function) redisplay-highlight-region-function))
@@ -645,6 +648,7 @@ and end of region respectively."
     (face-background 'region)))
 
 (defun emojify--overlay-face (beg)
+  "Get the overlay face for point BEG."
   (let* ((overlays-with-face (seq-filter (lambda (overlay)
                                            (and (overlay-get overlay 'face)
                                                 (face-background (overlay-get overlay 'face) nil 'default)))
@@ -653,8 +657,11 @@ and end of region respectively."
       (face-background (overlay-get (car (last overlays-with-face)) 'face) nil 'default))))
 
 (defun emojify--get-image-background (beg end)
-  "Get the color to be used as background for emoji between BEG and END."
-  (or (emojify--region-face beg end)
+  "Get the color to be used as background for emoji between BEG and END.
+
+Ideally `emojify--overlay-face' should have been enough to handle selection,
+but for some reason it does not work well."
+  (or (emojify--region-face-maybe beg end)
       (emojify--overlay-face beg)
       (face-background 'default)))
 
@@ -963,12 +970,16 @@ disables update of emojis when region changes."
     (jit-lock-register #'emojify-redisplay-emojis-in-region)
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
-    ;; Update emoji backgrounds when region is selected
-    ;; (add-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t t)
-    ;; (add-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t t)
+    ;; Update emoji backgrounds after each command
     (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t t)
+
+    ;; Update emoji backgrounds after mark is deactivated, this is needed since
+    ;; deactivation can happen outside the command loop
     (add-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t t)
+
+    ;; Update emoji backgrounds after when window scrolls
     (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t)
+
     ;; Redisplay visible emojis when emoji style changes
     (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
 
@@ -983,7 +994,7 @@ disables update of emojis when region changes."
   (jit-lock-unregister #'emojify-redisplay-emojis-in-region)
   (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
 
-  ;; Update emoji backgrounds when region is selected
+  ;; Disable hooks to update emoji backgrounds
   (remove-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t)
   (remove-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t)
   (remove-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t)
