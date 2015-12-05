@@ -938,24 +938,6 @@ This function updates the backgrounds of the emojis in the newly displayed area
 of the window.  DISPLAY-START corresponds to the new start of the window."
   (emojify--update-emojis-background-in-region-starting-at display-start))
 
-(defun emojify-update-emojis-on-mark-activation ()
-  "Executed in `activate-mark-hook'.
-
-Updates emoji backgrounds on activation of mark as well setup update of emojis
-when region changes."
-  (emojify-update-visible-emojis-background-after-command)
-  (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t t)
-  (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t))
-
-(defun emojify-update-emojis-on-mark-deactivation ()
-  "Executed in `deactivate-mark-hook'.
-
-Updates emoji backgrounds of emojis in buffer on deactivation of mark as well
-disables update of emojis when region changes."
-  (emojify--update-emojis-background-in-region (point-min) (point-max))
-  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t)
-  (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t))
-
 
 
 (defun emojify-turn-on-emojify-mode ()
@@ -995,9 +977,9 @@ disables update of emojis when region changes."
   (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
 
   ;; Disable hooks to update emoji backgrounds
-  (remove-hook 'activate-mark-hook #'emojify-update-emojis-on-mark-activation t)
+  (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t)
   (remove-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t)
-  (remove-hook 'deactivate-mark-hook #'emojify-update-emojis-on-mark-deactivation t)
+  (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t)
 
   ;; Remove style change hooks
   (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region))
