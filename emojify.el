@@ -830,12 +830,18 @@ end of line at END.  _LEN is ignored.
 
 The idea is since an emoji cannot span multiple lines, redisplaying complete
 lines ensures that all the possibly affected emojis are redisplayed."
-  (setq jit-lock-start (save-excursion
-                         (goto-char beg)
-                         (line-beginning-position))
-        jit-lock-end (save-excursion
-                       (goto-char end)
-                       (line-end-position))))
+  (let ((emojify-jit-lock-start (save-excursion
+                                  (goto-char beg)
+                                  (line-beginning-position)))
+        (emojify-jit-lock-end (save-excursion
+                                (goto-char end)
+                                (line-end-position))))
+    (setq jit-lock-start (if jit-lock-start
+                             (min jit-lock-start emojify-jit-lock-start)
+                           emojify-jit-lock-start))
+    (setq jit-lock-end (if jit-lock-end
+                           (max jit-lock-end emojify-jit-lock-end)
+                         emojify-jit-lock-end))))
 
 
 
