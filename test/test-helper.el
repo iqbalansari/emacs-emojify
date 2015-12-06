@@ -40,7 +40,9 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-prog-contexts emojify-prog-contexts)
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
-         (emojify-saved-show-help emojify-show-help))
+         (emojify-saved-show-help emojify-show-help)
+         (emojify-saved-debug-mode emojify-debug-mode)
+         (emojify-debug-mode t))
      (unwind-protect
          (progn
            ,@forms)
@@ -52,7 +54,8 @@ Helps isolate tests from each other's customizations."
              emojify-prog-contexts emojify-saved-prog-contexts
              emojify-inhibit-functions emojify-saved-inhibit-functions
              emojify-point-entered-behaviour emojify-saved-point-entered-behaviour
-             emojify-show-help emojify-saved-show-help)
+             emojify-show-help emojify-saved-show-help
+             emojify-debug-mode emojify-saved-debug-mode)
        ;; This as a side-effect also re-reads JSON data so no need to
        ;; re-adjust changes to emojify-emoji-json
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
