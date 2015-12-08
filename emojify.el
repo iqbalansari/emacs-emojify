@@ -1015,6 +1015,8 @@ an update of emoji backgrounds.  Not the cleanest but the only way I can think o
   (when emojify-mode
     (emojify-update-visible-emojis-background-after-command)))
 
+(ad-activate #'mouse--drag-set-mark-and-point)
+
 (defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (direction))
   "Advice `isearch-repeat' to run emojify's point motion hooks.
 
