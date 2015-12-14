@@ -244,7 +244,8 @@ Possible values are
     compilation-mode
     proced-mode
     comint-mode
-    mu4e-headers-mode)
+    mu4e-headers-mode
+    tuareg-mode)
   "Major modes where emojify mode should not be enabled."
   :type '(repeat symbol)
   :group 'emojify)
