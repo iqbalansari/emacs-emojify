@@ -738,7 +738,7 @@ TODO: Skip emojifying if region is already emojified."
 
           (when (and (ht-contains-p emojify-emojis match)
                      ;; Display unconditionally in non-prog mode
-                     (or (not (derived-mode-p 'prog-mode))
+                     (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
                          ;; In prog mode enable respecting `emojify-prog-contexts'
                          (emojify-valid-prog-context-p match-beginning match-end))
 
