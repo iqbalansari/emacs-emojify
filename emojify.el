@@ -6,7 +6,7 @@
 ;; Keywords: multimedia, convenience
 ;; URL: https://github.com/iqbalansari/emacs-emojify
 ;; Version: 0.2
-;; Package-Requires: ((seq "1.12") (ht "2.0") (emacs "24.3"))
+;; Package-Requires: ((seq "1.11") (ht "2.0") (emacs "24.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
