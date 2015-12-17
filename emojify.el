@@ -306,15 +306,11 @@ can customize `emojify-inhibit-major-modes' and
 (defvar emojify-emoji-style-change-hooks nil
   "Hooks run when emoji style changes.")
 
-(defun emojify-set-emoji-data (styles)
+(defun emojify-set-emoji-data ()
   "Read the emoji data for STYLES and set the regexp required to search them."
   (setq emojify-emojis (let ((json-array-type 'list)
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
-
-  (ht-reject! (lambda (_key value)
-                (not (memq (intern (ht-get value "style")) styles)))
-              emojify-emojis)
 
   (setq emojify-regexps (when (ht-keys emojify-emojis)
                           (let ((emojis (ht-keys emojify-emojis)))
@@ -330,9 +326,6 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
     (warn "`emojify-emoji-style' has been deprecated use `emojify-emoji-styles' instead!"))
 
   (setq-default emojify-emoji-styles styles)
-
-  ;; Update emoji data
-  (emojify-set-emoji-data styles)
 
   (run-hooks 'emojify-emoji-style-change-hooks))
 
@@ -737,6 +730,8 @@ TODO: Skip emojifying if region is already emojified."
               (buffer (current-buffer)))
 
           (when (and (ht-contains-p emojify-emojis match)
+                     (memql (intern (ht-get (ht-get emojify-emojis match) "style"))
+                            emojify-emoji-styles)
                      ;; Display unconditionally in non-prog mode
                      (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
                          ;; In prog mode enable respecting `emojify-prog-contexts'
@@ -951,7 +946,7 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
   ;; Calculate emoji data if needed
   (unless emojify-emojis
-    (emojify-set-emoji-data emojify-emoji-styles))
+    (emojify-set-emoji-data))
 
   (when (emojify-buffer-p (current-buffer))
     ;; Install our jit-lock function
