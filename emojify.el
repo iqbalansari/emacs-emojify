@@ -663,6 +663,9 @@ This returns nil if the emojis between BEG and END do not fall in region."
 Ideally `emojify--overlay-face-background' should have been enough to handle
 selection, but for some reason it does not work well."
   (or (emojify--region-background-face-maybe beg end)
+      ;; TODO: `emojify--face-background-at-point' might already be
+      ;; handling overlay faces as such `emojify--overlay-face-background'
+      ;; might be redundant, need to verify this though
       (emojify--overlay-face-background beg)
       (emojify--face-background-at-point beg)
       (face-background 'default)))
