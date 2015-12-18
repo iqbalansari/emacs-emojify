@@ -649,6 +649,14 @@ This returns nil if the emojis between BEG and END do not fall in region."
     (when overlays-with-face
       (face-background (overlay-get (car (last overlays-with-face)) 'face) nil 'default))))
 
+(defun emojify--face-background-at-point (beg)
+  "Get the background color for emoji at BEG."
+  (save-excursion
+    (goto-char beg)
+    (let ((point-face (face-at-point)))
+      (when point-face
+        (face-background point-face)))))
+
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END.
 
@@ -656,6 +664,7 @@ Ideally `emojify--overlay-face' should have been enough to handle selection,
 but for some reason it does not work well."
   (or (emojify--region-face-maybe beg end)
       (emojify--overlay-face beg)
+      (emojify--face-background-at-point beg)
       (face-background 'default)))
 
 (defun emojify--get-image-display (data beg end)
