@@ -629,7 +629,7 @@ and end of region respectively."
         (and (<= emojify-region-beg end)
              (<= end emojify-region-end)))))
 
-(defun emojify--region-face-maybe (beg end)
+(defun emojify--region-background-face-maybe (beg end)
   "Get the region for emoji between BEG and END.
 
 This returns nil if the emojis between BEG and END do not fall in region."
@@ -640,7 +640,7 @@ This returns nil if the emojis between BEG and END do not fall in region."
                  (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
-(defun emojify--overlay-face (beg)
+(defun emojify--overlay-face-background (beg)
   "Get the overlay face for point BEG."
   (let* ((overlays-with-face (seq-filter (lambda (overlay)
                                            (and (overlay-get overlay 'face)
@@ -660,10 +660,10 @@ This returns nil if the emojis between BEG and END do not fall in region."
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END.
 
-Ideally `emojify--overlay-face' should have been enough to handle selection,
-but for some reason it does not work well."
-  (or (emojify--region-face-maybe beg end)
-      (emojify--overlay-face beg)
+Ideally `emojify--overlay-face-background' should have been enough to handle
+selection, but for some reason it does not work well."
+  (or (emojify--region-background-face-maybe beg end)
+      (emojify--overlay-face-background beg)
       (emojify--face-background-at-point beg)
       (face-background 'default)))
 
@@ -676,7 +676,6 @@ be displayed."
                                        emojify-image-dir))
          (image-type (intern (upcase (file-name-extension image-file)))))
     (when (file-exists-p image-file)
-      (emojify-message "Color is (%s) %d => %d" (emojify--get-image-background beg end) beg end)
       (create-image image-file
                     ;; use imagemagick if available and supports PNG images
                     ;; (allows resizing images)
