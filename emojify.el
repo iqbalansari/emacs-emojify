@@ -774,6 +774,7 @@ TODO: Skip emojifying if region is already emojified."
                                            'emojify-text match
                                            'emojify-beginning (copy-marker match-beginning)
                                            'emojify-end (copy-marker match-end)
+                                           'yank-handler (list nil match)
                                            'keymap emojify-emoji-keymap
                                            'point-entered #'emojify-point-entered-function
                                            'help-echo #'emojify-help-function))))))))))
@@ -811,6 +812,7 @@ BEG and END are the beginning and end of the region respectively"
                                                                       'emojify-text t
                                                                       'emojify-beginning t
                                                                       'emojify-end t
+                                                                      'yank-handler t
                                                                       'keymap t
                                                                       'help-echo t
                                                                       'rear-nonsticky t))))
