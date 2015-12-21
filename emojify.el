@@ -312,9 +312,9 @@ can customize `emojify-inhibit-major-modes' and
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
 
-  (setq emojify-regexps (when (ht-keys emojify-emojis)
-                          (let ((emojis (ht-keys emojify-emojis)))
-                            (regexp-opt emojis)))))
+  (setq emojify-regexps (seq-map #'regexp-opt
+                                 (seq-partition (ht-keys emojify-emojis)
+                                                1000))))
 
 ;;;###autoload
 (defun emojify-set-emoji-styles (styles)
@@ -731,53 +731,53 @@ region containing the emoji."
 BEG and END are the beginning and end of the region respectively.
 TODO: Skip emojifying if region is already emojified."
   (emojify-with-saved-buffer-state
-    (goto-char beg)
-    (when emojify-regexps
-      (while (and (> end (point))
-                  (search-forward-regexp emojify-regexps end t))
-        (let ((match-beginning (match-beginning 0))
-              (match-end (match-end 0))
-              (match (match-string-no-properties 0))
-              (buffer (current-buffer)))
+    (seq-doseq (regexp emojify-regexps)
+      (let (case-fold-search)
+        (goto-char beg)
+        (while (and (> end (point))
+                    (search-forward-regexp regexp end t))
+          (let ((match-beginning (match-beginning 0))
+                (match-end (match-end 0))
+                (match (match-string-no-properties 0))
+                (buffer (current-buffer)))
 
-          (when (and (ht-contains-p emojify-emojis match)
-                     (memql (intern (ht-get (ht-get emojify-emojis match) "style"))
-                            emojify-emoji-styles)
-                     ;; Display unconditionally in non-prog mode
-                     (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
-                         ;; In prog mode enable respecting `emojify-prog-contexts'
-                         (emojify-valid-prog-context-p match-beginning match-end))
+            (when (and (memql (intern (ht-get (ht-get emojify-emojis match) "style"))
+                              emojify-emoji-styles)
+                       ;; Display unconditionally in non-prog mode
+                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
+                           ;; In prog mode enable respecting `emojify-prog-contexts'
+                           (emojify-valid-prog-context-p match-beginning match-end))
 
-                     ;; Display ascii emojis conservatively, since they have potential
-                     ;; to be annoying consider d: in head:
-                     (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
-                         (emojify-valid-ascii-emoji-context-p match-beginning match-end))
+                       ;; Display ascii emojis conservatively, since they have potential
+                       ;; to be annoying consider d: in head:
+                       (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
+                           (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
-                     (not (emojify-inside-org-src-p match-beginning))
+                       (not (emojify-inside-org-src-p match-beginning))
 
-                     ;; Inhibit possibly inside a list
-                     ;; 41 is ?) but packages get confused by the extra closing paren :)
-                     ;; TODO Report bugs to such packages
-                     (not (and (eq (char-syntax (char-before match-end)) 41)
-                               (emojify-looking-at-end-of-list-maybe match-end)))
+                       ;; Inhibit possibly inside a list
+                       ;; 41 is ?) but packages get confused by the extra closing paren :)
+                       ;; TODO Report bugs to such packages
+                       (not (and (eq (char-syntax (char-before match-end)) 41)
+                                 (emojify-looking-at-end-of-list-maybe match-end)))
 
-                     (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
+                       (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-            (let ((display-prop (emojify--get-text-display-props match match-beginning match-end)))
-              (when display-prop
-                (add-text-properties match-beginning
-                                     match-end
-                                     (list 'emojified t
-                                           'emojify-display display-prop
-                                           'display display-prop
-                                           'emojify-buffer buffer
-                                           'emojify-text match
-                                           'emojify-beginning (copy-marker match-beginning)
-                                           'emojify-end (copy-marker match-end)
-                                           'yank-handler (list nil match)
-                                           'keymap emojify-emoji-keymap
-                                           'point-entered #'emojify-point-entered-function
-                                           'help-echo #'emojify-help-function))))))))))
+              (let ((display-prop (emojify--get-text-display-props match match-beginning match-end)))
+                (when display-prop
+                  (add-text-properties match-beginning
+                                       match-end
+                                       (list 'emojified t
+                                             'emojify-display display-prop
+                                             'display display-prop
+                                             'emojify-buffer buffer
+                                             'emojify-text match
+                                             'emojify-beginning (copy-marker match-beginning)
+                                             'emojify-end (copy-marker match-end)
+                                             'yank-handler (list nil match)
+                                             'keymap emojify-emoji-keymap
+                                             'point-entered #'emojify-point-entered-function
+                                             'help-echo #'emojify-help-function)))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
