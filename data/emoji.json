@@ -2374,6 +2374,12 @@
         "unicode": "😄", 
         "ascii": ":)"
     }, 
+    ":simple_smile:": {
+        "style": "github",
+        "image": "simple_smile.png",
+        "unicode": "🙂",
+        "ascii": ":)"
+    },
     ":hatched_chick:": {
         "style": "github", 
         "image": "hatched_chick.png", 
