@@ -5365,6 +5365,12 @@
         "image": "arrows_counterclockwise.png", 
         "unicode": "🔄"
     }, 
+    ":simple_smile:": {
+        "style": "github",
+        "image": "smile.png",
+        "unicode": "🙂",
+        "ascii": ":)"
+    },
     ":hatched_chick:": {
         "style": "github", 
         "image": "hatched_chick.png", 
