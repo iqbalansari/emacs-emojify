@@ -1,0 +1,6 @@
+language: generic
+sudo: false
+
+branches:
+  except:
+    - images
