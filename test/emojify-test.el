@@ -47,7 +47,7 @@
   (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:"
     (emojify-tests-should-be-emojified (point-min))
     (emojify-tests-should-be-emojified (line-beginning-position 2))
-    (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+    (emojify-tests-should-be-emojified (line-beginning-position 3))
     (emojify-tests-should-be-emojified (line-beginning-position 4))))
 
 ;; The after-change tests stopped working after moving to JIT lock :unamused:

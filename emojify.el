@@ -306,19 +306,15 @@ can customize `emojify-inhibit-major-modes' and
 (defvar emojify-emoji-style-change-hooks nil
   "Hooks run when emoji style changes.")
 
-(defun emojify-set-emoji-data (styles)
+(defun emojify-set-emoji-data ()
   "Read the emoji data for STYLES and set the regexp required to search them."
   (setq emojify-emojis (let ((json-array-type 'list)
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
 
-  (ht-reject! (lambda (_key value)
-                (not (memq (intern (ht-get value "style")) styles)))
-              emojify-emojis)
-
-  (setq emojify-regexps (when (ht-keys emojify-emojis)
-                          (let ((emojis (ht-keys emojify-emojis)))
-                            (regexp-opt emojis)))))
+  (setq emojify-regexps (seq-map #'regexp-opt
+                                 (seq-partition (ht-keys emojify-emojis)
+                                                1000))))
 
 ;;;###autoload
 (defun emojify-set-emoji-styles (styles)
@@ -330,9 +326,6 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
     (warn "`emojify-emoji-style' has been deprecated use `emojify-emoji-styles' instead!"))
 
   (setq-default emojify-emoji-styles styles)
-
-  ;; Update emoji data
-  (emojify-set-emoji-data styles)
 
   (run-hooks 'emojify-emoji-style-change-hooks))
 
@@ -636,7 +629,7 @@ and end of region respectively."
         (and (<= emojify-region-beg end)
              (<= end emojify-region-end)))))
 
-(defun emojify--region-face-maybe (beg end)
+(defun emojify--region-background-face-maybe (beg end)
   "Get the region for emoji between BEG and END.
 
 This returns nil if the emojis between BEG and END do not fall in region."
@@ -647,7 +640,7 @@ This returns nil if the emojis between BEG and END do not fall in region."
                  (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
-(defun emojify--overlay-face (beg)
+(defun emojify--overlay-face-background (beg)
   "Get the overlay face for point BEG."
   (let* ((overlays-with-face (seq-filter (lambda (overlay)
                                            (and (overlay-get overlay 'face)
@@ -656,13 +649,25 @@ This returns nil if the emojis between BEG and END do not fall in region."
     (when overlays-with-face
       (face-background (overlay-get (car (last overlays-with-face)) 'face) nil 'default))))
 
+(defun emojify--face-background-at-point (beg)
+  "Get the background color for emoji at BEG."
+  (save-excursion
+    (goto-char beg)
+    (let ((point-face (face-at-point)))
+      (when point-face
+        (face-background point-face)))))
+
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END.
 
-Ideally `emojify--overlay-face' should have been enough to handle selection,
-but for some reason it does not work well."
-  (or (emojify--region-face-maybe beg end)
-      (emojify--overlay-face beg)
+Ideally `emojify--overlay-face-background' should have been enough to handle
+selection, but for some reason it does not work well."
+  (or (emojify--region-background-face-maybe beg end)
+      ;; TODO: `emojify--face-background-at-point' might already be
+      ;; handling overlay faces as such `emojify--overlay-face-background'
+      ;; might be redundant, need to verify this though
+      (emojify--overlay-face-background beg)
+      (emojify--face-background-at-point beg)
       (face-background 'default)))
 
 (defun emojify--get-image-display (data beg end)
@@ -674,7 +679,6 @@ be displayed."
                                        emojify-image-dir))
          (image-type (intern (upcase (file-name-extension image-file)))))
     (when (file-exists-p image-file)
-      (emojify-message "Color is (%s) %d => %d" (emojify--get-image-background beg end) beg end)
       (create-image image-file
                     ;; use imagemagick if available and supports PNG images
                     ;; (allows resizing images)
@@ -727,50 +731,53 @@ region containing the emoji."
 BEG and END are the beginning and end of the region respectively.
 TODO: Skip emojifying if region is already emojified."
   (emojify-with-saved-buffer-state
-    (goto-char beg)
-    (when emojify-regexps
-      (while (and (> end (point))
-                  (search-forward-regexp emojify-regexps end t))
-        (let ((match-beginning (match-beginning 0))
-              (match-end (match-end 0))
-              (match (match-string-no-properties 0))
-              (buffer (current-buffer)))
+    (seq-doseq (regexp emojify-regexps)
+      (let (case-fold-search)
+        (goto-char beg)
+        (while (and (> end (point))
+                    (search-forward-regexp regexp end t))
+          (let ((match-beginning (match-beginning 0))
+                (match-end (match-end 0))
+                (match (match-string-no-properties 0))
+                (buffer (current-buffer)))
 
-          (when (and (ht-contains-p emojify-emojis match)
-                     ;; Display unconditionally in non-prog mode
-                     (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
-                         ;; In prog mode enable respecting `emojify-prog-contexts'
-                         (emojify-valid-prog-context-p match-beginning match-end))
+            (when (and (memql (intern (ht-get (ht-get emojify-emojis match) "style"))
+                              emojify-emoji-styles)
+                       ;; Display unconditionally in non-prog mode
+                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
+                           ;; In prog mode enable respecting `emojify-prog-contexts'
+                           (emojify-valid-prog-context-p match-beginning match-end))
 
-                     ;; Display ascii emojis conservatively, since they have potential
-                     ;; to be annoying consider d: in head:
-                     (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
-                         (emojify-valid-ascii-emoji-context-p match-beginning match-end))
+                       ;; Display ascii emojis conservatively, since they have potential
+                       ;; to be annoying consider d: in head:
+                       (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
+                           (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
-                     (not (emojify-inside-org-src-p match-beginning))
+                       (not (emojify-inside-org-src-p match-beginning))
 
-                     ;; Inhibit possibly inside a list
-                     ;; 41 is ?) but packages get confused by the extra closing paren :)
-                     ;; TODO Report bugs to such packages
-                     (not (and (eq (char-syntax (char-before match-end)) 41)
-                               (emojify-looking-at-end-of-list-maybe match-end)))
+                       ;; Inhibit possibly inside a list
+                       ;; 41 is ?) but packages get confused by the extra closing paren :)
+                       ;; TODO Report bugs to such packages
+                       (not (and (eq (char-syntax (char-before match-end)) 41)
+                                 (emojify-looking-at-end-of-list-maybe match-end)))
 
-                     (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
+                       (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-            (let ((display-prop (emojify--get-text-display-props match match-beginning match-end)))
-              (when display-prop
-                (add-text-properties match-beginning
-                                     match-end
-                                     (list 'emojified t
-                                           'emojify-display display-prop
-                                           'display display-prop
-                                           'emojify-buffer buffer
-                                           'emojify-text match
-                                           'emojify-beginning (copy-marker match-beginning)
-                                           'emojify-end (copy-marker match-end)
-                                           'keymap emojify-emoji-keymap
-                                           'point-entered #'emojify-point-entered-function
-                                           'help-echo #'emojify-help-function))))))))))
+              (let ((display-prop (emojify--get-text-display-props match match-beginning match-end)))
+                (when display-prop
+                  (add-text-properties match-beginning
+                                       match-end
+                                       (list 'emojified t
+                                             'emojify-display display-prop
+                                             'display display-prop
+                                             'emojify-buffer buffer
+                                             'emojify-text match
+                                             'emojify-beginning (copy-marker match-beginning)
+                                             'emojify-end (copy-marker match-end)
+                                             'yank-handler (list nil match)
+                                             'keymap emojify-emoji-keymap
+                                             'point-entered #'emojify-point-entered-function
+                                             'help-echo #'emojify-help-function)))))))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
@@ -805,6 +812,7 @@ BEG and END are the beginning and end of the region respectively"
                                                                       'emojify-text t
                                                                       'emojify-beginning t
                                                                       'emojify-end t
+                                                                      'yank-handler t
                                                                       'keymap t
                                                                       'help-echo t
                                                                       'rear-nonsticky t))))
@@ -951,7 +959,7 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
   ;; Calculate emoji data if needed
   (unless emojify-emojis
-    (emojify-set-emoji-data emojify-emoji-styles))
+    (emojify-set-emoji-data))
 
   (when (emojify-buffer-p (current-buffer))
     ;; Install our jit-lock function
