@@ -2380,6 +2380,12 @@
         "unicode": "🙂",
         "ascii": ":)"
     },
+    ":metal:": {
+        "style": "github",
+        "image": "metal.png",
+        "unicode": "🤘",
+        "ascii": "\\m/"
+    },
     ":hatched_chick:": {
         "style": "github", 
         "image": "hatched_chick.png", 
