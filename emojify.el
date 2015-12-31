@@ -43,6 +43,7 @@
 (require 'regexp-opt)
 (require 'jit-lock)
 (require 'pcase)
+(require 'tar-mode)
 
 
 
@@ -195,20 +196,39 @@ visible in the selected window."
   :prefix "emojify-")
 
 (defcustom emojify-emoji-json
-  (expand-file-name "data/emoji.json" (if load-file-name
-                                     (file-name-directory load-file-name)
-                                   default-directory))
+  (expand-file-name "data/emoji.json"
+                    (cond (load-file-name (file-name-directory load-file-name))
+                          ((locate-library "emojify") (file-name-directory (locate-library "emojify")))
+                          (t default-directory)))
   "The path to JSON file containing the configuration for displaying emojis."
   :type 'file
   :group 'emojify)
 
-(defcustom emojify-image-dir
-  (expand-file-name "images" (if load-file-name
-                                 (file-name-directory load-file-name)
-                               default-directory))
+(defvar emojify-emoji-set-json
+  (let ((json-array-type 'list)
+        (json-object-type 'hash-table))
+    (json-read-file (expand-file-name "data/emoji-sets.json"
+                                      (cond (load-file-name (file-name-directory load-file-name))
+                                            ((locate-library "emojify") (file-name-directory (locate-library "emojify")))
+                                            (t default-directory))))))
+
+(defcustom emojify-emoji-set "emojione-v2-22"
+  "The emoji set used to display emojis."
+  :type (append '(radio :tag "Emoji set")
+                (mapcar (lambda (set) (list 'const set))
+                        (ht-keys emojify-emoji-set-json)))
+  :group 'emojify)
+
+(defcustom emojify-emojis-dir
+  (locate-user-emacs-file "emojis")
   "Path to the directory containing the emoji images."
   :type 'directory
   :group 'emojify)
+
+(defcustom emojify-image-dir
+  (expand-file-name emojify-emoji-set
+                    emojify-emojis-dir)
+  "Path to emoji images.")
 
 (defcustom emojify-display-style
   'image
@@ -954,6 +974,56 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
+;; Image lazy downloading
+
+(defun emojify--emoji-download-emoji-set (data)
+  "Download the emoji images according to DATA."
+  (let ((destination (make-temp-name temporary-file-directory)))
+    (url-copy-file (ht-get data "url")
+                   destination)
+    (let ((downloaded-sha (with-temp-buffer
+                            (insert-file-contents-literally destination)
+                            (secure-hash 'sha256 (current-buffer)))))
+      (when (string= downloaded-sha (ht-get data "sha256"))
+        destination))))
+
+(defun emojify--extract-emojis (file)
+  "Extract the tar FILE in emoji directory."
+  (let* ((default-directory emojify-emojis-dir))
+    (with-temp-buffer
+      (insert-file-contents-literally file)
+      (let ((emojify-inhibit-emojify-in-current-buffer-p t))
+        (tar-mode))
+      (tar-untar-buffer))))
+
+(defun emojify-download-emoji (emoji-set)
+  "Download the provided EMOJI-SET."
+  (interactive (completing-read "Select the emoji set you want to download: "
+                                (ht-keys emojify-emoji-set-json)))
+  (if (ht-get emojify-emoji-set-json emoji-set)
+      (emojify--extract-emojis (emojify--emoji-download-emoji-set (ht-get emojify-emoji-set-json emoji-set)))))
+
+(defvar emojify--refused-image-download nil)
+
+(defun emojify-download-emoji-maybe ()
+  "Download emoji images if needed."
+  (when (and (equal emojify-display-style 'image)
+             (not (file-exists-p emojify-image-dir))
+             (not emojify--refused-image-download))
+    (if (yes-or-no-p "[emojify] Emoji images not available should I download them now?")
+        (emojify-download-emoji emojify-emoji-set)
+      (setq emojify--refused-image-download t)
+      (message "[emojify] Not downloading emoji images for now. Emojis would not be displayed
+since images are not available. If you wish to download emojis, run the command"))))
+
+(defun emojify-ensure-images ()
+  "Ensure that emoji images are downloaded."
+  (if after-init-time
+      (emojify-download-emoji-maybe)
+    (add-hook 'after-init-hook #'emojify-download-emoji-maybe t)))
+
+
+
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
 
@@ -962,6 +1032,9 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
     (emojify-set-emoji-data))
 
   (when (emojify-buffer-p (current-buffer))
+    ;; Download images if not available
+    (emojify-ensure-images)
+
     ;; Install our jit-lock function
     (jit-lock-register #'emojify-redisplay-emojis-in-region)
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)

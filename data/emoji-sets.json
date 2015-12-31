@@ -1,0 +1,8 @@
+{
+    "emojione-v2-22" : {
+        "description" : "Emojis provided by Emoji One (version 2), resized to 22px",
+        "website" : "http://emojione.com",
+        "url" : "https://github.com/iqbalansari/emacs-emojify/blob/26d3fadc57f27f008c1ac183b4aa36e4f252d291/emojione-v2-22.tar?raw=true",
+        "sha256" : "bfc26bc7ac5a46cd36c478ec549db784bc416f6dcc8e512937590b451497c775"
+    }
+}

@@ -2,7 +2,7 @@
 (source melpa)
 
 (package-file "emojify.el")
-(files "*.el" ("data" "data/emoji.json") ("images" "images/*"))
+(files "*.el" ("data" "data/emoji.json" "data/emoji-sets.json"))
 
 (development
  (depends-on "f")
