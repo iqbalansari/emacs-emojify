@@ -45,6 +45,8 @@ Helps isolate tests from each other's customizations."
          (emojify-debug-mode t))
      (unwind-protect
          (progn
+           (unless (file-exists-p emojify-image-dir)
+             (emojify-download-emoji emojify-emoji-set))
            ,@forms)
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-image-dir emojify-saved-image-dir
