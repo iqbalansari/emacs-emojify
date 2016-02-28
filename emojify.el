@@ -1004,12 +1004,16 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 (defun emojify-download-emoji (emoji-set)
   "Download the provided EMOJI-SET."
-  (interactive (completing-read "Select the emoji set you want to download: "
-                                (ht-keys emojify-emoji-set-json)))
-  (if (ht-get emojify-emoji-set-json emoji-set)
-      (emojify--extract-emojis (emojify--emoji-download-emoji-set (ht-get emojify-emoji-set-json emoji-set)))))
-
-(defvar emojify--refused-image-download nil)
+  (interactive (list (completing-read "Select the emoji set you want to download: "
+                                      (ht-keys emojify-emoji-set-json))))
+  (let ((emoji-data (ht-get emojify-emoji-set-json emoji-set)))
+    (cond ((not emoji-data)
+           (error "No emoji set named %s found" emoji-set))
+          ((and (file-exists-p (expand-file-name emoji-set emojify-emojis-dir))
+                (called-interactively-p 'any))
+           (message "%s emoji-set already downloaded, not downloading again!" emoji-set))
+          (t
+           (emojify--extract-emojis (emojify--emoji-download-emoji-set (ht-get emojify-emoji-set-json emoji-set)))))))
 
 (defun emojify-download-emoji-maybe ()
   "Download emoji images if needed."
