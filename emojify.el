@@ -974,7 +974,13 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
-;; Image lazy downloading
+;; Lazy image downloading
+
+(defvar emojify--refused-image-download nil
+  "Used to remember that user has refused to download images in this session.")
+(defvar emojify--download-in-progress nil
+  "Used to remember that emojis are being downloaded, to avoid multiple emoji
+  download prompts.")
 
 (defun emojify--emoji-download-emoji-set (data)
   "Download the emoji images according to DATA."
@@ -1010,11 +1016,19 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
   (when (and (equal emojify-display-style 'image)
              (not (file-exists-p emojify-image-dir))
              (not emojify--refused-image-download))
-    (if (yes-or-no-p "[emojify] Emoji images not available should I download them now?")
-        (emojify-download-emoji emojify-emoji-set)
-      (setq emojify--refused-image-download t)
-      (message "[emojify] Not downloading emoji images for now. Emojis would not be displayed
-since images are not available. If you wish to download emojis, run the command"))))
+    (unwind-protect
+        ;; Do not prompt for download if download is in progress
+        (unless emojify--download-in-progress
+          (setq emojify--download-in-progress t)
+          (if (yes-or-no-p "[emojify] Emoji images not available should I download them now?")
+              (emojify-download-emoji emojify-emoji-set)
+            ;; Remember that user has refused to download the emojis so that we
+            ;; do not ask again in present session
+            (setq emojify--refused-image-download t)
+            (warn "[emojify] Not downloading emoji images for now. Emojis would
+not be displayed since images are not available. If you wish to download emojis,
+run the command `emojify-download-emoji'")))
+      (setq emojify--download-in-progress nil))))
 
 (defun emojify-ensure-images ()
   "Ensure that emoji images are downloaded."
