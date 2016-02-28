@@ -23,7 +23,7 @@
 
 ;;; Commentary:
 
-;; This package displays emojis in Emacs similar to how Github, Slack etc do. It
+;; This package displays emojis in Emacs similar to how Github, Slack etc do.  It
 ;; can display plain ascii like ':)' as well as Github style emojis like ':smile:'
 ;;
 ;; It provides a minor mode `emojify-mode' to enable display of emojis in a buffer.
@@ -976,11 +976,10 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 ;; Lazy image downloading
 
-(defvar emojify--refused-image-download nil
+(defvar emojify--refused-image-download-p nil
   "Used to remember that user has refused to download images in this session.")
-(defvar emojify--download-in-progress nil
-  "Used to remember that emojis are being downloaded, to avoid multiple emoji
-  download prompts.")
+(defvar emojify--download-in-progress-p nil
+  "Is emoji download in progress used to avoid multiple emoji download prompts.")
 
 (defun emojify--emoji-download-emoji-set (data)
   "Download the emoji images according to DATA."
@@ -1019,20 +1018,20 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
   "Download emoji images if needed."
   (when (and (equal emojify-display-style 'image)
              (not (file-exists-p emojify-image-dir))
-             (not emojify--refused-image-download))
+             (not emojify--refused-image-download-p))
     (unwind-protect
         ;; Do not prompt for download if download is in progress
-        (unless emojify--download-in-progress
-          (setq emojify--download-in-progress t)
+        (unless emojify--download-in-progress-p
+          (setq emojify--download-in-progress-p t)
           (if (yes-or-no-p "[emojify] Emoji images not available should I download them now?")
               (emojify-download-emoji emojify-emoji-set)
             ;; Remember that user has refused to download the emojis so that we
             ;; do not ask again in present session
-            (setq emojify--refused-image-download t)
+            (setq emojify--refused-image-download-p t)
             (warn "[emojify] Not downloading emoji images for now. Emojis would
 not be displayed since images are not available. If you wish to download emojis,
 run the command `emojify-download-emoji'")))
-      (setq emojify--download-in-progress nil))))
+      (setq emojify--download-in-progress-p nil))))
 
 (defun emojify-ensure-images ()
   "Ensure that emoji images are downloaded."
