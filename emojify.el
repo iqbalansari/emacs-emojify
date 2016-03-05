@@ -660,14 +660,30 @@ This returns nil if the emojis between BEG and END do not fall in region."
                  (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
-(defun emojify--overlay-face-background (beg)
+(defun emojify--overlay-face-background (face)
+  "Get background for given overlay FACE.
+
+This similar to `face-background' except it handles different values possible
+for overlay face including anonymous faces and list of faces.  Unlike
+`face-background' it always looks up inherited faces if background is not
+directly defined on the face."
+  (if (memq (type-of face) '(string symbol))
+      (and (facep face)
+           (face-background face nil 'default))
+    (and (consp face)
+         ;; Handle anonymous faces
+         (or (or (plist-get face :background)
+                 (emojify--face-background (car (plist-get face :inherit))))
+             ;; Possibly a list of faces
+             (emojify--overlay-face-background (car face))))))
+
+(defun emojify--overlay-background (beg)
   "Get the overlay face for point BEG."
-  (let* ((overlays-with-face (seq-filter (lambda (overlay)
-                                           (and (overlay-get overlay 'face)
-                                                (face-background (overlay-get overlay 'face) nil 'default)))
-                                         (emojify-overlays-at beg t))))
-    (when overlays-with-face
-      (face-background (overlay-get (car (last overlays-with-face)) 'face) nil 'default))))
+  (let* ((overlay-backgrounds (delq nil (seq-map (lambda (overlay)
+                                                   (and (overlay-get overlay 'face)
+                                                        (emojify--overlay-face-background (overlay-get overlay 'face))))
+                                                 (emojify-overlays-at beg t)))))
+    (car overlay-backgrounds)))
 
 (defun emojify--face-background-at-point (beg)
   "Get the background color for emoji at BEG."
@@ -680,13 +696,13 @@ This returns nil if the emojis between BEG and END do not fall in region."
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END.
 
-Ideally `emojify--overlay-face-background' should have been enough to handle
+Ideally `emojify--overlay-background' should have been enough to handle
 selection, but for some reason it does not work well."
   (or (emojify--region-background-face-maybe beg end)
       ;; TODO: `emojify--face-background-at-point' might already be
-      ;; handling overlay faces as such `emojify--overlay-face-background'
+      ;; handling overlay faces as such `emojify--overlay-background'
       ;; might be redundant, need to verify this though
-      (emojify--overlay-face-background beg)
+      (emojify--overlay-background beg)
       (emojify--face-background-at-point beg)
       (face-background 'default)))
 
