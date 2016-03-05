@@ -369,20 +369,18 @@ These can have one of the following values
 (define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
 (define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
 
-(defcustom emojify-prog-contexts
-  'both
+(defcustom emojify-program-contexts
+  '(comments string code)
   "Contexts where emojis can be displayed in programming modes.
 
 Possible values are
-`comments' - Display emojis only in comments
-`string'   - Display emojis only in strings
-`both'     - Display emojis in comments and strings
-`none'     - Do not display emojis in programming modes"
-  :type '(radio :tag "Contexts where emojis should be displayed in programming modes"
-                (const :tag "Only in comments" comments)
-                (const :tag "Only in string" string)
-                (const :tag "Both in comments and string" both)
-                (const :tag "Do not display emojis in programming modes" none))
+`comments' - Display emojis in comments
+`string'   - Display emojis in strings
+`code'     - Display emojis in code (this is applicable only for unicode emojis)"
+  :type '(set :tag "Contexts where emojis should be displayed in programming modes"
+              (const :tag "Display emojis in comments" comments)
+              (const :tag "Display emojis in string" string)
+              (const :tag "Display emojis in code" code))
   :group 'emojify)
 
 (defcustom emojify-inhibit-functions
@@ -417,20 +415,19 @@ The arguments IGNORED are, well ignored"
   (and (eq major-mode 'org-mode)
        (org-at-item-p)))
 
-(defun emojify-valid-prog-context-p (beg end)
-  "Determine if the text between BEG and END should be used to display emojis.
+(defun emojify-valid-program-context-p (beg end)
+  "Determine if emoji should be displayed for text between BEG and END.
 
-This returns non-nil if the region is valid according to `emojify-prog-contexts'"
-  (when (and emojify-prog-contexts
-             (memq emojify-prog-contexts '(string comments both)))
-    (let ((syntax-beg (syntax-ppss beg))
-          (syntax-end (syntax-ppss end))
-          (pos (pcase emojify-prog-contexts
-                 (`string 3)
-                 (`comments 4)
-                 (`both 8))))
-      (and (nth pos syntax-beg)
-           (nth pos syntax-end)))))
+This returns non-nil if the region is valid according to `emojify-program-contexts'"
+  (when emojify-program-contexts
+    (let* ((syntax-beg (syntax-ppss beg))
+           (syntax-end (syntax-ppss end))
+           (context (cond ((and (nth 3 syntax-beg)
+                                (nth 3 syntax-end)) 'string)
+                          ((and (nth 4 syntax-beg)
+                                (nth 4 syntax-end)) 'comments)
+                          (t 'code))))
+      (memql context emojify-program-contexts))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -463,7 +460,7 @@ the visible area."
                      (nth 8 syntax-end)))))))))
 
 (defun emojify-valid-ascii-emoji-context-p (beg end)
-  "Determine if the okay to display for text between BEG and END."
+  "Determine if the okay to display ascii emoji between BEG and END."
   ;; The text is at the start of the buffer
   (and (or (not (char-before beg))
            ;; 32 space since ?  (? followed by a space) is not readable
@@ -781,8 +778,8 @@ TODO: Skip emojifying if region is already emojified."
                               emojify-emoji-styles)
                        ;; Display unconditionally in non-prog mode
                        (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
-                           ;; In prog mode enable respecting `emojify-prog-contexts'
-                           (emojify-valid-prog-context-p match-beginning match-end))
+                           ;; In prog mode enable respecting `emojify-program-contexts'
+                           (emojify-valid-program-context-p match-beginning match-end))
 
                        ;; Display ascii emojis conservatively, since they have potential
                        ;; to be annoying consider d: in head:
