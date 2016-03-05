@@ -397,7 +397,7 @@ Possible values are
          (setq emojify-program-contexts (pcase value
                                           (`comments '(comments))
                                           (`string '(string))
-                                          (`both '(comments string))
+                                          (`both '(comments string code))
                                           (`none '()))))
   :group 'emojify)
 
@@ -433,7 +433,7 @@ The arguments IGNORED are, well ignored"
   (and (eq major-mode 'org-mode)
        (org-at-item-p)))
 
-(defun emojify-valid-program-context-p (beg end)
+(defun emojify-valid-program-context-p (emoji beg end)
   "Determine if emoji should be displayed for text between BEG and END.
 
 This returns non-nil if the region is valid according to `emojify-program-contexts'"
@@ -445,7 +445,13 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                           ((and (nth 4 syntax-beg)
                                 (nth 4 syntax-end)) 'comments)
                           (t 'code))))
-      (memql context emojify-program-contexts))))
+      (and (memql context emojify-program-contexts)
+           (if (equal context 'code)
+               ;; If context if code display only unicode emojis
+               (and (string= (ht-get emoji "style") "unicode")
+                    (memql 'unicode emojify-emoji-styles))
+             ;; No need to check for non-code context
+             t)))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -795,21 +801,22 @@ TODO: Skip emojifying if region is already emojified."
         (goto-char beg)
         (while (and (> end (point))
                     (search-forward-regexp regexp end t))
-          (let ((match-beginning (match-beginning 0))
-                (match-end (match-end 0))
-                (match (match-string-no-properties 0))
-                (buffer (current-buffer)))
+          (let* ((match-beginning (match-beginning 0))
+                 (match-end (match-end 0))
+                 (match (match-string-no-properties 0))
+                 (buffer (current-buffer))
+                 (emoji (ht-get emojify-emojis match)))
 
-            (when (and (memql (intern (ht-get (ht-get emojify-emojis match) "style"))
+            (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Display unconditionally in non-prog mode
                        (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
                            ;; In prog mode enable respecting `emojify-program-contexts'
-                           (emojify-valid-program-context-p match-beginning match-end))
+                           (emojify-valid-program-context-p emoji match-beginning match-end))
 
                        ;; Display ascii emojis conservatively, since they have potential
                        ;; to be annoying consider d: in head:
-                       (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
+                       (or (not (string= (ht-get emoji "style") "ascii"))
                            (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
                        (not (emojify-inside-org-src-p match-beginning))
