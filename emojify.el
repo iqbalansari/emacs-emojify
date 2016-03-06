@@ -712,7 +712,7 @@ directly defined on the face."
                                                    (and (overlay-get overlay 'face)
                                                         (emojify--overlay-face-background (overlay-get overlay 'face))))
                                                  (emojify-overlays-at beg t)))))
-    (car overlay-backgrounds)))
+    (car (last overlay-backgrounds))))
 
 (defun emojify--face-background-at-point (beg)
   "Get the background color for emoji at BEG."
