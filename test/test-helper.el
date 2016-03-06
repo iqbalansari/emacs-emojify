@@ -37,7 +37,7 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-inhibit-major-modes emojify-inhibit-major-modes)
          (emojify-saved-inhibit-in-buffer-functions emojify-inhibit-in-buffer-functions)
          (emojify-saved-emoji-style emojify-emoji-styles)
-         (emojify-saved-prog-contexts emojify-prog-contexts)
+         (emojify-saved-program-contexts emojify-program-contexts)
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
          (emojify-saved-show-help emojify-show-help)
@@ -53,7 +53,7 @@ Helps isolate tests from each other's customizations."
              emojify-display-style emojify-saved-display-style
              emojify-inhibit-major-modes emojify-saved-inhibit-major-modes
              emojify-inhibit-in-buffer-functions emojify-saved-inhibit-in-buffer-functions
-             emojify-prog-contexts emojify-saved-prog-contexts
+             emojify-program-contexts emojify-saved-program-contexts
              emojify-inhibit-functions emojify-saved-inhibit-functions
              emojify-point-entered-behaviour emojify-saved-point-entered-behaviour
              emojify-show-help emojify-saved-show-help

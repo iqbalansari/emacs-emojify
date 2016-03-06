@@ -365,9 +365,19 @@ These can have one of the following values
   :set (lambda (_ value) (emojify-set-emoji-styles value))
   :group 'emojify)
 
-;; Obsolete vars
-(define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
-(define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
+(defcustom emojify-program-contexts
+  '(comments string code)
+  "Contexts where emojis can be displayed in programming modes.
+
+Possible values are
+`comments' - Display emojis in comments
+`string'   - Display emojis in strings
+`code'     - Display emojis in code (this is applicable only for unicode emojis)"
+  :type '(set :tag "Contexts where emojis should be displayed in programming modes"
+              (const :tag "Display emojis in comments" comments)
+              (const :tag "Display emojis in string" string)
+              (const :tag "Display emojis in code" code))
+  :group 'emojify)
 
 (defcustom emojify-prog-contexts
   'both
@@ -383,6 +393,12 @@ Possible values are
                 (const :tag "Only in string" string)
                 (const :tag "Both in comments and string" both)
                 (const :tag "Do not display emojis in programming modes" none))
+  :set (lambda (_ value)
+         (setq emojify-program-contexts (pcase value
+                                          (`comments '(comments))
+                                          (`string '(string))
+                                          (`both '(comments string code))
+                                          (`none '()))))
   :group 'emojify)
 
 (defcustom emojify-inhibit-functions
@@ -417,20 +433,25 @@ The arguments IGNORED are, well ignored"
   (and (eq major-mode 'org-mode)
        (org-at-item-p)))
 
-(defun emojify-valid-prog-context-p (beg end)
-  "Determine if the text between BEG and END should be used to display emojis.
+(defun emojify-valid-program-context-p (emoji beg end)
+  "Determine if emoji should be displayed for text between BEG and END.
 
-This returns non-nil if the region is valid according to `emojify-prog-contexts'"
-  (when (and emojify-prog-contexts
-             (memq emojify-prog-contexts '(string comments both)))
-    (let ((syntax-beg (syntax-ppss beg))
-          (syntax-end (syntax-ppss end))
-          (pos (pcase emojify-prog-contexts
-                 (`string 3)
-                 (`comments 4)
-                 (`both 8))))
-      (and (nth pos syntax-beg)
-           (nth pos syntax-end)))))
+This returns non-nil if the region is valid according to `emojify-program-contexts'"
+  (when emojify-program-contexts
+    (let* ((syntax-beg (syntax-ppss beg))
+           (syntax-end (syntax-ppss end))
+           (context (cond ((and (nth 3 syntax-beg)
+                                (nth 3 syntax-end)) 'string)
+                          ((and (nth 4 syntax-beg)
+                                (nth 4 syntax-end)) 'comments)
+                          (t 'code))))
+      (and (memql context emojify-program-contexts)
+           (if (equal context 'code)
+               ;; If context if code display only unicode emojis
+               (and (string= (ht-get emoji "style") "unicode")
+                    (memql 'unicode emojify-emoji-styles))
+             ;; No need to check for non-code context
+             t)))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -463,7 +484,7 @@ the visible area."
                      (nth 8 syntax-end)))))))))
 
 (defun emojify-valid-ascii-emoji-context-p (beg end)
-  "Determine if the okay to display for text between BEG and END."
+  "Determine if the okay to display ascii emoji between BEG and END."
   ;; The text is at the start of the buffer
   (and (or (not (char-before beg))
            ;; 32 space since ?  (? followed by a space) is not readable
@@ -496,6 +517,14 @@ the visible area."
                    41
                    ;; comment end
                    ?>)))))
+
+
+
+;; Obsolete vars
+
+(define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
+(define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
+(define-obsolete-variable-alias 'emojify-prog-contexts 'emojify-program-contexts "0.3")
 
 
 
@@ -660,14 +689,30 @@ This returns nil if the emojis between BEG and END do not fall in region."
                  (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
-(defun emojify--overlay-face-background (beg)
+(defun emojify--overlay-face-background (face)
+  "Get background for given overlay FACE.
+
+This similar to `face-background' except it handles different values possible
+for overlay face including anonymous faces and list of faces.  Unlike
+`face-background' it always looks up inherited faces if background is not
+directly defined on the face."
+  (if (memq (type-of face) '(string symbol))
+      (and (facep face)
+           (face-background face nil 'default))
+    (and (consp face)
+         ;; Handle anonymous faces
+         (or (or (plist-get face :background)
+                 (emojify--face-background (car (plist-get face :inherit))))
+             ;; Possibly a list of faces
+             (emojify--overlay-face-background (car face))))))
+
+(defun emojify--overlay-background (beg)
   "Get the overlay face for point BEG."
-  (let* ((overlays-with-face (seq-filter (lambda (overlay)
-                                           (and (overlay-get overlay 'face)
-                                                (face-background (overlay-get overlay 'face) nil 'default)))
-                                         (emojify-overlays-at beg t))))
-    (when overlays-with-face
-      (face-background (overlay-get (car (last overlays-with-face)) 'face) nil 'default))))
+  (let* ((overlay-backgrounds (delq nil (seq-map (lambda (overlay)
+                                                   (and (overlay-get overlay 'face)
+                                                        (emojify--overlay-face-background (overlay-get overlay 'face))))
+                                                 (emojify-overlays-at beg t)))))
+    (car (last overlay-backgrounds))))
 
 (defun emojify--face-background-at-point (beg)
   "Get the background color for emoji at BEG."
@@ -680,13 +725,13 @@ This returns nil if the emojis between BEG and END do not fall in region."
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END.
 
-Ideally `emojify--overlay-face-background' should have been enough to handle
+Ideally `emojify--overlay-background' should have been enough to handle
 selection, but for some reason it does not work well."
   (or (emojify--region-background-face-maybe beg end)
       ;; TODO: `emojify--face-background-at-point' might already be
-      ;; handling overlay faces as such `emojify--overlay-face-background'
+      ;; handling overlay faces as such `emojify--overlay-background'
       ;; might be redundant, need to verify this though
-      (emojify--overlay-face-background beg)
+      (emojify--overlay-background beg)
       (emojify--face-background-at-point beg)
       (face-background 'default)))
 
@@ -756,21 +801,22 @@ TODO: Skip emojifying if region is already emojified."
         (goto-char beg)
         (while (and (> end (point))
                     (search-forward-regexp regexp end t))
-          (let ((match-beginning (match-beginning 0))
-                (match-end (match-end 0))
-                (match (match-string-no-properties 0))
-                (buffer (current-buffer)))
+          (let* ((match-beginning (match-beginning 0))
+                 (match-end (match-end 0))
+                 (match (match-string-no-properties 0))
+                 (buffer (current-buffer))
+                 (emoji (ht-get emojify-emojis match)))
 
-            (when (and (memql (intern (ht-get (ht-get emojify-emojis match) "style"))
+            (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Display unconditionally in non-prog mode
                        (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
-                           ;; In prog mode enable respecting `emojify-prog-contexts'
-                           (emojify-valid-prog-context-p match-beginning match-end))
+                           ;; In prog mode enable respecting `emojify-program-contexts'
+                           (emojify-valid-program-context-p emoji match-beginning match-end))
 
                        ;; Display ascii emojis conservatively, since they have potential
                        ;; to be annoying consider d: in head:
-                       (or (not (string= (ht-get (ht-get emojify-emojis match) "style") "ascii"))
+                       (or (not (string= (ht-get emoji "style") "ascii"))
                            (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
                        (not (emojify-inside-org-src-p match-beginning))
