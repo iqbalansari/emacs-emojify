@@ -263,7 +263,6 @@ Possible values are
     ert-results-mode
     compilation-mode
     proced-mode
-    comint-mode
     mu4e-headers-mode)
   "Major modes where emojify mode should not be enabled."
   :type '(repeat symbol)
@@ -775,20 +774,18 @@ DATA holds the emoji data, _BEG and _END delimit the region where emoji will
 be displayed."
   (ht-get data "ascii"))
 
-(defun emojify--get-text-display-props (text beg end)
-  "Get the display property for an emoji.
+(defun emojify--get-text-display-props (emoji beg end)
+  "Get the display property for an EMOJI.
 
 TEXT is the text to be displayed as emoji, BEG and END delimit the
 region containing the emoji."
-  (let ((emoji-data (ht-get emojify-emojis text)))
-    (when emoji-data
-      (funcall (pcase emojify-display-style
-                 (`image #'emojify--get-image-display)
-                 (`unicode #'emojify--get-unicode-display)
-                 (`ascii #'emojify--get-ascii-display))
-               emoji-data
-               beg
-               end))))
+  (funcall (pcase emojify-display-style
+             (`image #'emojify--get-image-display)
+             (`unicode #'emojify--get-unicode-display)
+             (`ascii #'emojify--get-ascii-display))
+           emoji
+           beg
+           end))
 
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
@@ -810,7 +807,7 @@ TODO: Skip emojifying if region is already emojified."
             (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Display unconditionally in non-prog mode
-                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
+                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
                            ;; In prog mode enable respecting `emojify-program-contexts'
                            (emojify-valid-program-context-p emoji match-beginning match-end))
 
@@ -829,7 +826,7 @@ TODO: Skip emojifying if region is already emojified."
 
                        (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-              (let ((display-prop (emojify--get-text-display-props match match-beginning match-end)))
+              (let ((display-prop (emojify--get-text-display-props emoji match-beginning match-end)))
                 (when display-prop
                   (add-text-properties match-beginning
                                        match-end
