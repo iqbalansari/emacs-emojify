@@ -263,7 +263,6 @@ Possible values are
     ert-results-mode
     compilation-mode
     proced-mode
-    comint-mode
     mu4e-headers-mode)
   "Major modes where emojify mode should not be enabled."
   :type '(repeat symbol)
@@ -810,7 +809,7 @@ TODO: Skip emojifying if region is already emojified."
             (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Display unconditionally in non-prog mode
-                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode))
+                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
                            ;; In prog mode enable respecting `emojify-program-contexts'
                            (emojify-valid-program-context-p emoji match-beginning match-end))
 
