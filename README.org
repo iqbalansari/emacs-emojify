@@ -18,6 +18,7 @@
      - [[#controlling-behaviour-when-point-enters-an-emoji][Controlling behaviour when point enters an emoji]]
      - [[#controlling-behaviour-when-mouse-hovers-over-an-emoji][Controlling behaviour when mouse hovers over an emoji]]
    - [[#known-issues][Known issues]]
+   - [[#contributing][Contributing]]
    - [[#thanks][Thanks]]
    - [[#credits][Credits]]
    - [[#licence][Licence]]
@@ -178,6 +179,27 @@
      will be fine as long as you set these variables before ~emojify~ has
      loaded.
    - There is currently no support for custom emojis/images. I plan to add this in future.
+
+** Contributing
+   Code as well as documentation contributions are welcome. Development on
+   Emojify happens only on *develop* branch with stable and well-tested changes
+   merged from time to time into ~master~ as such make sure you base your
+   changes and pull requests on the *develop* branch.
+
+   [[https://github.com/cask/cask][Cask]] is used to manage project dependencies so make sure you have it
+   installed. To run the tests you need to install the dependencies by running
+   the following
+
+   #+BEGIN_SRC sh
+     cask install
+   #+END_SRC
+
+   After the installation completes you can run the tests by running the
+   following command
+
+   #+BEGIN_SRC sh
+     cask exec ert-runner
+   #+END_SRC
 
 ** Thanks
    Special thanks to @ryanprior for bug reports and valuable feedback on the
