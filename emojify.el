@@ -378,28 +378,6 @@ Possible values are
               (const :tag "Display emojis in code" code))
   :group 'emojify)
 
-(defcustom emojify-prog-contexts
-  'both
-  "Contexts where emojis can be displayed in programming modes.
-
-Possible values are
-`comments' - Display emojis only in comments
-`string'   - Display emojis only in strings
-`both'     - Display emojis in comments and strings
-`none'     - Do not display emojis in programming modes"
-  :type '(radio :tag "Contexts where emojis should be displayed in programming modes"
-                (const :tag "Only in comments" comments)
-                (const :tag "Only in string" string)
-                (const :tag "Both in comments and string" both)
-                (const :tag "Do not display emojis in programming modes" none))
-  :set (lambda (_ value)
-         (setq emojify-program-contexts (pcase value
-                                          (`comments '(comments))
-                                          (`string '(string))
-                                          (`both '(comments string code))
-                                          (`none '()))))
-  :group 'emojify)
-
 (defcustom emojify-inhibit-functions
   '(emojify-in-org-tags-p emojify-in-org-list-p)
   "Functions used to determine given emoji should displayed at current point.
@@ -523,7 +501,6 @@ the visible area."
 
 (define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
 (define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
-(define-obsolete-variable-alias 'emojify-prog-contexts 'emojify-program-contexts "0.3")
 
 
 
