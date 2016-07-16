@@ -225,11 +225,6 @@ visible in the selected window."
   :type 'directory
   :group 'emojify)
 
-(defcustom emojify-image-dir
-  (expand-file-name emojify-emoji-set
-                    emojify-emojis-dir)
-  "Path to emoji images.")
-
 (defcustom emojify-display-style
   'image
   "How the emoji's be displayed.
@@ -590,6 +585,11 @@ To understand WINDOW, STRING and POS see the function documentation for
                                (define-key map [remap backward-delete-char-untabify] #'emojify-delete-emoji-backward)
                                map))
 
+(defun emojify-image-dir ()
+  "Get the path to directory containing images for currently selected emoji set."
+  (expand-file-name emojify-emoji-set
+                    emojify-emojis-dir))
+
 (defun emojify--get-point-left-function (buffer match-beginning match-end)
   "Create a function that can be executed in point-left hook for emoji text.
 
@@ -717,7 +717,7 @@ selection, but for some reason it does not work well."
 DATA holds the emoji data, BEG and END delimit the region where emoji will
 be displayed."
   (let* ((image-file (expand-file-name (ht-get data "image")
-                                       emojify-image-dir))
+                                       (emojify-image-dir)))
          (image-type (intern (upcase (file-name-extension image-file)))))
     (when (file-exists-p image-file)
       (create-image image-file
@@ -1037,7 +1037,7 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 (defun emojify-download-emoji-maybe ()
   "Download emoji images if needed."
   (when (and (equal emojify-display-style 'image)
-             (not (file-exists-p emojify-image-dir))
+             (not (file-exists-p (emojify-image-dir)))
              (not emojify--refused-image-download-p))
     (unwind-protect
         ;; Do not prompt for download if download is in progress

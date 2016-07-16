@@ -32,7 +32,6 @@
 Helps isolate tests from each other's customizations."
   (declare (indent 0))
   `(let ((emojify-saved-emoji-json emojify-emoji-json)
-         (emojify-saved-image-dir emojify-image-dir)
          (emojify-saved-display-style emojify-display-style)
          (emojify-saved-inhibit-major-modes emojify-inhibit-major-modes)
          (emojify-saved-inhibit-in-buffer-functions emojify-inhibit-in-buffer-functions)
@@ -45,11 +44,10 @@ Helps isolate tests from each other's customizations."
          (emojify-debug-mode t))
      (unwind-protect
          (progn
-           (unless (file-exists-p emojify-image-dir)
+           (unless (file-exists-p (emojify-image-dir))
              (emojify-download-emoji emojify-emoji-set))
            ,@forms)
        (setq emojify-emoji-json emojify-saved-emoji-json
-             emojify-image-dir emojify-saved-image-dir
              emojify-display-style emojify-saved-display-style
              emojify-inhibit-major-modes emojify-saved-inhibit-major-modes
              emojify-inhibit-in-buffer-functions emojify-saved-inhibit-in-buffer-functions
