@@ -254,7 +254,9 @@ Possible values are
     pdf-view-mode
     image-mode
     help-mode
+    ibuffer-mode
     magit-popup-mode
+    magit-diff-mode
     ert-results-mode
     compilation-mode
     proced-mode
