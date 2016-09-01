@@ -212,7 +212,7 @@ visible in the selected window."
                                             ((locate-library "emojify") (file-name-directory (locate-library "emojify")))
                                             (t default-directory))))))
 
-(defcustom emojify-emoji-set "emojione-v2-22"
+(defcustom emojify-emoji-set "emojione-v2.2.6-22"
   "The emoji set used to display emojis."
   :type (append '(radio :tag "Emoji set")
                 (mapcar (lambda (set) (list 'const set))
