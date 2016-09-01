@@ -4,3 +4,4 @@
 
 # cask packages
 .cask/
+/dist/
