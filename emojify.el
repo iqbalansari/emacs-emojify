@@ -282,6 +282,9 @@ This is a buffer local variable that can be set to inhibit enabling of
 emojify in a buffer.")
 (make-variable-buffer-local 'emojify-inhibit-emojify-in-current-buffer-p)
 
+(defvar emojify-in-apropos-p nil
+  "Are we currently executing emojify apropos command?")
+
 (defun emojify-ephemeral-buffer-p (buffer)
   "Determine if BUFFER is an ephemeral/temporary buffer."
   (string-match-p "^ " (buffer-name buffer)))
@@ -295,7 +298,8 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
 
 (defun emojify-helm-buffer-p (buffer)
   "Determine if the current BUFFER is a helm buffer."
-  (string-match-p "\\*helm" (buffer-name buffer)))
+  (unless emojify-in-apropos-p
+    (string-match-p "\\*helm" (buffer-name buffer))))
 
 (defun emojify-buffer-p (buffer)
   "Determine if `emojify-mode' should be enabled for given BUFFER.
@@ -791,8 +795,10 @@ TODO: Skip emojifying if region is already emojified."
                            (emojify-valid-program-context-p emoji match-beginning match-end))
 
                        ;; Display ascii emojis conservatively, since they have potential
-                       ;; to be annoying consider d: in head:
+                       ;; to be annoying consider d: in head:, except while executing apropos
+                       ;; emoji
                        (or (not (string= (ht-get emoji "style") "ascii"))
+                           emojify-in-apropos-p
                            (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
                        (not (emojify-inside-org-src-p match-beginning))
@@ -993,6 +999,24 @@ To work around this
 This function updates the backgrounds of the emojis in the newly displayed area
 of the window.  DISPLAY-START corresponds to the new start of the window."
   (emojify--update-emojis-background-in-region-starting-at display-start))
+
+
+
+;; Apropos Emoji
+
+(defun emojify-apropos-emoji ()
+  (interactive)
+  (let ((emojify-in-apropos-p t))
+    (insert (completing-read "Apropos Emoji: "
+                             (let (emojis)
+                               (maphash (lambda (key value)
+                                          (push (format "%s - %s (%s)"
+                                                        key
+                                                        (gethash "name" value)
+                                                        (gethash "style" value))
+                                                emojis))
+                                        emojify-emojis)
+                               emojis)))))
 
 
 
