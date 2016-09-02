@@ -792,7 +792,6 @@ TODO: Skip emojifying if region is already emojified."
                  (match (match-string-no-properties 0))
                  (buffer (current-buffer))
                  (emoji (ht-get emojify-emojis match)))
-
             (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Display unconditionally in non-prog mode
@@ -804,7 +803,6 @@ TODO: Skip emojifying if region is already emojified."
                        ;; to be annoying consider d: in head:, except while executing apropos
                        ;; emoji
                        (or (not (string= (ht-get emoji "style") "ascii"))
-                           emojify-in-apropos-p
                            (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
                        (not (emojify-inside-org-src-p match-beginning))
