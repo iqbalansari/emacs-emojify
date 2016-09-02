@@ -458,7 +458,9 @@ the visible area."
     (save-restriction
       (narrow-to-region beg end)
       (let ((list-start (ignore-errors (scan-sexps point -1))))
-        (when list-start
+        (when (and list-start
+                   ;; Ignore the starting brace if it is an emoji
+                   (not (get-text-property list-start 'emojified)))
           ;; If we got a list start make sure both start and end
           ;; belong to same string/comment
           (let ((syntax-beg (syntax-ppss list-start))

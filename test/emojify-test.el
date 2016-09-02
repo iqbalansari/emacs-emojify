@@ -306,6 +306,20 @@
   (emojify-tests-with-emojified-static-buffer ";; 8)"
     (emojify-tests-should-be-emojified (+ 3 (point-min))))
 
+  (emojify-tests-with-emojified-static-buffer ":(
+:)"
+    (fundamental-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-tests-should-be-emojified (point-min))
+    (emojify-tests-should-be-emojified (line-beginning-position 2)))
+
+    (emojify-tests-with-emojified-static-buffer "(
+:)"
+    (fundamental-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-tests-should-not-be-emojified (point-min))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2)))
+
   (emojify-tests-with-emojified-static-buffer ";; (lambda () 8)"
     (emacs-lisp-mode)
     (emojify-redisplay-emojis-in-region)
