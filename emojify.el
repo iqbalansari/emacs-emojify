@@ -266,7 +266,7 @@ Possible values are
   :group 'emojify)
 
 (defcustom emojify-inhibit-in-buffer-functions
-  '(minibufferp emojify-helm-buffer-p)
+  '(emojify-minibuffer-p emojify-helm-buffer-p)
   "Functions used inhibit emojify-mode in a buffer.
 
 These functions are called with one argument, the buffer where emojify-mode
@@ -287,7 +287,8 @@ emojify in a buffer.")
 
 (defun emojify-ephemeral-buffer-p (buffer)
   "Determine if BUFFER is an ephemeral/temporary buffer."
-  (string-match-p "^ " (buffer-name buffer)))
+  (and (not (minibufferp))
+       (string-match-p "^ " (buffer-name buffer))))
 
 (defun emojify-inhibit-major-mode-p (buffer)
   "Determine if user has disabled the `major-mode' enabled for the BUFFER.
@@ -300,6 +301,11 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
   "Determine if the current BUFFER is a helm buffer."
   (unless emojify-in-apropos-p
     (string-match-p "\\*helm" (buffer-name buffer))))
+
+(defun emojify-minibuffer-p (buffer)
+  "Determine if the current BUFFER is a minibuffer."
+  (unless emojify-in-apropos-p
+    (minibufferp buffer)))
 
 (defun emojify-buffer-p (buffer)
   "Determine if `emojify-mode' should be enabled for given BUFFER.
