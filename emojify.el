@@ -1013,16 +1013,17 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 (defun emojify-apropos-emoji ()
   (interactive)
   (let ((emojify-in-apropos-p t))
-    (insert (completing-read "Apropos Emoji: "
-                             (let (emojis)
-                               (maphash (lambda (key value)
-                                          (push (format "%s - %s (%s)"
-                                                        key
-                                                        (gethash "name" value)
-                                                        (gethash "style" value))
-                                                emojis))
-                                        emojify-emojis)
-                               emojis)))))
+    (insert (car (split-string (completing-read "Apropos Emoji: "
+                                                (let (emojis)
+                                                  (maphash (lambda (key value)
+                                                             (push (format "%s - %s (%s)"
+                                                                           key
+                                                                           (gethash "name" value)
+                                                                           (gethash "style" value))
+                                                                   emojis))
+                                                           emojify-emojis)
+                                                  emojis))
+                               " ")))))
 
 
 
