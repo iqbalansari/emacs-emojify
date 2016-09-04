@@ -1029,7 +1029,9 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 This respects the `emojify-emoji-styles' variable."
   (interactive)
   (let ((emojify-in-insertion-command-p t)
-        (styles (mapcar #'symbol-name emojify-emoji-styles)))
+        (styles (mapcar #'symbol-name emojify-emoji-styles))
+        (line-spacing 7)
+        (completion-ignore-case t))
     (insert (car (split-string (completing-read "Apropos Emoji: "
                                                 (let (emojis)
                                                   (maphash (lambda (key value)
