@@ -9,6 +9,7 @@ cache:
   apt: true
   directories:
   - $HOME/emacsen
+  - $HOME/.emacs.d/emojis
 
 addons:
   apt:
