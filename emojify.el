@@ -110,18 +110,20 @@ priority on lower versions."
 
 
 
-;; Utility functions
+;; Debugging helpers
 
-(defvar emojify-debug-mode nil
-  "Signal errors when emoji redisplay fails.
+(define-minor-mode emojify-debug-mode
+  "Enable debugging for emojify-mode.
 
 By default emojify silences any errors during emoji redisplay.  This is done
 since emojis are redisplayed using jit-lock (the same mechanism used for
 font-lock) as such any bugs in the code can cause other important things to
-fail.
-
-Set `emojify-debug-mode' to non-nil to instruct emojify to not silence any
-errors during operation.")
+fail. This also turns on jit-debug-mode so that (e)debugging emojify's redisplay
+functions work."
+  :init-value nil
+  (if emojify-debug-mode
+      (jit-lock-debug-mode +1)
+    (jit-lock-debug-mode -1)))
 
 (defmacro emojify-execute-ignoring-errors-unless-debug (&rest forms)
   "Execute FORMS ignoring errors unless `emojify-debug-mode' is non-nil."
@@ -131,6 +133,10 @@ errors during operation.")
          ,@forms)
      (ignore-errors
        ,@forms)))
+
+
+
+;; Utility functions
 
 (defmacro emojify-with-saved-buffer-state (&rest forms)
   "Execute FORMS saving current buffer state.
