@@ -275,25 +275,28 @@
 :100:a:smile:
 🎆😃
 🎆a😃
+😉:wink:
 :100:😃
 :100:a😃"
     ;; Github emojis
     (emojify-tests-should-be-emojified (point-min))
     (emojify-tests-should-be-emojified (+ (point-min) 5))
-    (emojify-tests-should-be-emojified (line-beginning-position 1))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 1) 6))
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 6))
 
     ;; Unicode emojis
-    (emojify-tests-should-be-emojified (line-beginning-position 2))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 1))
     (emojify-tests-should-be-emojified (line-beginning-position 3))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 3) 3))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 3) 1))
+    (emojify-tests-should-be-emojified (line-beginning-position 4))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 2))
 
     ;; Mixed emojis
-    (emojify-tests-should-be-emojified (line-beginning-position 4))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
-    (emojify-tests-should-be-emojified (line-beginning-position 4))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 6))))
+    (emojify-tests-should-be-emojified (line-beginning-position 5))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 5) 1))
+    (emojify-tests-should-be-emojified (line-beginning-position 6))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 6) 5))
+    (emojify-tests-should-be-emojified (line-beginning-position 7))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 7) 6))))
 
 (ert-deftest emojify-tests-emojifying-lists ()
   :tags '(core contextual)
