@@ -14,6 +14,7 @@
 (require 'org)
 (require 'org-agenda)
 (require 'cc-mode)
+(require 'bytecomp)
 
 (ert-deftest emojify-tests-simple-ascii-emoji-test ()
   :tags '(ascii simple)
@@ -275,25 +276,28 @@
 :100:a:smile:
 🎆😃
 🎆a😃
+😉:wink:
 :100:😃
 :100:a😃"
     ;; Github emojis
     (emojify-tests-should-be-emojified (point-min))
     (emojify-tests-should-be-emojified (+ (point-min) 5))
-    (emojify-tests-should-be-emojified (line-beginning-position 1))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 1) 6))
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 6))
 
     ;; Unicode emojis
-    (emojify-tests-should-be-emojified (line-beginning-position 2))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 1))
     (emojify-tests-should-be-emojified (line-beginning-position 3))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 3) 3))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 3) 1))
+    (emojify-tests-should-be-emojified (line-beginning-position 4))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 2))
 
     ;; Mixed emojis
-    (emojify-tests-should-be-emojified (line-beginning-position 4))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
-    (emojify-tests-should-be-emojified (line-beginning-position 4))
-    (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 6))))
+    (emojify-tests-should-be-emojified (line-beginning-position 5))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 5) 1))
+    (emojify-tests-should-be-emojified (line-beginning-position 6))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 6) 5))
+    (emojify-tests-should-be-emojified (line-beginning-position 7))
+    (emojify-tests-should-be-emojified (+ (line-beginning-position 7) 6))))
 
 (ert-deftest emojify-tests-emojifying-lists ()
   :tags '(core contextual)
@@ -306,10 +310,37 @@
   (emojify-tests-with-emojified-static-buffer ";; 8)"
     (emojify-tests-should-be-emojified (+ 3 (point-min))))
 
+  (emojify-tests-with-emojified-static-buffer ":(
+:)"
+    (fundamental-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-tests-should-be-emojified (point-min))
+    (emojify-tests-should-be-emojified (line-beginning-position 2)))
+
+    (emojify-tests-with-emojified-static-buffer "(
+:)"
+    (fundamental-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-tests-should-not-be-emojified (point-min))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2)))
+
   (emojify-tests-with-emojified-static-buffer ";; (lambda () 8)"
     (emacs-lisp-mode)
     (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (+ 14 (point-min)))))
+
+(ert-deftest emojify-tests-overlapping-emojis ()
+  :tags '(core)
+  (emojify-tests-with-emojified-static-buffer "👲🏽"
+    (fundamental-mode)
+    (let ((count 0))
+      (emojify-do-for-emojis-in-region (point-min) (point-max)
+        (incf count))
+      ;; Only one emoji should be displayed
+      (should (= count 1))
+      ;; The larger emoji should be preferred
+      (should (string= (get-text-property (point-min) 'emojify-text)
+                       "👲🏽")))))
 
 (ert-deftest emojify-tests-emojifying-org-mode-buffers ()
   :tags '(org-mode contextual)
@@ -453,7 +484,7 @@
         (delete-selection-pre-hook))
       (should (equal (point-min) (point-max))))))
 
-(ert-deftest emojify-tests-no-byte-compilation-errors ()
+(ert-deftest emojify-tests-no-byte-compilation-warnings ()
   :tags '(byte-compilation)
   (with-mock
     (stub message => nil)
