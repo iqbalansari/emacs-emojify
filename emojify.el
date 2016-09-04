@@ -808,7 +808,7 @@ TODO: Skip emojifying if region is already emojified."
                        ;; this means larger emojis get precedence over smaller
                        ;; ones
                        (not (or (get-text-property match-beginning 'emojified)
-                                (get-text-property match-end 'emojified)))
+                                (get-text-property (1- match-end) 'emojified)))
                        ;; Display unconditionally in non-prog mode
                        (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
                            ;; In prog mode enable respecting `emojify-program-contexts'
