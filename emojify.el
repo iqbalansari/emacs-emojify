@@ -1027,8 +1027,9 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
-;; Apropos Emoji
+;; Inserting Emojis
 
+;;;###autoload
 (defun emojify-insert-emoji ()
   "Interactively prompt for Emojis and insert them in the current buffer.
 
