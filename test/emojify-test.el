@@ -489,7 +489,6 @@
   (with-mock
     (stub message => nil)
     (stub byte-compile-dest-file => "/tmp/emojify.elc")
-    (stub byte-compile-warn => (error "Did not byte compile cleanly"))
     (should (byte-compile-file (locate-library "emojify.el")))))
 
 ;; So that tests can be run simply by doing `eval-buffer'
