@@ -325,6 +325,19 @@
     (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (+ 14 (point-min)))))
 
+(ert-deftest emojify-tests-overlapping-emojis ()
+  :tags '(core)
+  (emojify-tests-with-emojified-static-buffer "👲🏽"
+    (fundamental-mode)
+    (let ((count 0))
+      (emojify-do-for-emojis-in-region (point-min) (point-max)
+        (incf count))
+      ;; Only one emoji should be displayed
+      (should (= count 1))
+      ;; The larger emoji should be preferred
+      (should (string= (get-text-property (point-min) 'emojify-text)
+                       "👲🏽")))))
+
 (ert-deftest emojify-tests-emojifying-org-mode-buffers ()
   :tags '(org-mode contextual)
   (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"

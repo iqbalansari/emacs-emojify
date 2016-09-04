@@ -338,8 +338,13 @@ can customize `emojify-inhibit-major-modes' and
                              (json-object-type 'hash-table))
                          (json-read-file emojify-emoji-json)))
 
+  ;; Construct emojify-regexps in descending order of length, this is important
+  ;; so that larger emojis are searched first and get precedence over smaller
+  ;; ones (see also `emojify-display-emojis-in-region')
   (setq emojify-regexps (seq-map #'regexp-opt
-                                 (seq-partition (ht-keys emojify-emojis)
+                                 (seq-partition (sort (ht-keys emojify-emojis)
+                                                      (lambda (string1 string2) (> (length string1)
+                                                                                   (length string2))))
                                                 1000))))
 
 ;;;###autoload
@@ -796,6 +801,14 @@ TODO: Skip emojifying if region is already emojified."
                  (emoji (ht-get emojify-emojis match)))
             (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
+                       ;; Skip displaying this emoji if the its bounds are
+                       ;; already part of an existing emoji. Since the emojis
+                       ;; are searched in descending order of length (see
+                       ;; construction of emojify-regexp in `emojify-set-emoji-data'),
+                       ;; this means larger emojis get precedence over smaller
+                       ;; ones
+                       (not (or (get-text-property match-beginning 'emojified)
+                                (get-text-property match-end 'emojified)))
                        ;; Display unconditionally in non-prog mode
                        (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
                            ;; In prog mode enable respecting `emojify-program-contexts'
