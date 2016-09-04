@@ -44,6 +44,7 @@
 (require 'jit-lock)
 (require 'pcase)
 (require 'tar-mode)
+(require 'apropos)
 
 
 
@@ -320,7 +321,10 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
 can customize `emojify-inhibit-major-modes' and
 `emojify-inhibit-in-buffer-functions' to disabled emojify in additional buffers."
   (not (or emojify-inhibit-emojify-in-current-buffer-p
-           (emojify-ephemeral-buffer-p (current-buffer))
+           ;; Even though `emojify-apropos-mode' buffers are ephemeral
+           ;; we want to display emojis in them
+           (and (equal major-mode 'emojify-apropos-mode)
+                (emojify-ephemeral-buffer-p (current-buffer)))
            (emojify-inhibit-major-mode-p (current-buffer))
            (buffer-base-buffer buffer)
            (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
@@ -602,13 +606,14 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
-(defvar emojify-emoji-keymap (let ((map (make-sparse-keymap)))
-                               (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
-                               (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
-                               (define-key map [remap backward-delete-char] #'emojify-delete-emoji-backward)
-                               (define-key map [remap delete-backward-char] #'emojify-delete-emoji-backward)
-                               (define-key map [remap backward-delete-char-untabify] #'emojify-delete-emoji-backward)
-                               map))
+(defvar emojify-emoji-keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
+    (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
+    (define-key map [remap backward-delete-char] #'emojify-delete-emoji-backward)
+    (define-key map [remap delete-backward-char] #'emojify-delete-emoji-backward)
+    (define-key map [remap backward-delete-char-untabify] #'emojify-delete-emoji-backward)
+    map))
 
 (defun emojify-image-dir ()
   "Get the path to directory containing images for currently selected emoji set."
@@ -1027,33 +1032,6 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
-;; Inserting Emojis
-
-;;;###autoload
-(defun emojify-insert-emoji ()
-  "Interactively prompt for Emojis and insert them in the current buffer.
-
-This respects the `emojify-emoji-styles' variable."
-  (interactive)
-  (let ((emojify-in-insertion-command-p t)
-        (styles (mapcar #'symbol-name emojify-emoji-styles))
-        (line-spacing 7)
-        (completion-ignore-case t))
-    (insert (car (split-string (completing-read "Apropos Emoji: "
-                                                (let (emojis)
-                                                  (maphash (lambda (key value)
-                                                             (when (member (gethash "style" value) styles)
-                                                               (push (format "%s - %s (%s)"
-                                                                             key
-                                                                             (gethash "name" value)
-                                                                             (gethash "style" value))
-                                                                     emojis)))
-                                                           emojify-emojis)
-                                                  emojis))
-                               " ")))))
-
-
-
 ;; Lazy image downloading
 
 (defvar emojify--refused-image-download-p nil
@@ -1183,6 +1161,139 @@ run the command `emojify-download-emoji'")))
   emojify-mode emojify-mode
   :init-value nil)
 
+
+
+;; Searching and inserting emojis
+
+(defun emojify-apropos-quit ()
+  "Delete the window displaying Emoji search results."
+  (interactive)
+  (if (= (length (window-list)) 1)
+      (bury-buffer)
+    (quit-window)))
+
+(defun emojify-apropos-copy-emoji ()
+  "Copy the emoji being displayed at current line in apropos results."
+  (interactive)
+  (save-excursion
+    (goto-char (line-beginning-position))
+    (if (not (get-text-property (point) 'emojified))
+        (user-error "No emoji at point")
+      (kill-new (get-text-property (point) 'emojify-text))
+      (message "Copied emoji to kill ring!"))))
+
+(defvar emojify-apropos-mode-map
+  (let ((map (make-sparse-keymap)))
+
+    (define-key map "q" #'emojify-apropos-quit)
+    (define-key map "c" #'emojify-apropos-copy-emoji)
+    (define-key map "w" #'emojify-apropos-copy-emoji)
+    (define-key map "n" #'next-line)
+    (define-key map "p" #'previous-line)
+    (define-key map "r" #'isearch-backward)
+    (define-key map "s" #'isearch-forward)
+    (define-key map ">" 'end-of-buffer)
+    (define-key map "<" 'beginning-of-buffer)
+
+    (dolist (key '("?" "h" "H"))
+      (define-key map key #'describe-mode))
+
+    (dolist (number (number-sequence 0 9))
+      (define-key map (number-to-string number) #'digit-argument))
+
+    map)
+  "Keymap used in `emojify-apropos-mode'.")
+
+(define-derived-mode emojify-apropos-mode fundamental-mode "Apropos Emojis"
+  "Mode used to display results of `emojify-apropos-emoji'
+
+\\{emojify-apropos-mode-map}"
+  (emojify-mode +1)
+  (read-only-mode +1))
+
+(put 'emojify-apropos-mode 'mode-class 'special)
+
+;;;###autoload
+(defun emojify-apropos-emoji (pattern)
+  "Show Emojis that match PATTERN."
+  (interactive (list (apropos-read-pattern "emoji")))
+
+  (let (matching-emojis sorted-emojis)
+
+    (unless (listp pattern)
+      (setq pattern (list pattern)))
+
+    ;; Convert the user entered text to a regex to match the emoji name or
+    ;; description
+    (apropos-parse-pattern pattern)
+
+    ;; Collection matching emojis in a list (list score emoji emoji-data)
+    ;; elements, where score is the proximity of the emoji to given pattern
+    ;; calculated using `apropos-score-str'
+    (maphash (lambda (key value)
+               (when (or (string-match apropos-regexp key)
+                         (string-match apropos-regexp (gethash "name" value)))
+                 (push (list (max (apropos-score-str key)
+                                  (apropos-score-str (gethash "name" value)))
+                             key
+                             value)
+                       matching-emojis)))
+             emojify-emojis)
+
+    ;; Sort the emojis by the proximity score
+    (setq sorted-emojis (mapcar #'cdr
+                                (sort matching-emojis
+                                      (lambda (emoji1 emoji2)
+                                        (> (car emoji1) (car emoji2))))))
+
+    (when (get-buffer "*Apropos Emojis*")
+      (kill-buffer "*Apropos Emojis*"))
+
+    ;; Insert result in apropos buffer and display it
+    (with-current-buffer (get-buffer-create "*Apropos Emojis*")
+      (erase-buffer)
+      (insert (propertize "Emojis matching" 'face 'apropos-symbol))
+      (insert (format " - \"%s\"" (mapconcat 'identity pattern " ")))
+      (insert "\n\nUse `c' or `w' to copy emoji on current line\n\n")
+      (dolist (emoji sorted-emojis)
+        (insert (format "%s - %s (%s)"
+                        (car emoji)
+                        (gethash "name" (cadr emoji))
+                        (gethash "style" (cadr emoji))))
+        (insert "\n"))
+      (goto-char (point-min))
+      (emojify-apropos-mode)
+      (setq-local line-spacing 7))
+
+    (display-buffer (get-buffer "*Apropos Emojis*"))))
+
+;;;###autoload
+(defun emojify-insert-emoji ()
+  "Interactively prompt for Emojis and insert them in the current buffer.
+
+This respects the `emojify-emoji-styles' variable."
+  (interactive)
+  (let* ((emojify-in-insertion-command-p t)
+         (styles (mapcar #'symbol-name emojify-emoji-styles))
+         (line-spacing 7)
+         (completion-ignore-case t)
+         (candidates (let (emojis)
+                       (maphash (lambda (key value)
+                                  (when (member (gethash "style" value) styles)
+                                    (push (format "%s - %s (%s)"
+                                                  key
+                                                  (gethash "name" value)
+                                                  (gethash "style" value))
+                                          emojis)))
+                                emojify-emojis)
+                       emojis)))
+    (insert (car (split-string (completing-read "Apropos Emoji: " candidates)
+                               " ")))))
+
+
+
+;; Integration with some miscellaneous functionality
+
 (defadvice mouse--drag-set-mark-and-point (after emojify-update-emoji-background (&rest ignored))
   "Advice to update emoji backgrounds after selection is changed using mouse.
 
@@ -1227,6 +1338,8 @@ runs (only emojify's) point motion hooks."
                    new-font-height)))))
 
 (ad-activate #'text-scale-increase)
+
+
 
 (provide 'emojify)
 ;;; emojify.el ends here

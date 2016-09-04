@@ -11,6 +11,7 @@
      - [[#elpa][ELPA]]
    - [[#usage][Usage]]
      - [[#displaying-emojis][Displaying emojis]]
+     - [[#searching-emojis][Searching emojis]]
      - [[#inserting-emojis][Inserting emojis]]
    - [[#customizations][Customizations]]
      - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
@@ -78,6 +79,11 @@
     #+END_SRC
 
     In programming modes only emojis in string and comments are displayed.
+
+*** Searching emojis
+    The command ~emojify-apropos-emoji~ can be used to display emojis that match
+    given regexp/apropos pattern. The results are displayed in a specialized
+    buffer, where ~w~ or ~c~ can be used to copy emojis to the kill ring.
 
 *** Inserting emojis
     The command ~emojify-insert-emoji~ can be used to insert emojis
