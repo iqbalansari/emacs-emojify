@@ -11,6 +11,7 @@
      - [[#elpa][ELPA]]
    - [[#usage][Usage]]
      - [[#displaying-emojis][Displaying emojis]]
+     - [[#searching-emojis][Searching emojis]]
      - [[#inserting-emojis][Inserting emojis]]
    - [[#customizations][Customizations]]
      - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
@@ -79,11 +80,26 @@
 
     In programming modes only emojis in string and comments are displayed.
 
+*** Searching emojis
+    The command ~emojify-apropos-emoji~ can be used to display emojis that match
+    given regexp/apropos pattern. The results are displayed in a specialized
+    buffer, where ~w~ or ~c~ can be used to copy emojis to the kill ring.
+
+    *NOTE* - You might notice that some of the emojis returned by this search
+    are not displayed by ~emojify~, this might happen if you newer emoji data
+    but old set of image. Download the latest emoji image using
+    ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
+
 *** Inserting emojis
     The command ~emojify-insert-emoji~ can be used to insert emojis
     interactively. While the command works with vanilla Emacs completion system,
     the experience would be better with something like [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/abo-abo/swiper][Ivy]], [[https://www.emacswiki.org/emacs/Icicles][Icicles]] or Ido
     depending on you preference.
+
+    *NOTE* - You might notice that some of the emojis prompted in the above
+    command are not displayed by ~emojify~, this might happen if you newer emoji
+    data but old set of image. Download the latest emoji image using
+    ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
 
 ** Customizations
 *** Configuring the types of emojis displayed
