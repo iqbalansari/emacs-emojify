@@ -82,7 +82,7 @@
 *** Inserting emojis
     The command ~emojify-insert-emoji~ can be used to insert emojis
     interactively. While the command works with vanilla Emacs completion system,
-    the experience would be better with something like [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/abo-abo/swiper][Ivy]] or Ido
+    the experience would be better with something like [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/abo-abo/swiper][Ivy]], [[https://www.emacswiki.org/emacs/Icicles][Icicles]] or Ido
     depending on you preference.
 
 ** Customizations
