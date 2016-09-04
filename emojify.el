@@ -674,7 +674,7 @@ and end of region respectively."
              (<= end emojify-region-end)))))
 
 (defun emojify--region-background-face-maybe (beg end)
-  "Get the region for emoji between BEG and END.
+  "If the BEG and END falls inside an active region return the region face.
 
 This returns nil if the emojis between BEG and END do not fall in region."
   ;; `redisplay-highlight-region-function' was not defined in Emacs 24.3
@@ -697,7 +697,7 @@ directly defined on the face."
     (and (consp face)
          ;; Handle anonymous faces
          (or (or (plist-get face :background)
-                 (emojify--face-background (car (plist-get face :inherit))))
+                 (face-background (car (plist-get face :inherit)) nil 'default ))
              ;; Possibly a list of faces
              (emojify--overlay-face-background (car face))))))
 
