@@ -282,7 +282,7 @@ This is a buffer local variable that can be set to inhibit enabling of
 emojify in a buffer.")
 (make-variable-buffer-local 'emojify-inhibit-emojify-in-current-buffer-p)
 
-(defvar emojify-in-apropos-p nil
+(defvar emojify-in-insertion-command-p nil
   "Are we currently executing emojify apropos command?")
 
 (defun emojify-ephemeral-buffer-p (buffer)
@@ -299,12 +299,12 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
 
 (defun emojify-helm-buffer-p (buffer)
   "Determine if the current BUFFER is a helm buffer."
-  (unless emojify-in-apropos-p
+  (unless emojify-in-insertion-command-p
     (string-match-p "\\*helm" (buffer-name buffer))))
 
 (defun emojify-minibuffer-p (buffer)
   "Determine if the current BUFFER is a minibuffer."
-  (unless emojify-in-apropos-p
+  (unless emojify-in-insertion-command-p
     (minibufferp buffer)))
 
 (defun emojify-buffer-p (buffer)
@@ -1023,17 +1023,22 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 ;; Apropos Emoji
 
-(defun emojify-apropos-emoji ()
+(defun emojify-insert-emoji ()
+  "Interactively prompt for Emojis and insert them in the current buffer.
+
+This respects the `emojify-emoji-styles' variable."
   (interactive)
-  (let ((emojify-in-apropos-p t))
+  (let ((emojify-in-insertion-command-p t)
+        (styles (mapcar #'symbol-name emojify-emoji-styles)))
     (insert (car (split-string (completing-read "Apropos Emoji: "
                                                 (let (emojis)
                                                   (maphash (lambda (key value)
-                                                             (push (format "%s - %s (%s)"
-                                                                           key
-                                                                           (gethash "name" value)
-                                                                           (gethash "style" value))
-                                                                   emojis))
+                                                             (when (member (gethash "style" value) styles)
+                                                               (push (format "%s - %s (%s)"
+                                                                             key
+                                                                             (gethash "name" value)
+                                                                             (gethash "style" value))
+                                                                     emojis)))
                                                            emojify-emojis)
                                                   emojis))
                                " ")))))
