@@ -14,6 +14,7 @@
 (require 'org)
 (require 'org-agenda)
 (require 'cc-mode)
+(require 'bytecomp)
 
 (ert-deftest emojify-tests-simple-ascii-emoji-test ()
   :tags '(ascii simple)
@@ -483,11 +484,12 @@
         (delete-selection-pre-hook))
       (should (equal (point-min) (point-max))))))
 
-(ert-deftest emojify-tests-no-byte-compilation-errors ()
+(ert-deftest emojify-tests-no-byte-compilation-warnings ()
   :tags '(byte-compilation)
   (with-mock
     (stub message => nil)
     (stub byte-compile-dest-file => "/tmp/emojify.elc")
+    (stub byte-compile-warn => (error "Did not byte compile cleanly"))
     (should (byte-compile-file (locate-library "emojify.el")))))
 
 ;; So that tests can be run simply by doing `eval-buffer'
