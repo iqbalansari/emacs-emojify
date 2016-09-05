@@ -423,7 +423,7 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                           (t 'code))))
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
-               ;; If context if code display only unicode emojis
+               ;; If context is code display only unicode emojis
                (and (string= (ht-get emoji "style") "unicode")
                     (memql 'unicode emojify-emoji-styles))
              ;; No need to check for non-code context
@@ -586,8 +586,38 @@ To understand WINDOW, STRING and POS see the function documentation for
 (defvar emojify-emojis nil
   "Data about the emojis, this contains only the emojis that come with emojify.")
 
+(defvar emojify-user-emojis nil
+  "User specified custom emojis.")
+
+(defvar emojify-pretty-symbol-emojis nil
+  "Emojis extracted from `prettify-symbols-alist'.")
+
+(make-variable-buffer-local 'emojify-pretty-symbol-emojis)
+
 (defvar emojify-regexps nil
   "Regexp to match text to emojified.")
+
+(defun emojify-get-emoji (emoji)
+  "Get data for given EMOJI.
+
+This first looks for the emoji in `emojify-user-emojis',
+`emojify-pretty-symbol-emojis' and finally in `emojify-emojis'."
+  (or (when emojify-user-emojis
+        (ht-get emojify-user-emojis emoji))
+      (when emojify-pretty-symbol-emojis
+        (ht-get emojify-pretty-symbol-emojis emoji))
+      (ht-get emojify-emojis emoji)))
+
+(defun emojify-emojis-each (function)
+  "Execute FUNCTION for each emoji.
+
+This first runs function for `emojify-user-emojis',
+`emojify-pretty-symbol-emojis' and then `emojify-emojis'."
+  (when emojify-user-emojis
+    (ht-each function emojify-user-emojis))
+  (when emojify-pretty-symbol-emojis
+    (ht-each function emojify-pretty-symbol-emojis))
+  (ht-each function emojify-emojis))
 
 (defun emojify-set-emoji-data ()
   "Read the emoji data for STYLES and set the regexp required to search them."
@@ -807,7 +837,7 @@ TODO: Skip emojifying if region is already emojified."
                  (match-end (match-end 0))
                  (match (match-string-no-properties 0))
                  (buffer (current-buffer))
-                 (emoji (ht-get emojify-emojis match)))
+                 (emoji (emojify-get-emoji match)))
             (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Skip displaying this emoji if the its bounds are
@@ -1228,15 +1258,14 @@ run the command `emojify-download-emoji'")))
     ;; Collection matching emojis in a list (list score emoji emoji-data)
     ;; elements, where score is the proximity of the emoji to given pattern
     ;; calculated using `apropos-score-str'
-    (ht-each (lambda (key value)
-               (when (or (string-match apropos-regexp key)
-                         (string-match apropos-regexp (ht-get value "name")))
-                 (push (list (max (apropos-score-str key)
-                                  (apropos-score-str (ht-get value "name")))
-                             key
-                             value)
-                       matching-emojis)))
-             emojify-emojis)
+    (emojify-emojis-each (lambda (key value)
+                          (when (or (string-match apropos-regexp key)
+                                    (string-match apropos-regexp (ht-get value "name")))
+                            (push (list (max (apropos-score-str key)
+                                             (apropos-score-str (ht-get value "name")))
+                                        key
+                                        value)
+                                  matching-emojis))))
 
     ;; Sort the emojis by the proximity score
     (setq sorted-emojis (mapcar #'cdr
@@ -1276,14 +1305,13 @@ This respects the `emojify-emoji-styles' variable."
          (line-spacing 7)
          (completion-ignore-case t)
          (candidates (let (emojis)
-                       (ht-each (lambda (key value)
-                                  (when (member (ht-get value "style") styles)
-                                    (push (format "%s - %s (%s)"
-                                                  key
-                                                  (ht-get value "name")
-                                                  (ht-get value "style"))
-                                          emojis)))
-                                emojify-emojis)
+                       (emojify-emojis-each (lambda (key value)
+                                              (when (member (ht-get value "style") styles)
+                                                (push (format "%s - %s (%s)"
+                                                              key
+                                                              (ht-get value "name")
+                                                              (ht-get value "style"))
+                                                      emojis))))
                        emojis)))
     (insert (car (split-string (completing-read "Apropos Emoji: " candidates)
                                " ")))))
