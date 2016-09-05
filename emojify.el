@@ -331,29 +331,8 @@ can customize `emojify-inhibit-major-modes' and
 
 ;; Customizations to control display of emojis
 
-(defvar emojify-emojis nil
-  "Data about the emojis, this contains only the emojis that come with emojify.")
-
-(defvar emojify-regexps nil
-  "Regexp to match text to emojified.")
-
 (defvar emojify-emoji-style-change-hooks nil
   "Hooks run when emoji style changes.")
-
-(defun emojify-set-emoji-data ()
-  "Read the emoji data for STYLES and set the regexp required to search them."
-  (setq emojify-emojis (let ((json-array-type 'list)
-                             (json-object-type 'hash-table))
-                         (json-read-file emojify-emoji-json)))
-
-  ;; Construct emojify-regexps in descending order of length, this is important
-  ;; so that larger emojis are searched first and get precedence over smaller
-  ;; ones (see also `emojify-display-emojis-in-region')
-  (setq emojify-regexps (seq-map #'regexp-opt
-                                 (seq-partition (sort (ht-keys emojify-emojis)
-                                                      (lambda (string1 string2) (> (length string1)
-                                                                                   (length string2))))
-                                                1000))))
 
 ;;;###autoload
 (defun emojify-set-emoji-styles (styles)
@@ -603,6 +582,27 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 
 ;; Core functions and macros
+
+(defvar emojify-emojis nil
+  "Data about the emojis, this contains only the emojis that come with emojify.")
+
+(defvar emojify-regexps nil
+  "Regexp to match text to emojified.")
+
+(defun emojify-set-emoji-data ()
+  "Read the emoji data for STYLES and set the regexp required to search them."
+  (setq-default emojify-emojis (let ((json-array-type 'list)
+                                     (json-object-type 'hash-table))
+                                 (json-read-file emojify-emoji-json)))
+
+  ;; Construct emojify-regexps in descending order of length, this is important
+  ;; so that larger emojis are searched first and get precedence over smaller
+  ;; ones (see also `emojify-display-emojis-in-region')
+  (setq-default emojify-regexps (seq-map #'regexp-opt
+                                         (seq-partition (sort (ht-keys emojify-emojis)
+                                                              (lambda (string1 string2) (> (length string1)
+                                                                                           (length string2))))
+                                                        1000))))
 
 (defvar emojify-emoji-keymap
   (let ((map (make-sparse-keymap)))
@@ -1230,9 +1230,9 @@ run the command `emojify-download-emoji'")))
     ;; calculated using `apropos-score-str'
     (maphash (lambda (key value)
                (when (or (string-match apropos-regexp key)
-                         (string-match apropos-regexp (gethash "name" value)))
+                         (string-match apropos-regexp (ht-get value "name")))
                  (push (list (max (apropos-score-str key)
-                                  (apropos-score-str (gethash "name" value)))
+                                  (apropos-score-str (ht-get value "name")))
                              key
                              value)
                        matching-emojis)))
@@ -1256,8 +1256,8 @@ run the command `emojify-download-emoji'")))
       (dolist (emoji sorted-emojis)
         (insert (format "%s - %s (%s)"
                         (car emoji)
-                        (gethash "name" (cadr emoji))
-                        (gethash "style" (cadr emoji))))
+                        (ht-get (cadr emoji) "name")
+                        (ht-get (cadr emoji) "style")))
         (insert "\n"))
       (goto-char (point-min))
       (emojify-apropos-mode)
@@ -1277,11 +1277,11 @@ This respects the `emojify-emoji-styles' variable."
          (completion-ignore-case t)
          (candidates (let (emojis)
                        (maphash (lambda (key value)
-                                  (when (member (gethash "style" value) styles)
+                                  (when (member (ht-get value "style") styles)
                                     (push (format "%s - %s (%s)"
                                                   key
-                                                  (gethash "name" value)
-                                                  (gethash "style" value))
+                                                  (ht-get value "name")
+                                                  (ht-get value "style"))
                                           emojis)))
                                 emojify-emojis)
                        emojis)))
