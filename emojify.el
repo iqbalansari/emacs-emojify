@@ -1330,6 +1330,7 @@ run the command `emojify-download-emoji'")))
     (define-key map "p" #'previous-line)
     (define-key map "r" #'isearch-backward)
     (define-key map "s" #'isearch-forward)
+    (define-key map "g" #'emojify-apropos-emoji)
     (define-key map ">" 'end-of-buffer)
     (define-key map "<" 'beginning-of-buffer)
 
@@ -1356,7 +1357,9 @@ run the command `emojify-download-emoji'")))
   "Show Emojis that match PATTERN."
   (interactive (list (apropos-read-pattern "emoji")))
 
-  (let (matching-emojis sorted-emojis)
+  (let ((in-apropos-buffer-p (equal major-mode 'emojify-apropos-mode))
+        matching-emojis
+        sorted-emojis)
 
     (unless (listp pattern)
       (setq pattern (list pattern)))
@@ -1369,13 +1372,13 @@ run the command `emojify-download-emoji'")))
     ;; elements, where score is the proximity of the emoji to given pattern
     ;; calculated using `apropos-score-str'
     (emojify-emojis-each (lambda (key value)
-                          (when (or (string-match apropos-regexp key)
-                                    (string-match apropos-regexp (ht-get value "name")))
-                            (push (list (max (apropos-score-str key)
-                                             (apropos-score-str (ht-get value "name")))
-                                        key
-                                        value)
-                                  matching-emojis))))
+                           (when (or (string-match apropos-regexp key)
+                                     (string-match apropos-regexp (ht-get value "name")))
+                             (push (list (max (apropos-score-str key)
+                                              (apropos-score-str (ht-get value "name")))
+                                         key
+                                         value)
+                                   matching-emojis))))
 
     ;; Sort the emojis by the proximity score
     (setq sorted-emojis (mapcar #'cdr
@@ -1383,26 +1386,26 @@ run the command `emojify-download-emoji'")))
                                       (lambda (emoji1 emoji2)
                                         (> (car emoji1) (car emoji2))))))
 
-    (when (get-buffer "*Apropos Emojis*")
-      (kill-buffer "*Apropos Emojis*"))
-
     ;; Insert result in apropos buffer and display it
     (with-current-buffer (get-buffer-create "*Apropos Emojis*")
-      (erase-buffer)
-      (insert (propertize "Emojis matching" 'face 'apropos-symbol))
-      (insert (format " - \"%s\"" (mapconcat 'identity pattern " ")))
-      (insert "\n\nUse `c' or `w' to copy emoji on current line\n\n")
-      (dolist (emoji sorted-emojis)
-        (insert (format "%s - %s (%s)"
-                        (car emoji)
-                        (ht-get (cadr emoji) "name")
-                        (ht-get (cadr emoji) "style")))
-        (insert "\n"))
-      (goto-char (point-min))
-      (emojify-apropos-mode)
-      (setq-local line-spacing 7))
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (propertize "Emojis matching" 'face 'apropos-symbol))
+        (insert (format " - \"%s\"" (mapconcat 'identity pattern " ")))
+        (insert "\n\nUse `c' or `w' to copy emoji on current line\nUse `g' to rerun apropos\n\n")
+        (dolist (emoji sorted-emojis)
+          (insert (format "%s - %s (%s)"
+                          (car emoji)
+                          (ht-get (cadr emoji) "name")
+                          (ht-get (cadr emoji) "style")))
+          (insert "\n"))
+        (goto-char (point-min))
+        (emojify-apropos-mode)
+        (setq-local line-spacing 7)))
 
-    (display-buffer (get-buffer "*Apropos Emojis*"))))
+    (display-buffer (get-buffer "*Apropos Emojis*")
+                    (when in-apropos-buffer-p
+                      (cons #'display-buffer-same-window nil)))))
 
 ;;;###autoload
 (defun emojify-insert-emoji ()
