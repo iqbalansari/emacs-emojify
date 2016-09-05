@@ -348,20 +348,20 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
   (run-hooks 'emojify-emoji-style-change-hook))
 
 (defcustom emojify-emoji-styles
-  '(ascii unicode github pretty-symbols)
+  '(ascii unicode github prettify-symbol)
   "The type of emojis that should be displayed.
 
 These can have one of the following values
 
-`ascii'          - Display only ascii emojis for example ';)'
-`unicode'        - Display only unicode emojis for example '😉'
-`github'         - Display only github style emojis for example ':wink:'
-`pretty-symbols' - Display only emojis extracted from `prettify-symbols-alist'"
+`ascii'           - Display only ascii emojis for example ';)'
+`unicode'         - Display only unicode emojis for example '😉'
+`github'          - Display only github style emojis for example ':wink:'
+`prettify-symbol' - Display only emojis extracted from `prettify-symbols-alist'"
   :type '(set
           (const :tag "Display only ascii emojis" ascii)
           (const :tag "Display only github emojis" github)
           (const :tag "Display only unicode codepoints" unicode)
-          (const :tag "Display only emojis extracted from `prettify-symbols-alist'" pretty-symbols))
+          (const :tag "Display only emojis extracted from `prettify-symbols-alist'" prettify-symbol))
   :set (lambda (_ value) (emojify-set-emoji-styles value))
   :group 'emojify)
 
@@ -428,12 +428,12 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                ;; If context is code display only unicode emojis
                (or (and (string= (ht-get emoji "style") "unicode")
                         (memql 'unicode emojify-emoji-styles))
-                   (and (string= (ht-get emoji "style") "pretty-symbols")
+                   (and (string= (ht-get emoji "style") "prettify-symbol")
                         (bound-and-true-p prettify-symbols-mode)
-                        (memql 'pretty-symbols emojify-emoji-styles)))
+                        (memql 'prettify-symbol emojify-emoji-styles)))
              ;; Display any other style in all contexts except for
-             ;; pretty-symbols emoji
-             (not (string= (ht-get emoji "style") "pretty-symbols")))))))
+             ;; prettify-symbol emoji
+             (not (string= (ht-get emoji "style") "prettify-symbol")))))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -601,7 +601,7 @@ The inner alist should have atleast (not all keys are strings)
 `name'  - The name of the emoji
 `style' - This should be one of \"github\", \"ascii\" or \"github\"
           (see `emojify-emoji-styles')
-          Note: \"pretty-symbols\" is not a valid style for custom emojis
+          Note: \"prettify-symbol\" is not a valid style for custom emojis
 
 The alist should contain one of (see `emojify-display-style')
 `unicode' - The replacement for the provided emoji for \"unicode\" display style
@@ -1128,7 +1128,7 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 (defun emojify-populate-emojis-from-prettify-symbol-mode ()
   "Populate additional text to display from `prettify-symbols-alist'."
-  (when (and (seq-position emojify-emoji-styles 'pretty-symbols)
+  (when (and (seq-position emojify-emoji-styles 'prettify-symbol)
              (bound-and-true-p prettify-symbols-alist))
 
     (let (new-regexps emojis)
@@ -1137,7 +1137,7 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
                (emojify-symbol-data (emojify-get-emoji symbol-text)))
           (when emojify-symbol-data
             (push (cons (car pretty-symbol)
-                        (ht-from-alist (list (cons "style" "pretty-symbols")
+                        (ht-from-alist (list (cons "style" "prettify-symbol")
                                              (cons "image" (gethash "image" emojify-symbol-data))
                                              (cons "unicode" symbol-text)
                                              (cons "name" (format "Pretty represenation for '%s'" (car pretty-symbol))))))
