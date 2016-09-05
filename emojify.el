@@ -321,10 +321,7 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
 can customize `emojify-inhibit-major-modes' and
 `emojify-inhibit-in-buffer-functions' to disabled emojify in additional buffers."
   (not (or emojify-inhibit-emojify-in-current-buffer-p
-           ;; Even though `emojify-apropos-mode' buffers are ephemeral
-           ;; we want to display emojis in them
-           (and (equal major-mode 'emojify-apropos-mode)
-                (emojify-ephemeral-buffer-p (current-buffer)))
+           (emojify-ephemeral-buffer-p (current-buffer))
            (emojify-inhibit-major-mode-p (current-buffer))
            (buffer-base-buffer buffer)
            (run-hook-with-args-until-success 'emojify-inhibit-in-buffer-functions buffer))))
