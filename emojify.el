@@ -1307,6 +1307,8 @@ run the command `emojify-download-emoji'")))
 
 ;; Searching and inserting emojis
 
+(defvar emojify-apropos-buffer-name "*Apropos Emojis*")
+
 (defun emojify-apropos-quit ()
   "Delete the window displaying Emoji search results."
   (interactive)
@@ -1393,7 +1395,7 @@ run the command `emojify-download-emoji'")))
                                         (> (car emoji1) (car emoji2))))))
 
     ;; Insert result in apropos buffer and display it
-    (with-current-buffer (get-buffer-create "*Apropos Emojis*")
+    (with-current-buffer (get-buffer-create emojify-apropos-buffer-name)
       (let ((inhibit-read-only t))
         (erase-buffer)
         (insert (propertize "Emojis matching" 'face 'apropos-symbol))
@@ -1409,7 +1411,7 @@ run the command `emojify-download-emoji'")))
         (emojify-apropos-mode)
         (setq-local line-spacing 7)))
 
-    (display-buffer (get-buffer "*Apropos Emojis*")
+    (display-buffer (get-buffer emojify-apropos-buffer-name)
                     (when in-apropos-buffer-p
                       (cons #'display-buffer-same-window nil)))))
 
