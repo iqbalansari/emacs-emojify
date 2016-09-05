@@ -635,6 +635,11 @@ The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png 
 (make-variable-buffer-local 'emojify-regexps)
 (make-variable-buffer-local 'emojify-pretty-symbol-emojis)
 
+(defun emojify-create-emojify-emojis ()
+  "Create `emojify-emojis' if needed."
+  (unless emojify-emojis
+    (emojify-set-emoji-data)))
+
 (defun emojify-get-emoji (emoji)
   "Get data for given EMOJI.
 
@@ -1230,8 +1235,7 @@ run the command `emojify-download-emoji'")))
   "Turn on `emojify-mode' in current buffer."
 
   ;; Calculate emoji data if needed
-  (unless emojify-emojis
-    (emojify-set-emoji-data))
+  (emojify-create-emojify-emojis)
 
   (when (emojify-buffer-p (current-buffer))
     ;; Download images if not available
@@ -1357,6 +1361,8 @@ run the command `emojify-download-emoji'")))
   "Show Emojis that match PATTERN."
   (interactive (list (apropos-read-pattern "emoji")))
 
+  (emojify-create-emojify-emojis)
+
   (let ((in-apropos-buffer-p (equal major-mode 'emojify-apropos-mode))
         matching-emojis
         sorted-emojis)
@@ -1413,6 +1419,7 @@ run the command `emojify-download-emoji'")))
 
 This respects the `emojify-emoji-styles' variable."
   (interactive)
+  (emojify-create-emojify-emojis)
   (let* ((emojify-in-insertion-command-p t)
          (styles (mapcar #'symbol-name emojify-emoji-styles))
          (line-spacing 7)
