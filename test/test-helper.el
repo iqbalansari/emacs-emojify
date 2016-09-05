@@ -35,7 +35,8 @@
        (custom-emoji-dir (expand-file-name "test/assets/" project-dir)))
   (setq emojify-test-custom-emojis
         `((":troll:" . (("name" . "Troll") ("image" . ,(expand-file-name "trollface.png" custom-emoji-dir)) ("style" . "github")))
-          (":neckbeard:" . (("name" . "Neckbeard") ("image" . ,(expand-file-name "neckbeard.png" custom-emoji-dir)) ("style" . "github"))))))
+          (":neckbeard:" . (("name" . "Neckbeard") ("image" . ,(expand-file-name "neckbeard.png" custom-emoji-dir)) ("style" . "github")))
+          ("λ" .  (("name" . "Lambda") ("image" . ,(expand-file-name "lambda.png" custom-emoji-dir)) ("style" . "unicode"))))))
 
 ;; Helper macros for tests
 (defmacro emojify-tests-with-saved-customizations (&rest forms)
