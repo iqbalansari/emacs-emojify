@@ -258,6 +258,7 @@ Possible values are
 (defcustom emojify-inhibit-major-modes
   '(dired-mode
     doc-view-mode
+    debugger-mode
     pdf-view-mode
     image-mode
     help-mode
