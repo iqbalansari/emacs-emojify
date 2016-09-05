@@ -429,6 +429,7 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                (or (and (string= (ht-get emoji "style") "unicode")
                         (memql 'unicode emojify-emoji-styles))
                    (and (string= (ht-get emoji "style") "pretty-symbols")
+                        (bound-and-true-p prettify-symbols-mode)
                         (memql 'pretty-symbols emojify-emoji-styles)))
              ;; Display any other style in all contexts except for
              ;; pretty-symbols emoji
