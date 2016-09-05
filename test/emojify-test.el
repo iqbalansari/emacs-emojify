@@ -63,13 +63,34 @@
     (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (point-min))))
 
+(ert-deftest emojify-test-custom-emojis ()
+  :tags '(core custom-images)
+  (let ((emojify-user-emojis emojify-test-custom-emojis))
+    (emojify-set-emoji-data)
+    (emojify-tests-with-emojified-static-buffer ":neckbeard:
+:troll:"
+      (emojify-tests-should-be-emojified (point-min))
+      (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
+      (should (= (get-text-property (point-min) 'emojify-beginning) (point-min-marker)))
+      (should (= (get-text-property (point) 'emojify-end) (line-end-position 1)))
+      (should (equal (get-text-property (point) 'emojify-text)  ":neckbeard:"))
+
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
+      (should (equal (get-text-property (line-beginning-position 2) 'emojify-buffer) (current-buffer)))
+      (should (= (get-text-property (line-beginning-position 2) 'emojify-beginning) (line-beginning-position 2)))
+      (should (= (get-text-property (line-beginning-position 2) 'emojify-end) (point-max-marker)))
+      (should (equal (get-text-property (line-beginning-position 2) 'emojify-text)  ":troll:")))))
+
 (ert-deftest emojify-tests-mixed-emoji-test ()
   :tags '(core mixed)
-  (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:"
-    (emojify-tests-should-be-emojified (point-min))
-    (emojify-tests-should-be-emojified (line-beginning-position 2))
-    (emojify-tests-should-be-emojified (line-beginning-position 3))
-    (emojify-tests-should-be-emojified (line-beginning-position 4))))
+  (let ((emojify-user-emojis emojify-test-custom-emojis))
+    (emojify-set-emoji-data)
+    (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:\n:neckbeard:"
+      (emojify-tests-should-be-emojified (point-min))
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
+      (emojify-tests-should-be-emojified (line-beginning-position 3))
+      (emojify-tests-should-be-emojified (line-beginning-position 4))
+      (emojify-tests-should-be-emojified (line-beginning-position 5)))))
 
 ;; The after-change tests stopped working after moving to JIT lock :unamused:
 ;; (ert-deftest emojify-tests-emojifying-on-comment-uncomment ()

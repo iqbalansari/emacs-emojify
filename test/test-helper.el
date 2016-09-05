@@ -28,6 +28,15 @@
 ;; Load emojify
 (require 'emojify)
 
+;; Define custom emoji config
+(defvar emojify-test-custom-emojis)
+(let* ((project-dir (locate-dominating-file (or (buffer-file-name) load-file-name)
+                                            ".cask"))
+       (custom-emoji-dir (expand-file-name "test/assets/" project-dir)))
+  (setq emojify-test-custom-emojis
+        `((":troll:" . (("name" . "Troll") ("image" . ,(expand-file-name "trollface.png" custom-emoji-dir)) ("style" . "github")))
+          (":neckbeard:" . (("name" . "Neckbeard") ("image" . ,(expand-file-name "neckbeard.png" custom-emoji-dir)) ("style" . "github"))))))
+
 ;; Helper macros for tests
 (defmacro emojify-tests-with-saved-customizations (&rest forms)
   "Run forms saving current customizations and restoring them on completion.
@@ -35,6 +44,9 @@
 Helps isolate tests from each other's customizations."
   (declare (indent 0))
   `(let ((emojify-saved-emoji-json emojify-emoji-json)
+         (emojify-saved-user-emojis emojify-user-emojis)
+         (emojify-saved-user-emojis-parsed emojify--user-emojis)
+         (emojify-saved-emojify-regexps emojify-regexps)
          (emojify-saved-display-style emojify-display-style)
          (emojify-saved-inhibit-major-modes emojify-inhibit-major-modes)
          (emojify-saved-inhibit-in-buffer-functions emojify-inhibit-in-buffer-functions)
@@ -53,6 +65,9 @@ Helps isolate tests from each other's customizations."
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-display-style emojify-saved-display-style
              emojify-inhibit-major-modes emojify-saved-inhibit-major-modes
+             emojify-user-emojis emojify-saved-user-emojis
+             emojify--user-emojis emojify-saved-user-emojis-parsed
+             emojify-regexps emojify-saved-emojify-regexps
              emojify-inhibit-in-buffer-functions emojify-saved-inhibit-in-buffer-functions
              emojify-program-contexts emojify-saved-program-contexts
              emojify-inhibit-functions emojify-saved-inhibit-functions
