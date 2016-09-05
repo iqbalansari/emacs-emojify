@@ -1228,7 +1228,7 @@ run the command `emojify-download-emoji'")))
     ;; Collection matching emojis in a list (list score emoji emoji-data)
     ;; elements, where score is the proximity of the emoji to given pattern
     ;; calculated using `apropos-score-str'
-    (maphash (lambda (key value)
+    (ht-each (lambda (key value)
                (when (or (string-match apropos-regexp key)
                          (string-match apropos-regexp (ht-get value "name")))
                  (push (list (max (apropos-score-str key)
@@ -1276,7 +1276,7 @@ This respects the `emojify-emoji-styles' variable."
          (line-spacing 7)
          (completion-ignore-case t)
          (candidates (let (emojis)
-                       (maphash (lambda (key value)
+                       (ht-each (lambda (key value)
                                   (when (member (ht-get value "style") styles)
                                     (push (format "%s - %s (%s)"
                                                   key
