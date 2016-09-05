@@ -331,7 +331,7 @@ can customize `emojify-inhibit-major-modes' and
 
 ;; Customizations to control display of emojis
 
-(defvar emojify-emoji-style-change-hooks nil
+(defvar emojify-emoji-style-change-hook nil
   "Hooks run when emoji style changes.")
 
 ;;;###autoload
@@ -345,21 +345,23 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
 
   (setq-default emojify-emoji-styles styles)
 
-  (run-hooks 'emojify-emoji-style-change-hooks))
+  (run-hooks 'emojify-emoji-style-change-hook))
 
 (defcustom emojify-emoji-styles
-  '(ascii unicode github)
+  '(ascii unicode github pretty-symbols)
   "The type of emojis that should be displayed.
 
 These can have one of the following values
 
-`ascii'   - Display only ascii emojis for example ';)'
-`unicode' - Display only unicode emojis for example '😉'
-`github'  - Display only github style emojis for example ':wink:'"
+`ascii'          - Display only ascii emojis for example ';)'
+`unicode'        - Display only unicode emojis for example '😉'
+`github'         - Display only github style emojis for example ':wink:'
+`pretty-symbols' - Display only emojis extracted from `prettify-symbols-alist'"
   :type '(set
           (const :tag "Display only ascii emojis" ascii)
           (const :tag "Display only github emojis" github)
-          (const :tag "Display only unicode codepoints" unicode))
+          (const :tag "Display only unicode codepoints" unicode)
+          (const :tag "Display only emojis extracted from `prettify-symbols-alist'" pretty-symbols))
   :set (lambda (_ value) (emojify-set-emoji-styles value))
   :group 'emojify)
 
@@ -424,10 +426,13 @@ This returns non-nil if the region is valid according to `emojify-program-contex
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
                ;; If context is code display only unicode emojis
-               (and (string= (ht-get emoji "style") "unicode")
-                    (memql 'unicode emojify-emoji-styles))
-             ;; No need to check for non-code context
-             t)))))
+               (or (and (string= (ht-get emoji "style") "unicode")
+                        (memql 'unicode emojify-emoji-styles))
+                   (and (string= (ht-get emoji "style") "pretty-symbols")
+                        (memql 'pretty-symbols emojify-emoji-styles)))
+             ;; Display any other style in all contexts except for
+             ;; pretty-symbols emoji
+             (not (string= (ht-get emoji "style") "pretty-symbols")))))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -592,10 +597,11 @@ To understand WINDOW, STRING and POS see the function documentation for
 (defvar emojify-pretty-symbol-emojis nil
   "Emojis extracted from `prettify-symbols-alist'.")
 
-(make-variable-buffer-local 'emojify-pretty-symbol-emojis)
-
 (defvar emojify-regexps nil
   "Regexp to match text to emojified.")
+
+(make-variable-buffer-local 'emojify-regexps)
+(make-variable-buffer-local 'emojify-pretty-symbol-emojis)
 
 (defun emojify-get-emoji (emoji)
   "Get data for given EMOJI.
@@ -1060,6 +1066,35 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
+;; Integration with prettify-symbols-mode
+
+(defun emojify-populate-emojis-from-pretty-symbol-mode ()
+  "Populate additional text to display from `prettify-symbols-alist'."
+  (when (and (member 'pretty-symbols emojify-emoji-styles)
+             (bound-and-true-p prettify-symbols-alist))
+
+    (let (new-regexps emojis)
+      (dolist (pretty-symbol prettify-symbols-alist)
+        (let* ((symbol-text (make-string 1 (cdr pretty-symbol)))
+               (emojify-symbol-data (emojify-get-emoji symbol-text)))
+          (when emojify-symbol-data
+            (push (cons (car pretty-symbol)
+                        (ht-from-alist (list (cons "style" "pretty-symbols")
+                                             (cons "image" (gethash "image" emojify-symbol-data))
+                                             (cons "unicode" symbol-text)
+                                             (cons "name" (format "Pretty represenation for '%s'" (car pretty-symbol))))))
+                  emojis)
+            (push (car pretty-symbol) new-regexps))))
+
+      (when emojis
+        (setq emojify-pretty-symbol-emojis (ht-from-alist emojis)))
+
+      (when new-regexps
+        (let ((re (regexp-opt new-regexps 'symbols)))
+          (setq emojify-regexps (cons re (delete re emojify-regexps))))))))
+
+
+
 ;; Lazy image downloading
 
 (defvar emojify--refused-image-download-p nil
@@ -1138,6 +1173,8 @@ run the command `emojify-download-emoji'")))
     ;; Download images if not available
     (emojify-ensure-images)
 
+    (emojify-populate-emojis-from-pretty-symbol-mode)
+
     ;; Install our jit-lock function
     (jit-lock-register #'emojify-redisplay-emojis-in-region)
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
@@ -1153,7 +1190,10 @@ run the command `emojify-download-emoji'")))
     (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t)
 
     ;; Redisplay visible emojis when emoji style changes
-    (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
+    (add-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
+
+    ;; Repopulate emojis from prettify-symbols-alist when style changes
+    (add-hook 'emojify-emoji-style-change-hook #'emojify-populate-emojis-from-pretty-symbol-mode)))
 
 (defun emojify-turn-off-emojify-mode ()
   "Turn off `emojify-mode' in current buffer."
@@ -1172,7 +1212,8 @@ run the command `emojify-download-emoji'")))
   (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t)
 
   ;; Remove style change hooks
-  (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region))
+  (remove-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
+  (remove-hook 'emojify-emoji-style-change-hook #'emojify-populate-emojis-from-pretty-symbol-mode))
 
 ;;;###autoload
 (define-minor-mode emojify-mode
