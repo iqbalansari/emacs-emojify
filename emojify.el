@@ -1068,7 +1068,7 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 ;; Integration with prettify-symbols-mode
 
-(defun emojify-populate-emojis-from-pretty-symbol-mode ()
+(defun emojify-populate-emojis-from-prettify-symbol-mode ()
   "Populate additional text to display from `prettify-symbols-alist'."
   (when (and (member 'pretty-symbols emojify-emoji-styles)
              (bound-and-true-p prettify-symbols-alist))
@@ -1092,6 +1092,12 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
       (when new-regexps
         (let ((re (regexp-opt new-regexps 'symbols)))
           (setq emojify-regexps (cons re (delete re emojify-regexps))))))))
+
+(defun emojify-handle-prettify-symbol-mode ()
+  "Redisplay emojis after `prettify-symbol-mode' is enabled/disabled."
+  (when (bound-and-true-p prettify-symbols-mode)
+    (emojify-populate-emojis-from-prettify-symbol-mode))
+  (emojify-redisplay-emojis-in-region))
 
 
 
@@ -1173,8 +1179,6 @@ run the command `emojify-download-emoji'")))
     ;; Download images if not available
     (emojify-ensure-images)
 
-    (emojify-populate-emojis-from-pretty-symbol-mode)
-
     ;; Install our jit-lock function
     (jit-lock-register #'emojify-redisplay-emojis-in-region)
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
@@ -1192,8 +1196,12 @@ run the command `emojify-download-emoji'")))
     ;; Redisplay visible emojis when emoji style changes
     (add-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
 
+    ;; Add symbols from prettify symbol mode, to displayed emojis and redisplay
+    ;; emojis when prettify-symbols-mode is activated
+    (add-hook 'prettify-symbols-mode-hook #'emojify-handle-prettify-symbol-mode)
+
     ;; Repopulate emojis from prettify-symbols-alist when style changes
-    (add-hook 'emojify-emoji-style-change-hook #'emojify-populate-emojis-from-pretty-symbol-mode)))
+    (add-hook 'emojify-emoji-style-change-hook #'emojify-handle-prettify-symbol-mode)))
 
 (defun emojify-turn-off-emojify-mode ()
   "Turn off `emojify-mode' in current buffer."
@@ -1211,9 +1219,12 @@ run the command `emojify-download-emoji'")))
   (remove-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t)
   (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t)
 
+  ;; Disable display of symbols
+  (remove-hook 'prettify-symbols-mode-hook #'emojify-handle-prettify-symbol-mode)
+
   ;; Remove style change hooks
   (remove-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
-  (remove-hook 'emojify-emoji-style-change-hook #'emojify-populate-emojis-from-pretty-symbol-mode))
+  (remove-hook 'emojify-emoji-style-change-hook #'emojify-handle-prettify-symbol-mode))
 
 ;;;###autoload
 (define-minor-mode emojify-mode
