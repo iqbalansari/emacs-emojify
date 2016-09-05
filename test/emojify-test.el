@@ -592,6 +592,43 @@ return 4
         (emojify-tests-should-not-be-emojified (line-beginning-position 6))
         (emojify-tests-should-be-emojified (line-beginning-position 7))))))
 
+(ert-deftest emojify-tests-apropos ()
+  :tags '(apropos)
+  (emojify-apropos-emoji "squi")
+  ;; Window with results should be visible
+  (with-mock
+    (stub message => nil)
+    (should (get-buffer-window emojify-apropos-buffer-name))
+    (let ((matches 0))
+
+      (with-current-buffer emojify-apropos-buffer-name
+        (emojify-redisplay-emojis-in-region (point-min) (point-max))
+        (emojify-do-for-emojis-in-region (point-min) (point-max)
+          (goto-char emoji-start)
+          (call-interactively #'emojify-apropos-copy-emoji)
+          (should (string= (car kill-ring) (get-text-property (point) 'emojify-text)))
+          (incf matches)))
+
+      (should (= matches 2)))
+
+    ;; Test with custom emoji
+    (let ((emojify-user-emojis emojify-test-custom-emojis)
+          (matches 0))
+
+      (emojify-set-emoji-data)
+      (emojify-apropos-emoji "lambda")
+      (should (get-buffer-window emojify-apropos-buffer-name))
+
+      (with-current-buffer emojify-apropos-buffer-name
+        (emojify-redisplay-emojis-in-region (point-min) (point-max))
+        (emojify-do-for-emojis-in-region (point-min) (point-max)
+          (goto-char emoji-start)
+          (call-interactively #'emojify-apropos-copy-emoji)
+          (should (string= (car kill-ring) (get-text-property (point) 'emojify-text)))
+          (incf matches)))
+
+      (should (= matches 1)))))
+
 (ert-deftest emojify-tests-no-byte-compilation-warnings ()
   :tags '(byte-compilation)
   (with-mock
