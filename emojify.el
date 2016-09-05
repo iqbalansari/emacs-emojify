@@ -1313,7 +1313,7 @@ This respects the `emojify-emoji-styles' variable."
                                                               (ht-get value "style"))
                                                       emojis))))
                        emojis)))
-    (insert (car (split-string (completing-read "Apropos Emoji: " candidates)
+    (insert (car (split-string (completing-read "Insert Emoji: " candidates)
                                " ")))))
 
 
