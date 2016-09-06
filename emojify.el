@@ -593,8 +593,8 @@ To understand WINDOW, STRING and POS see the function documentation for
   "User specified custom emojis.
 
 This is an alist where first element of cons is the text to be displayed as
-emoji.  The second element of the cons is an alist containing data about the
-emoji.
+emoji, while the second element of the cons is an alist containing data about
+the emoji.
 
 The inner alist should have atleast (not all keys are strings)
 
