@@ -135,6 +135,12 @@
   :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
     (with-mock
+      ;; Since emojify checks that there is no message being displayed
+      ;; before echoing the emoji, we need to stub out current-message
+      ;; too otherwise emojify does not echo the message since messages
+      ;; from other tests are being displayed
+      (unless noninteractive
+        (stub current-message => nil))
       (mock (message ":)"))
       (setq emojify-point-entered-behaviour 'echo)
       (goto-char (1+ (point-min)))
@@ -602,6 +608,7 @@ return 4
     (let ((matches 0))
 
       (with-current-buffer emojify-apropos-buffer-name
+        ;; Force a display of emojis
         (emojify-redisplay-emojis-in-region (point-min) (point-max))
         (emojify-do-for-emojis-in-region (point-min) (point-max)
           (goto-char emoji-start)
