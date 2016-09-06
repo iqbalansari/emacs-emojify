@@ -545,6 +545,7 @@ except:
 yield 3
 return 4
 "
+      (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
       (python-mode)
       (setq prettify-symbols-alist
             '(("return" . ?↪)
@@ -585,6 +586,7 @@ except:
 yield 3
 return 4
 "
+        (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
         (python-mode)
         (setq prettify-symbols-alist
               '(("return" . ?↪)

@@ -348,7 +348,7 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
   (run-hooks 'emojify-emoji-style-change-hook))
 
 (defcustom emojify-emoji-styles
-  '(ascii unicode github prettify-symbol)
+  '(ascii unicode github)
   "The type of emojis that should be displayed.
 
 These can have one of the following values
