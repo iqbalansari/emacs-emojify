@@ -92,37 +92,40 @@
       (emojify-tests-should-be-emojified (line-beginning-position 4))
       (emojify-tests-should-be-emojified (line-beginning-position 5)))))
 
-;; The after-change tests stopped working after moving to JIT lock :unamused:
-;; (ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
-;;   :tags '(core after-change)
-;;   (emojify-tests-with-emojified-buffer ":smile:\n:)"
-;;     (emacs-lisp-mode)
-;;     (emojify-redisplay-emojis-in-region)
-;;     (emojify-mode +1)
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position))
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position 2))
+(ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
+  :tags '(core after-change)
+  (emojify-tests-with-emojified-buffer ":smile:\n:)"
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-mode +1)
+    (emojify-tests-should-not-be-emojified (line-beginning-position))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))
 
-;;     (comment-region (point-min) (point-max))
-;;     (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
-;;     (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
+    (comment-region (point-min) (point-max))
+    (emojify-redisplay)
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
 
-;;     (uncomment-region (point-min) (point-max))
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position))
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
+    (uncomment-region (point-min) (point-max))
+    (emojify-redisplay)
+    (emojify-tests-should-not-be-emojified (line-beginning-position))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
 
-;; (ert-deftest emojify-tests-emojifying-on-typing ()
-;;   :tags '(core after-change)
-;;   (emojify-tests-with-emojified-buffer ""
-;;     (emacs-lisp-mode)
-;;     (emojify-redisplay-emojis-in-region)
-;;     (emojify-mode +1)
-;;     (emojify-insert-string "; :)")
-;;     (emojify-tests-should-be-emojified 4)
-;;     (newline)
-;;     (emojify-insert-string "; :smile")
-;;     (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
-;;     (emojify-insert-string ":")
-;;     (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
+(ert-deftest emojify-tests-emojifying-on-typing ()
+  :tags '(core after-change)
+  (emojify-tests-with-emojified-buffer ""
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-mode +1)
+    (emojify-insert-string "; :)")
+    (emojify-redisplay)
+    (emojify-tests-should-be-emojified 4)
+    (newline)
+    (emojify-insert-string "; :smile")
+    (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
+    (emojify-insert-string ":")
+    (emojify-redisplay)
+    (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
 
 (ert-deftest emojify-tests-emoji-uncovering ()
   :tags '(behaviour point-motion)
@@ -382,7 +385,7 @@
     (fundamental-mode)
     (let ((count 0))
       (emojify-do-for-emojis-in-region (point-min) (point-max)
-        (incf count))
+        (cl-incf count))
       ;; Only one emoji should be displayed
       (should (= count 1))
       ;; The larger emoji should be preferred
@@ -614,7 +617,7 @@ return 4
           (goto-char emoji-start)
           (call-interactively #'emojify-apropos-copy-emoji)
           (should (string= (car kill-ring) (get-text-property (point) 'emojify-text)))
-          (incf matches)))
+          (cl-incf matches)))
 
       (should (= matches 2)))
 
@@ -632,7 +635,7 @@ return 4
           (goto-char emoji-start)
           (call-interactively #'emojify-apropos-copy-emoji)
           (should (string= (car kill-ring) (get-text-property (point) 'emojify-text)))
-          (incf matches)))
+          (cl-incf matches)))
 
       (should (= matches 1)))))
 

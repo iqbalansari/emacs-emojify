@@ -22,7 +22,7 @@
 ;; Libs required for tests
 (require 'ert)
 (require 'el-mock)
-(require 'cl)
+(require 'cl-lib)
 (require 'noflet)
 
 ;; Load emojify
@@ -40,7 +40,7 @@
 
 ;; Helper macros for tests
 (defmacro emojify-tests-with-saved-customizations (&rest forms)
-  "Run forms saving current customizations and restoring them on completion.
+  "Run FORMS saving current customizations and restoring them on completion.
 
 Helps isolate tests from each other's customizations."
   (declare (indent 0))
@@ -80,6 +80,9 @@ Helps isolate tests from each other's customizations."
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
 
 (defmacro emojify-tests-with-emojified-buffer (str &rest forms)
+  "Create a buffer with STR and execute FORMS.
+
+The FORMS are executed with emojify enabled."
   (declare (indent 1))
   ;; Run tests in a new buffer
   `(let ((test-buffer (get-buffer-create " *emojify-test-buffer*")))
@@ -106,12 +109,17 @@ Helps isolate tests from each other's customizations."
            (kill-buffer test-buffer))))))
 
 (defmacro emojify-tests-with-emojified-static-buffer (str &rest forms)
+  "Create a buffer with STR and execute FORMS.
+
+All kinds of dynamic behaviour on buffer are disabled.  See
+`emojify-with-saved-buffer-state'"
   (declare (indent 1))
   `(emojify-tests-with-emojified-buffer ,str
      (emojify-with-saved-buffer-state
        ,@forms)))
 
 (defmacro emojify-tests-should-be-emojified (point)
+  "Assert there is an emoji at POINT."
   `(progn
      (should-not (get-text-property ,point 'point-left))
      (should (get-text-property ,point 'emojified))
@@ -124,6 +132,7 @@ Helps isolate tests from each other's customizations."
      (should (get-text-property ,point 'point-entered))))
 
 (defmacro emojify-tests-should-not-be-emojified (point)
+  "Assert there is not emoji at POINT."
   `(progn
      (should-not (get-text-property ,point 'point-left))
      (should-not (get-text-property ,point 'emojified))
@@ -136,6 +145,7 @@ Helps isolate tests from each other's customizations."
      (should-not (get-text-property ,point 'point-entered))))
 
 (defmacro emojify-tests-should-be-uncovered (point)
+  "Assert the emoji at POINT is uncovered."
   `(progn
      (should (get-text-property ,point 'point-left))
      (should (get-text-property ,point 'emojified))
@@ -147,9 +157,19 @@ Helps isolate tests from each other's customizations."
      (should-not (get-text-property ,point 'display))))
 
 (defun emojify-insert-string (string)
+  "Insert the STRING."
   (mapc (lambda (character)
           (insert character))
         (string-to-vector string)))
+
+(defun emojify-redisplay ()
+  "Trigger a redisplay."
+  (if noninteractive
+      ;; In noninteractive mode JIT is not called
+      ;; call it
+      (jit-lock-fontify-now)
+    ;; In interactive mode just force redisplay
+    (redisplay t)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here
