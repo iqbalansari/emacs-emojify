@@ -1392,7 +1392,7 @@ Borrowed from apropos.el"
     ;; description
     (apropos-parse-pattern pattern)
 
-    ;; Collection matching emojis in a list (list score emoji emoji-data)
+    ;; Collect matching emojis in a list of (list score emoji emoji-data)
     ;; elements, where score is the proximity of the emoji to given pattern
     ;; calculated using `apropos-score-str'
     (emojify-emojis-each (lambda (key value)
@@ -1424,7 +1424,8 @@ Borrowed from apropos.el"
                           (ht-get (cadr emoji) "name")
                           (ht-get (cadr emoji) "style")))
           (insert "\n"))
-        (goto-char (point-min))
+          (goto-char (point-min))
+          (forward-line (1- 6))
         (emojify-apropos-mode)
         (setq emojify--apropos-last-query (concat query " "))
         (setq-local line-spacing 7)))
