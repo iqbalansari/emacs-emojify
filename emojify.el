@@ -1358,10 +1358,26 @@ run the command `emojify-download-emoji'")))
 
 (put 'emojify-apropos-mode 'mode-class 'special)
 
+(defvar emojify--apropos-last-query nil)
+(make-variable-buffer-local 'emojify--apropos-last-query)
+
+(defun emojify-apropos-read-pattern ()
+  "Read apropos pattern with INITIAL-INPUT as the initial input.
+
+Borrowed from apropos.el"
+  (let ((pattern (read-string (concat "Search for emoji (word list or regexp): ")
+                              emojify--apropos-last-query)))
+    (if (string-equal (regexp-quote pattern) pattern)
+        (or (split-string pattern "[ \t]+" t)
+            (if (fboundp 'user-error)
+                (apply #'user-error "No word list given")
+              (apply #'error "No word list given")))
+      pattern)))
+
 ;;;###autoload
 (defun emojify-apropos-emoji (pattern)
   "Show Emojis that match PATTERN."
-  (interactive (list (apropos-read-pattern "emoji")))
+  (interactive (list (emojify-apropos-read-pattern)))
 
   (emojify-create-emojify-emojis)
 
@@ -1396,10 +1412,11 @@ run the command `emojify-download-emoji'")))
 
     ;; Insert result in apropos buffer and display it
     (with-current-buffer (get-buffer-create emojify-apropos-buffer-name)
-      (let ((inhibit-read-only t))
+      (let ((inhibit-read-only t)
+            (query (mapconcat 'identity pattern " ")))
         (erase-buffer)
         (insert (propertize "Emojis matching" 'face 'apropos-symbol))
-        (insert (format " - \"%s\"" (mapconcat 'identity pattern " ")))
+        (insert (format " - \"%s\"" query))
         (insert "\n\nUse `c' or `w' to copy emoji on current line\nUse `g' to rerun apropos\n\n")
         (dolist (emoji sorted-emojis)
           (insert (format "%s - %s (%s)"
@@ -1409,6 +1426,7 @@ run the command `emojify-download-emoji'")))
           (insert "\n"))
         (goto-char (point-min))
         (emojify-apropos-mode)
+        (setq emojify--apropos-last-query (concat query " "))
         (setq-local line-spacing 7)))
 
     (display-buffer (get-buffer emojify-apropos-buffer-name)
