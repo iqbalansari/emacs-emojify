@@ -1429,9 +1429,9 @@ Borrowed from apropos.el"
         (setq emojify--apropos-last-query (concat query " "))
         (setq-local line-spacing 7)))
 
-    (display-buffer (get-buffer emojify-apropos-buffer-name)
-                    (when in-apropos-buffer-p
-                      (cons #'display-buffer-same-window nil)))))
+    (select-window (display-buffer (get-buffer emojify-apropos-buffer-name)
+                                   (when in-apropos-buffer-p
+                                     (cons #'display-buffer-same-window nil))))))
 
 ;;;###autoload
 (defun emojify-insert-emoji ()
