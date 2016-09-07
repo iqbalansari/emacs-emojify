@@ -22,19 +22,32 @@
 ;; Libs required for tests
 (require 'ert)
 (require 'el-mock)
-(require 'cl)
+(require 'cl-lib)
 (require 'noflet)
 
 ;; Load emojify
 (require 'emojify)
 
+;; Define custom emoji config
+(defvar emojify-test-custom-emojis)
+(let* ((project-dir (locate-dominating-file (or (buffer-file-name) load-file-name)
+                                            ".cask"))
+       (custom-emoji-dir (expand-file-name "test/assets/" project-dir)))
+  (setq emojify-test-custom-emojis
+        `((":troll:" . (("name" . "Troll") ("image" . ,(expand-file-name "trollface.png" custom-emoji-dir)) ("style" . "github")))
+          (":neckbeard:" . (("name" . "Neckbeard") ("image" . ,(expand-file-name "neckbeard.png" custom-emoji-dir)) ("style" . "github")))
+          ("λ" .  (("name" . "Lambda") ("image" . ,(expand-file-name "lambda.png" custom-emoji-dir)) ("style" . "unicode"))))))
+
 ;; Helper macros for tests
 (defmacro emojify-tests-with-saved-customizations (&rest forms)
-  "Run forms saving current customizations and restoring them on completion.
+  "Run FORMS saving current customizations and restoring them on completion.
 
 Helps isolate tests from each other's customizations."
   (declare (indent 0))
   `(let ((emojify-saved-emoji-json emojify-emoji-json)
+         (emojify-saved-user-emojis emojify-user-emojis)
+         (emojify-saved-user-emojis-parsed emojify--user-emojis)
+         (emojify-saved-emojify-regexps emojify-regexps)
          (emojify-saved-display-style emojify-display-style)
          (emojify-saved-inhibit-major-modes emojify-inhibit-major-modes)
          (emojify-saved-inhibit-in-buffer-functions emojify-inhibit-in-buffer-functions)
@@ -53,6 +66,9 @@ Helps isolate tests from each other's customizations."
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-display-style emojify-saved-display-style
              emojify-inhibit-major-modes emojify-saved-inhibit-major-modes
+             emojify-user-emojis emojify-saved-user-emojis
+             emojify--user-emojis emojify-saved-user-emojis-parsed
+             emojify-regexps emojify-saved-emojify-regexps
              emojify-inhibit-in-buffer-functions emojify-saved-inhibit-in-buffer-functions
              emojify-program-contexts emojify-saved-program-contexts
              emojify-inhibit-functions emojify-saved-inhibit-functions
@@ -64,6 +80,9 @@ Helps isolate tests from each other's customizations."
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
 
 (defmacro emojify-tests-with-emojified-buffer (str &rest forms)
+  "Create a buffer with STR and execute FORMS.
+
+The FORMS are executed with emojify enabled."
   (declare (indent 1))
   ;; Run tests in a new buffer
   `(let ((test-buffer (get-buffer-create " *emojify-test-buffer*")))
@@ -90,12 +109,17 @@ Helps isolate tests from each other's customizations."
            (kill-buffer test-buffer))))))
 
 (defmacro emojify-tests-with-emojified-static-buffer (str &rest forms)
+  "Create a buffer with STR and execute FORMS.
+
+All kinds of dynamic behaviour on buffer are disabled.  See
+`emojify-with-saved-buffer-state'"
   (declare (indent 1))
   `(emojify-tests-with-emojified-buffer ,str
      (emojify-with-saved-buffer-state
        ,@forms)))
 
 (defmacro emojify-tests-should-be-emojified (point)
+  "Assert there is an emoji at POINT."
   `(progn
      (should-not (get-text-property ,point 'point-left))
      (should (get-text-property ,point 'emojified))
@@ -108,6 +132,7 @@ Helps isolate tests from each other's customizations."
      (should (get-text-property ,point 'point-entered))))
 
 (defmacro emojify-tests-should-not-be-emojified (point)
+  "Assert there is not emoji at POINT."
   `(progn
      (should-not (get-text-property ,point 'point-left))
      (should-not (get-text-property ,point 'emojified))
@@ -120,6 +145,7 @@ Helps isolate tests from each other's customizations."
      (should-not (get-text-property ,point 'point-entered))))
 
 (defmacro emojify-tests-should-be-uncovered (point)
+  "Assert the emoji at POINT is uncovered."
   `(progn
      (should (get-text-property ,point 'point-left))
      (should (get-text-property ,point 'emojified))
@@ -131,9 +157,19 @@ Helps isolate tests from each other's customizations."
      (should-not (get-text-property ,point 'display))))
 
 (defun emojify-insert-string (string)
+  "Insert the STRING."
   (mapc (lambda (character)
           (insert character))
         (string-to-vector string)))
+
+(defun emojify-redisplay ()
+  "Trigger a redisplay."
+  (if noninteractive
+      ;; In noninteractive mode JIT is not called
+      ;; call it
+      (jit-lock-fontify-now)
+    ;; In interactive mode just force redisplay
+    (redisplay t)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here

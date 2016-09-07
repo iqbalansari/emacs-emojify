@@ -20,6 +20,8 @@
      - [[#configuring-the-texts-that-are-displayed-as-emojis][Configuring the texts that are displayed as emojis]]
      - [[#controlling-behaviour-when-point-enters-an-emoji][Controlling behaviour when point enters an emoji]]
      - [[#controlling-behaviour-when-mouse-hovers-over-an-emoji][Controlling behaviour when mouse hovers over an emoji]]
+     - [[#custom-emojis][Custom emojis]]
+   - [[#integration-with-prettify-symbol-mode][Integration with prettify-symbol-mode]]
    - [[#known-issues][Known issues]]
    - [[#contributing][Contributing]]
    - [[#thanks][Thanks]]
@@ -78,16 +80,22 @@
       (add-hook 'after-init-hook #'global-emojify-mode)
     #+END_SRC
 
-    In programming modes only emojis in string and comments are displayed.
+    Additionally ~emojify~ can integrate with ~prettify-symbols-mode~ displaying
+    the symbols it recognizes as emojis. This is disabled by default, see
+    [[#integration-with-prettify-symbol-mode][Integration with prettify-symbol-mode]].
+
+    In programming modes ~github~ and ~ascii~ style emojis are displayed only in
+    string and comments, ~unicode~ emojis are displayed in all contexts. The
+    emojis of type ~prettify-symbol~ are displayed only in code context.
 
 *** Searching emojis
     The command ~emojify-apropos-emoji~ can be used to display emojis that match
     given regexp/apropos pattern. The results are displayed in a specialized
     buffer, where ~w~ or ~c~ can be used to copy emojis to the kill ring.
 
-    *NOTE* - You might notice that some of the emojis returned by this search
-    are not displayed by ~emojify~, this might happen if you newer emoji data
-    but old set of image. Download the latest emoji image using
+    *NOTE* - You might notice that some of the emojis prompted in the above
+    command are not displayed by ~emojify~, this might happen if you have newer
+    emoji data but old set of images. Download the latest emoji image using
     ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
 
 *** Inserting emojis
@@ -97,8 +105,8 @@
     depending on you preference.
 
     *NOTE* - You might notice that some of the emojis prompted in the above
-    command are not displayed by ~emojify~, this might happen if you newer emoji
-    data but old set of image. Download the latest emoji image using
+    command are not displayed by ~emojify~, this might happen if you have newer
+    emoji data but old set of images. Download the latest emoji image using
     ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
 
 ** Customizations
@@ -111,9 +119,11 @@
     one parameter the list of styles that you want to be displayed. The possible
     styles are
 
-    - ascii   - Display only plain ascii emojis
-    - unicode - Display only unicode emojis
-    - github  - Display only github style emojis
+    - ascii            - Display only plain ascii emojis
+    - unicode          - Display only unicode emojis
+    - github           - Display only github style emojis
+    - prettify-symbol  - Display symbols from ~prettify-symbols-alist~
+                         (which emojify recognizes) as emojis
 
 *** Configuring how emojis are displayed
     By default emojis are displayed using images. However you can instruct emojify
@@ -198,12 +208,62 @@
     When mouse hovers over a emoji, the underlying text is displayed in a help
     popup. This behaviour can be disabled by setting ~emojify-show-help~ to nil.
 
+*** Custom emojis
+    You can specify custom emojis using the ~emojify-user-emojis~ variable.  You
+    need to set it to an alist where first element of cons is the text to be
+    displayed as emoji, while the second element of the cons is an alist
+    containing data about the emoji.
+
+    The inner alist should have atleast
+
+    1) "name"  - The name of the emoji
+    2) "style" - This should be one of "github", "ascii" or "github"
+                 Note: "prettify-symbol" is not a valid style for custom emojis
+
+    Additionally the alist should contain one of (see [[#configuring-the-types-of-emojis-displayed][emojify-display-style]])
+    1) "unicode" - The replacement for the provided emoji for "unicode" display style
+    2) "image"   - The replacement for the provided emoji for "image" display style.
+                   This should be the *absolute* path to the image
+    3) "ascii"   - The replacement for the provided emoji for "ascii" display style
+
+    It is best to set this variable before you load ~emojify~, in case you set
+    this variable after loading ~emojify~ run the function
+    ~emojify-set-emoji-data~ to recalculate emoji data.
+
+    User emojis take precedence over default emojis so the above mechanism can
+    also be used to override the default emojis
+
+**** Example
+     Below is an example of setting up custom emojis. Assuming that the custom
+     images are at ~\~/.emacs.d/emojis/trollface.png~ and
+     ~\~/.emacs.d/emojis/neckbeard.png~, you instruct ~emojify~ to display ~:trollface:~
+     and ~:neckbeard:~ as :trollface: and :neckbeard:
+
+     #+BEGIN_SRC emacs-lisp
+       (setq emojify-user-emojis '((":trollface:" . (("name" . "Troll Face")
+                                                     ("image" . "~/.emacs.d/emojis/trollface.png")
+                                                     ("style" . "github")))
+                                   (":neckbeard:" . (("name" . "Neckbeard")
+                                                     ("image" . "~/.emacs.d/emojis/neckbeard.png")
+                                                     ("style" . "github")))))
+
+       ;; If emojify is already loaded refresh emoji data
+       (when (featurep 'emojify)
+         (emojify-set-emoji-data))
+     #+END_SRC
+
+** Integration with prettify-symbol-mode
+   Emojify can be configured to display symbols from ~prettify-symbols-alist~ as
+   emojis. To do so add ~prettify-symbol~ to [[#configuring-the-types-of-emojis-displayed][emojify-emoji-styles]]. You might
+   need re-enable ~prettify-symbols-mode~ if you are already using it, ~emojify~
+   will automatically display any symbols from ~prettify-symbols-alist~ that it
+   recognizes as emojis. You can use [[#custom-emojis][emojify-user-emojis]] to teach ~emojify~
+   about it any symbol it does not recognize yet.
+
 ** Known issues
    - Emojis are not properly updated after customizing ~emojify-display-style~ or
-     ~emojify-prog-contexts~. This would be fixed in future. For time being you
-     will be fine as long as you set these variables before ~emojify~ has
-     loaded.
-   - There is currently no support for custom emojis/images. I plan to add this in future.
+     ~emojify-program-contexts~. For time being you will be fine as long as you
+     set these variables before ~emojify~ has loaded.
 
 ** Contributing
    Code as well as documentation contributions are welcome. Development on

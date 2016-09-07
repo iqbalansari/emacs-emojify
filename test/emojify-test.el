@@ -63,45 +63,69 @@
     (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (point-min))))
 
+(ert-deftest emojify-test-custom-emojis ()
+  :tags '(core custom-images)
+  (let ((emojify-user-emojis emojify-test-custom-emojis))
+    (emojify-set-emoji-data)
+    (emojify-tests-with-emojified-static-buffer ":neckbeard:
+:troll:"
+      (emojify-tests-should-be-emojified (point-min))
+      (should (equal (get-text-property (point) 'emojify-buffer) (current-buffer)))
+      (should (= (get-text-property (point-min) 'emojify-beginning) (point-min-marker)))
+      (should (= (get-text-property (point) 'emojify-end) (line-end-position 1)))
+      (should (equal (get-text-property (point) 'emojify-text)  ":neckbeard:"))
+
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
+      (should (equal (get-text-property (line-beginning-position 2) 'emojify-buffer) (current-buffer)))
+      (should (= (get-text-property (line-beginning-position 2) 'emojify-beginning) (line-beginning-position 2)))
+      (should (= (get-text-property (line-beginning-position 2) 'emojify-end) (point-max-marker)))
+      (should (equal (get-text-property (line-beginning-position 2) 'emojify-text)  ":troll:")))))
+
 (ert-deftest emojify-tests-mixed-emoji-test ()
   :tags '(core mixed)
-  (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:"
-    (emojify-tests-should-be-emojified (point-min))
-    (emojify-tests-should-be-emojified (line-beginning-position 2))
-    (emojify-tests-should-be-emojified (line-beginning-position 3))
-    (emojify-tests-should-be-emojified (line-beginning-position 4))))
+  (let ((emojify-user-emojis emojify-test-custom-emojis))
+    (emojify-set-emoji-data)
+    (emojify-tests-with-emojified-static-buffer "😉\n:D\nD:\n:smile:\n:neckbeard:"
+      (emojify-tests-should-be-emojified (point-min))
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
+      (emojify-tests-should-be-emojified (line-beginning-position 3))
+      (emojify-tests-should-be-emojified (line-beginning-position 4))
+      (emojify-tests-should-be-emojified (line-beginning-position 5)))))
 
-;; The after-change tests stopped working after moving to JIT lock :unamused:
-;; (ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
-;;   :tags '(core after-change)
-;;   (emojify-tests-with-emojified-buffer ":smile:\n:)"
-;;     (emacs-lisp-mode)
-;;     (emojify-redisplay-emojis-in-region)
-;;     (emojify-mode +1)
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position))
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position 2))
+(ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
+  :tags '(core after-change)
+  (emojify-tests-with-emojified-buffer ":smile:\n:)"
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-mode +1)
+    (emojify-tests-should-not-be-emojified (line-beginning-position))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))
 
-;;     (comment-region (point-min) (point-max))
-;;     (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
-;;     (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
+    (comment-region (point-min) (point-max))
+    (emojify-redisplay)
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
 
-;;     (uncomment-region (point-min) (point-max))
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position))
-;;     (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
+    (uncomment-region (point-min) (point-max))
+    (emojify-redisplay)
+    (emojify-tests-should-not-be-emojified (line-beginning-position))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
 
-;; (ert-deftest emojify-tests-emojifying-on-typing ()
-;;   :tags '(core after-change)
-;;   (emojify-tests-with-emojified-buffer ""
-;;     (emacs-lisp-mode)
-;;     (emojify-redisplay-emojis-in-region)
-;;     (emojify-mode +1)
-;;     (emojify-insert-string "; :)")
-;;     (emojify-tests-should-be-emojified 4)
-;;     (newline)
-;;     (emojify-insert-string "; :smile")
-;;     (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
-;;     (emojify-insert-string ":")
-;;     (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
+(ert-deftest emojify-tests-emojifying-on-typing ()
+  :tags '(core after-change)
+  (emojify-tests-with-emojified-buffer ""
+    (emacs-lisp-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-mode +1)
+    (emojify-insert-string "; :)")
+    (emojify-redisplay)
+    (emojify-tests-should-be-emojified 4)
+    (newline)
+    (emojify-insert-string "; :smile")
+    (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
+    (emojify-insert-string ":")
+    (emojify-redisplay)
+    (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
 
 (ert-deftest emojify-tests-emoji-uncovering ()
   :tags '(behaviour point-motion)
@@ -114,6 +138,12 @@
   :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
     (with-mock
+      ;; Since emojify checks that there is no message being displayed
+      ;; before echoing the emoji, we need to stub out current-message
+      ;; too otherwise emojify does not echo the message since messages
+      ;; from other tests are being displayed
+      (unless noninteractive
+        (stub current-message => nil))
       (mock (message ":)"))
       (setq emojify-point-entered-behaviour 'echo)
       (goto-char (1+ (point-min)))
@@ -132,35 +162,55 @@
 
 (ert-deftest emojify-tests-emojify-setting-styles ()
   :tags '(styles github ascii)
-  (emojify-tests-with-emojified-static-buffer ":) 😄 :smile:"
+  (emojify-tests-with-emojified-static-buffer ":) 😄 :smile: return"
     (let ((ascii-emoji-pos (point-min))
           (unicode-emoji-pos (+ (point-min) (length ":) ")))
-          (github-emoji-pos (+ (point-min) (length ":) 😄 "))))
+          (github-emoji-pos (+ (point-min) (length ":) 😄 ")))
+          (prettify-emoji-pos (+ (point-min) (length ":) 😄 :smile: "))))
+
+      (setq prettify-symbols-alist
+            '(("return" . ?↪)))
+
+      (when (fboundp 'prettify-symbols-mode)
+        (prettify-symbols-mode +1))
 
       (emojify-set-emoji-styles '(ascii))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
       (emojify-tests-should-not-be-emojified github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prettify-emoji-pos)
 
       (emojify-set-emoji-styles '(unicode))
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-be-emojified unicode-emoji-pos)
       (emojify-tests-should-not-be-emojified github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prettify-emoji-pos)
 
       (emojify-set-emoji-styles '(github))
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
       (emojify-tests-should-be-emojified github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prettify-emoji-pos)
 
-      (emojify-set-emoji-styles '(ascii unicode github))
+      (emojify-set-emoji-styles '(prettify-symbol))
+      (emojify-tests-should-not-be-emojified ascii-emoji-pos)
+      (emojify-tests-should-not-be-emojified unicode-emoji-pos)
+      (emojify-tests-should-not-be-emojified github-emoji-pos)
+      (when (fboundp 'prettify-symbols-mode)
+        (emojify-tests-should-be-emojified prettify-emoji-pos))
+
+      (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
       (emojify-tests-should-be-emojified unicode-emoji-pos)
       (emojify-tests-should-be-emojified github-emoji-pos)
+      (when (fboundp 'prettify-symbols-mode)
+        (emojify-tests-should-be-emojified prettify-emoji-pos))
 
       (emojify-set-emoji-styles nil)
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
-      (emojify-tests-should-not-be-emojified github-emoji-pos))))
+      (emojify-tests-should-not-be-emojified github-emoji-pos)
+      (emojify-tests-should-not-be-emojified prettify-emoji-pos))))
 
 (ert-deftest emojify-tests-program-contexts ()
   :tags '(core prog contextual)
@@ -335,7 +385,7 @@
     (fundamental-mode)
     (let ((count 0))
       (emojify-do-for-emojis-in-region (point-min) (point-max)
-        (incf count))
+        (cl-incf count))
       ;; Only one emoji should be displayed
       (should (= count 1))
       ;; The larger emoji should be preferred
@@ -483,6 +533,113 @@
       (let ((this-command 'emojify-delete-emoji-forward))
         (delete-selection-pre-hook))
       (should (equal (point-min) (point-max))))))
+
+(ert-deftest emojify-tests-prettify-symbols ()
+  :tags '(prettify-symbols)
+  (when (fboundp 'prettify-symbols-mode)
+    (emojify-tests-with-emojified-static-buffer "try:
+    x = 1
+except:
+    raise(Exception)
+
+yield 3
+return 4
+"
+      (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
+      (python-mode)
+      (setq prettify-symbols-alist
+            '(("return" . ?↪)
+              ("try" . ?😱)
+              ("except" . ?⛐)
+              ("raise" . ?💥)))
+      (emojify-tests-should-not-be-emojified (point-min))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+      (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 6))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 7))
+      (prettify-symbols-mode +1)
+      (emojify-tests-should-be-emojified (point-min))
+      (should (equal (get-text-property (point-min) 'emojify-text) "try"))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+      (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
+      (should (equal (get-text-property (+ (line-beginning-position 4) 5) 'emojify-text) "raise"))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 6))
+      (emojify-tests-should-be-emojified (line-beginning-position 7))
+      (should (equal (get-text-property (line-beginning-position 7) 'emojify-text) "return"))
+      (prettify-symbols-mode -1)
+      (emojify-tests-should-not-be-emojified (point-min))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+      (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 6))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 7)))))
+
+(ert-deftest emojify-tests-prettify-symbols-with-custom-images ()
+  :tags '(prettify-symbols)
+  (when (fboundp 'prettify-symbols-mode)
+    (let ((emojify-user-emojis emojify-test-custom-emojis))
+      (emojify-set-emoji-data)
+      (emojify-tests-with-emojified-static-buffer "try:
+    lambda x: x
+except:
+    raise(Exception)
+
+yield 3
+return 4
+"
+        (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
+        (python-mode)
+        (setq prettify-symbols-alist
+              '(("return" . ?↪)
+                ("try" . ?😱)
+                ("except" . ?⛐)
+                ("lambda" . ?λ)
+                ("raise" . ?💥)))
+        (emojify-tests-should-not-be-emojified (+ (line-beginning-position 2) 5))
+        (prettify-symbols-mode +1)
+        (emojify-tests-should-be-emojified (point-min))
+        (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 5))
+        (emojify-tests-should-not-be-emojified (line-beginning-position 3))
+        (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
+        (emojify-tests-should-not-be-emojified (line-beginning-position 6))
+        (emojify-tests-should-be-emojified (line-beginning-position 7))))))
+
+(ert-deftest emojify-tests-apropos ()
+  :tags '(apropos)
+  (emojify-apropos-emoji "squi")
+  ;; Window with results should be visible
+  (with-mock
+    (stub message => nil)
+    (should (get-buffer-window emojify-apropos-buffer-name))
+    (let ((matches 0))
+
+      (with-current-buffer emojify-apropos-buffer-name
+        ;; Force a display of emojis
+        (emojify-redisplay-emojis-in-region (point-min) (point-max))
+        (emojify-do-for-emojis-in-region (point-min) (point-max)
+          (goto-char emoji-start)
+          (call-interactively #'emojify-apropos-copy-emoji)
+          (should (string= (car kill-ring) (get-text-property (point) 'emojify-text)))
+          (cl-incf matches)))
+
+      (should (= matches 2)))
+
+    ;; Test with custom emoji
+    (let ((emojify-user-emojis emojify-test-custom-emojis)
+          (matches 0))
+
+      (emojify-set-emoji-data)
+      (emojify-apropos-emoji "lambda")
+      (should (get-buffer-window emojify-apropos-buffer-name))
+
+      (with-current-buffer emojify-apropos-buffer-name
+        (emojify-redisplay-emojis-in-region (point-min) (point-max))
+        (emojify-do-for-emojis-in-region (point-min) (point-max)
+          (goto-char emoji-start)
+          (call-interactively #'emojify-apropos-copy-emoji)
+          (should (string= (car kill-ring) (get-text-property (point) 'emojify-text)))
+          (cl-incf matches)))
+
+      (should (= matches 1)))))
 
 (ert-deftest emojify-tests-no-byte-compilation-warnings ()
   :tags '(byte-compilation)

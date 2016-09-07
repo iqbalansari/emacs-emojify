@@ -331,29 +331,8 @@ can customize `emojify-inhibit-major-modes' and
 
 ;; Customizations to control display of emojis
 
-(defvar emojify-emojis nil
-  "Data about the emojis, this contains only the emojis that come with emojify.")
-
-(defvar emojify-regexps nil
-  "Regexp to match text to emojified.")
-
-(defvar emojify-emoji-style-change-hooks nil
+(defvar emojify-emoji-style-change-hook nil
   "Hooks run when emoji style changes.")
-
-(defun emojify-set-emoji-data ()
-  "Read the emoji data for STYLES and set the regexp required to search them."
-  (setq emojify-emojis (let ((json-array-type 'list)
-                             (json-object-type 'hash-table))
-                         (json-read-file emojify-emoji-json)))
-
-  ;; Construct emojify-regexps in descending order of length, this is important
-  ;; so that larger emojis are searched first and get precedence over smaller
-  ;; ones (see also `emojify-display-emojis-in-region')
-  (setq emojify-regexps (seq-map #'regexp-opt
-                                 (seq-partition (sort (ht-keys emojify-emojis)
-                                                      (lambda (string1 string2) (> (length string1)
-                                                                                   (length string2))))
-                                                1000))))
 
 ;;;###autoload
 (defun emojify-set-emoji-styles (styles)
@@ -366,7 +345,7 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
 
   (setq-default emojify-emoji-styles styles)
 
-  (run-hooks 'emojify-emoji-style-change-hooks))
+  (run-hooks 'emojify-emoji-style-change-hook))
 
 (defcustom emojify-emoji-styles
   '(ascii unicode github)
@@ -374,13 +353,15 @@ STYLES is the styles emoji styles that should be used, see `emojify-emoji-styles
 
 These can have one of the following values
 
-`ascii'   - Display only ascii emojis for example ';)'
-`unicode' - Display only unicode emojis for example '😉'
-`github'  - Display only github style emojis for example ':wink:'"
+`ascii'           - Display only ascii emojis for example ';)'
+`unicode'         - Display only unicode emojis for example '😉'
+`github'          - Display only github style emojis for example ':wink:'
+`prettify-symbol' - Display only emojis extracted from `prettify-symbols-alist'"
   :type '(set
           (const :tag "Display only ascii emojis" ascii)
           (const :tag "Display only github emojis" github)
-          (const :tag "Display only unicode codepoints" unicode))
+          (const :tag "Display only unicode codepoints" unicode)
+          (const :tag "Display only emojis extracted from `prettify-symbols-alist'" prettify-symbol))
   :set (lambda (_ value) (emojify-set-emoji-styles value))
   :group 'emojify)
 
@@ -444,11 +425,15 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                           (t 'code))))
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
-               ;; If context if code display only unicode emojis
-               (and (string= (ht-get emoji "style") "unicode")
-                    (memql 'unicode emojify-emoji-styles))
-             ;; No need to check for non-code context
-             t)))))
+               ;; If context is code display only unicode emojis
+               (or (and (string= (ht-get emoji "style") "unicode")
+                        (memql 'unicode emojify-emoji-styles))
+                   (and (string= (ht-get emoji "style") "prettify-symbol")
+                        (bound-and-true-p prettify-symbols-mode)
+                        (memql 'prettify-symbol emojify-emoji-styles)))
+             ;; Display any other style in all contexts except for
+             ;; prettify-symbol emoji
+             (not (string= (ht-get emoji "style") "prettify-symbol")))))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -604,6 +589,119 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
+(defcustom emojify-user-emojis nil
+  "User specified custom emojis.
+
+This is an alist where first element of cons is the text to be displayed as
+emoji, while the second element of the cons is an alist containing data about
+the emoji.
+
+The inner alist should have atleast (not all keys are strings)
+
+`name'  - The name of the emoji
+`style' - This should be one of \"github\", \"ascii\" or \"github\"
+          (see `emojify-emoji-styles')
+          Note: \"prettify-symbol\" is not a valid style for custom emojis
+
+The alist should contain one of (see `emojify-display-style')
+`unicode' - The replacement for the provided emoji for \"unicode\" display style
+`image'   - The replacement for the provided emoji for \"image\" display style.
+            This should be the absolute path to the image
+`ascii'   - The replacement for the provided emoji for \"ascii\" display style
+
+Example -
+The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png and
+~/.emacs.d/emojis/neckbeard.png
+
+'((\":troll:\"     . ((\"name\" . \"Troll\")
+                    (\"image\" . \"~/.emacs.d/emojis/trollface.png\")
+                    (\"style\" . \"github\")))
+  (\":neckbeard:\" . ((\"name\" . \"Neckbeard\")
+                    (\"image\" . \"~/.emacs.d/emojis/neckbeard.png\")
+                    (\"style\" . \"github\"))))")
+
+(defvar emojify-emojis nil
+  "Data about the emojis, this contains only the emojis that come with emojify.")
+
+(defvar emojify-pretty-symbol-emojis nil
+  "Emojis extracted from `prettify-symbols-alist'.")
+
+(defvar emojify--user-emojis nil
+  "User specified custom emojis.")
+
+(defvar emojify-regexps nil
+  "Regexp to match text to emojified.")
+
+(make-variable-buffer-local 'emojify-regexps)
+(make-variable-buffer-local 'emojify-pretty-symbol-emojis)
+
+(defun emojify-create-emojify-emojis ()
+  "Create `emojify-emojis' if needed."
+  (unless emojify-emojis
+    (emojify-set-emoji-data)))
+
+(defun emojify-get-emoji (emoji)
+  "Get data for given EMOJI.
+
+This first looks for the emoji in `emojify--user-emojis',
+`emojify-pretty-symbol-emojis' and finally in `emojify-emojis'."
+  (or (when emojify--user-emojis
+        (ht-get emojify--user-emojis emoji))
+      (when emojify-pretty-symbol-emojis
+        (ht-get emojify-pretty-symbol-emojis emoji))
+      (ht-get emojify-emojis emoji)))
+
+(defun emojify-emojis-each (function)
+  "Execute FUNCTION for each emoji.
+
+This first runs function for `emojify--user-emojis',
+`emojify-pretty-symbol-emojis' and then `emojify-emojis'."
+  (when emojify--user-emojis
+    (ht-each function emojify--user-emojis))
+  (when emojify-pretty-symbol-emojis
+    (ht-each function emojify-pretty-symbol-emojis))
+  (ht-each function emojify-emojis))
+
+(defun emojify--verify-user-emojis (emojis)
+  "Verify the EMOJIS in correct user format."
+  (seq-every-p (lambda (emoji)
+                 (and (assoc "name" (cdr emoji))
+                      ;; Make sure style is present is only one of
+                      ;; "unicode", "ascii" and "github".
+                      (assoc "style" (cdr emoji))
+                      (seq-position '("unicode" "ascii" "github")
+                                    (cdr (assoc "style" (cdr emoji))))
+                      (or (assoc "unicode" (cdr emoji))
+                          (assoc "image" (cdr emoji))
+                          (assoc "ascii" (cdr emoji)))))
+               emojis))
+
+(defun emojify-set-emoji-data ()
+  "Read the emoji data for STYLES and set the regexp required to search them."
+  (setq-default emojify-emojis (let ((json-array-type 'list)
+                                     (json-object-type 'hash-table))
+                                 (json-read-file emojify-emoji-json)))
+
+  ;; Construct emojify-regexps in descending order of length, this is important
+  ;; so that larger emojis are searched first and get precedence over smaller
+  ;; ones (see also `emojify-display-emojis-in-region')
+  (setq-default emojify-regexps (seq-map #'regexp-opt
+                                         (seq-partition (sort (ht-keys emojify-emojis)
+                                                              (lambda (string1 string2) (> (length string1)
+                                                                                           (length string2))))
+                                                        1000)))
+  (when emojify-user-emojis
+    (if (emojify--verify-user-emojis emojify-user-emojis)
+        ;; Create entries for user emojis
+        (let ((emoji-pairs (mapcar (lambda (user-emoji)
+                                     (cons (car user-emoji)
+                                           (ht-from-alist (cdr user-emoji))))
+                                   emojify-user-emojis)))
+          (setq-default emojify--user-emojis (ht-from-alist emoji-pairs))
+          (setq-default emojify-regexps (cons (regexp-opt (mapcar #'car emoji-pairs))
+                                              emojify-regexps)))
+      (message "[emojify] User emojis are not in correct format ignoring them."))))
+
 (defvar emojify-emoji-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
@@ -744,22 +842,23 @@ selection, but for some reason it does not work well."
 
 DATA holds the emoji data, BEG and END delimit the region where emoji will
 be displayed."
-  (let* ((image-file (expand-file-name (ht-get data "image")
-                                       (emojify-image-dir)))
-         (image-type (intern (upcase (file-name-extension image-file)))))
-    (when (file-exists-p image-file)
-      (create-image image-file
-                    ;; use imagemagick if available and supports PNG images
-                    ;; (allows resizing images)
-                    (when (and (fboundp 'imagemagick-types)
-                               (memq image-type (imagemagick-types)))
-                      'imagemagick)
-                    nil
-                    :ascent 'center
-                    :heuristic-mask t
-                    :background (emojify--get-image-background beg end)
-                    ;; no-op if imagemagick is not available
-                    :height (emojify-default-font-height)))))
+  (when (ht-get data "image")
+    (let* ((image-file (expand-file-name (ht-get data "image")
+                                         (emojify-image-dir)))
+           (image-type (intern (upcase (file-name-extension image-file)))))
+      (when (file-exists-p image-file)
+        (create-image image-file
+                      ;; use imagemagick if available and supports PNG images
+                      ;; (allows resizing images)
+                      (when (and (fboundp 'imagemagick-types)
+                                 (memq image-type (imagemagick-types)))
+                        'imagemagick)
+                      nil
+                      :ascent 'center
+                      :heuristic-mask t
+                      :background (emojify--get-image-background beg end)
+                      ;; no-op if imagemagick is not available
+                      :height (emojify-default-font-height))))))
 
 (defun emojify--get-unicode-display (data _beg _end)
   "Get the display text property to display the emoji as an unicode character.
@@ -807,7 +906,7 @@ TODO: Skip emojifying if region is already emojified."
                  (match-end (match-end 0))
                  (match (match-string-no-properties 0))
                  (buffer (current-buffer))
-                 (emoji (ht-get emojify-emojis match)))
+                 (emoji (emojify-get-emoji match)))
             (when (and (memql (intern (ht-get emoji "style"))
                               emojify-emoji-styles)
                        ;; Skip displaying this emoji if the its bounds are
@@ -901,10 +1000,12 @@ BEG and END are the beginning and end of the region respectively"
 Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
-         (end (or end (cdr area))))
-    (emojify-execute-ignoring-errors-unless-debug
-      (emojify-undisplay-emojis-in-region beg end)
-      (emojify-display-emojis-in-region beg end))))
+         (end (or end (cdr area)))
+         (region-too-big (> end (+ beg (* 10 (- (window-end) (window-start)))))))
+    (unless region-too-big
+      (emojify-execute-ignoring-errors-unless-debug
+        (emojify-undisplay-emojis-in-region beg end)
+        (emojify-display-emojis-in-region beg end)))))
 
 (defun emojify-after-change-extend-region-function (beg end _len)
   "Extend the region to be emojified.
@@ -1030,6 +1131,41 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
+;; Integration with prettify-symbols-mode
+
+(defun emojify-populate-emojis-from-prettify-symbol-mode ()
+  "Populate additional text to display from `prettify-symbols-alist'."
+  (when (and (seq-position emojify-emoji-styles 'prettify-symbol)
+             (bound-and-true-p prettify-symbols-alist))
+
+    (let (new-regexps emojis)
+      (dolist (pretty-symbol prettify-symbols-alist)
+        (let* ((symbol-text (make-string 1 (cdr pretty-symbol)))
+               (emojify-symbol-data (emojify-get-emoji symbol-text)))
+          (when emojify-symbol-data
+            (push (cons (car pretty-symbol)
+                        (ht-from-alist (list (cons "style" "prettify-symbol")
+                                             (cons "image" (gethash "image" emojify-symbol-data))
+                                             (cons "unicode" symbol-text)
+                                             (cons "name" (format "Pretty represenation for '%s'" (car pretty-symbol))))))
+                  emojis)
+            (push (car pretty-symbol) new-regexps))))
+
+      (when emojis
+        (setq emojify-pretty-symbol-emojis (ht-from-alist emojis)))
+
+      (when new-regexps
+        (let ((re (regexp-opt new-regexps 'symbols)))
+          (setq emojify-regexps (cons re (delete re emojify-regexps))))))))
+
+(defun emojify-handle-prettify-symbol-mode ()
+  "Redisplay emojis after `prettify-symbol-mode' is enabled/disabled."
+  (when (bound-and-true-p prettify-symbols-mode)
+    (emojify-populate-emojis-from-prettify-symbol-mode))
+  (emojify-redisplay-emojis-in-region))
+
+
+
 ;; Lazy image downloading
 
 (defvar emojify--refused-image-download-p nil
@@ -1101,8 +1237,7 @@ run the command `emojify-download-emoji'")))
   "Turn on `emojify-mode' in current buffer."
 
   ;; Calculate emoji data if needed
-  (unless emojify-emojis
-    (emojify-set-emoji-data))
+  (emojify-create-emojify-emojis)
 
   (when (emojify-buffer-p (current-buffer))
     ;; Download images if not available
@@ -1123,7 +1258,14 @@ run the command `emojify-download-emoji'")))
     (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t)
 
     ;; Redisplay visible emojis when emoji style changes
-    (add-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region)))
+    (add-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
+
+    ;; Add symbols from prettify symbol mode, to displayed emojis and redisplay
+    ;; emojis when prettify-symbols-mode is activated
+    (add-hook 'prettify-symbols-mode-hook #'emojify-handle-prettify-symbol-mode)
+
+    ;; Repopulate emojis from prettify-symbols-alist when style changes
+    (add-hook 'emojify-emoji-style-change-hook #'emojify-handle-prettify-symbol-mode)))
 
 (defun emojify-turn-off-emojify-mode ()
   "Turn off `emojify-mode' in current buffer."
@@ -1141,8 +1283,12 @@ run the command `emojify-download-emoji'")))
   (remove-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t)
   (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t)
 
+  ;; Disable display of symbols
+  (remove-hook 'prettify-symbols-mode-hook #'emojify-handle-prettify-symbol-mode)
+
   ;; Remove style change hooks
-  (remove-hook 'emojify-emoji-style-change-hooks #'emojify-redisplay-emojis-in-region))
+  (remove-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
+  (remove-hook 'emojify-emoji-style-change-hook #'emojify-handle-prettify-symbol-mode))
 
 ;;;###autoload
 (define-minor-mode emojify-mode
@@ -1162,6 +1308,8 @@ run the command `emojify-download-emoji'")))
 
 
 ;; Searching and inserting emojis
+
+(defvar emojify-apropos-buffer-name "*Apropos Emojis*")
 
 (defun emojify-apropos-quit ()
   "Delete the window displaying Emoji search results."
@@ -1190,6 +1338,7 @@ run the command `emojify-download-emoji'")))
     (define-key map "p" #'previous-line)
     (define-key map "r" #'isearch-backward)
     (define-key map "s" #'isearch-forward)
+    (define-key map "g" #'emojify-apropos-emoji)
     (define-key map ">" 'end-of-buffer)
     (define-key map "<" 'beginning-of-buffer)
 
@@ -1211,12 +1360,32 @@ run the command `emojify-download-emoji'")))
 
 (put 'emojify-apropos-mode 'mode-class 'special)
 
+(defvar emojify--apropos-last-query nil)
+(make-variable-buffer-local 'emojify--apropos-last-query)
+
+(defun emojify-apropos-read-pattern ()
+  "Read apropos pattern with INITIAL-INPUT as the initial input.
+
+Borrowed from apropos.el"
+  (let ((pattern (read-string (concat "Search for emoji (word list or regexp): ")
+                              emojify--apropos-last-query)))
+    (if (string-equal (regexp-quote pattern) pattern)
+        (or (split-string pattern "[ \t]+" t)
+            (if (fboundp 'user-error)
+                (apply #'user-error "No word list given")
+              (apply #'error "No word list given")))
+      pattern)))
+
 ;;;###autoload
 (defun emojify-apropos-emoji (pattern)
   "Show Emojis that match PATTERN."
-  (interactive (list (apropos-read-pattern "emoji")))
+  (interactive (list (emojify-apropos-read-pattern)))
 
-  (let (matching-emojis sorted-emojis)
+  (emojify-create-emojify-emojis)
+
+  (let ((in-apropos-buffer-p (equal major-mode 'emojify-apropos-mode))
+        matching-emojis
+        sorted-emojis)
 
     (unless (listp pattern)
       (setq pattern (list pattern)))
@@ -1225,18 +1394,17 @@ run the command `emojify-download-emoji'")))
     ;; description
     (apropos-parse-pattern pattern)
 
-    ;; Collection matching emojis in a list (list score emoji emoji-data)
+    ;; Collect matching emojis in a list of (list score emoji emoji-data)
     ;; elements, where score is the proximity of the emoji to given pattern
     ;; calculated using `apropos-score-str'
-    (maphash (lambda (key value)
-               (when (or (string-match apropos-regexp key)
-                         (string-match apropos-regexp (gethash "name" value)))
-                 (push (list (max (apropos-score-str key)
-                                  (apropos-score-str (gethash "name" value)))
-                             key
-                             value)
-                       matching-emojis)))
-             emojify-emojis)
+    (emojify-emojis-each (lambda (key value)
+                           (when (or (string-match apropos-regexp key)
+                                     (string-match apropos-regexp (ht-get value "name")))
+                             (push (list (max (apropos-score-str key)
+                                              (apropos-score-str (ht-get value "name")))
+                                         key
+                                         value)
+                                   matching-emojis))))
 
     ;; Sort the emojis by the proximity score
     (setq sorted-emojis (mapcar #'cdr
@@ -1244,26 +1412,29 @@ run the command `emojify-download-emoji'")))
                                       (lambda (emoji1 emoji2)
                                         (> (car emoji1) (car emoji2))))))
 
-    (when (get-buffer "*Apropos Emojis*")
-      (kill-buffer "*Apropos Emojis*"))
-
     ;; Insert result in apropos buffer and display it
-    (with-current-buffer (get-buffer-create "*Apropos Emojis*")
-      (erase-buffer)
-      (insert (propertize "Emojis matching" 'face 'apropos-symbol))
-      (insert (format " - \"%s\"" (mapconcat 'identity pattern " ")))
-      (insert "\n\nUse `c' or `w' to copy emoji on current line\n\n")
-      (dolist (emoji sorted-emojis)
-        (insert (format "%s - %s (%s)"
-                        (car emoji)
-                        (gethash "name" (cadr emoji))
-                        (gethash "style" (cadr emoji))))
-        (insert "\n"))
-      (goto-char (point-min))
-      (emojify-apropos-mode)
-      (setq-local line-spacing 7))
+    (with-current-buffer (get-buffer-create emojify-apropos-buffer-name)
+      (let ((inhibit-read-only t)
+            (query (mapconcat 'identity pattern " ")))
+        (erase-buffer)
+        (insert (propertize "Emojis matching" 'face 'apropos-symbol))
+        (insert (format " - \"%s\"" query))
+        (insert "\n\nUse `c' or `w' to copy emoji on current line\nUse `g' to rerun apropos\n\n")
+        (dolist (emoji sorted-emojis)
+          (insert (format "%s - %s (%s)"
+                          (car emoji)
+                          (ht-get (cadr emoji) "name")
+                          (ht-get (cadr emoji) "style")))
+          (insert "\n"))
+          (goto-char (point-min))
+          (forward-line (1- 6))
+        (emojify-apropos-mode)
+        (setq emojify--apropos-last-query (concat query " "))
+        (setq-local line-spacing 7)))
 
-    (display-buffer (get-buffer "*Apropos Emojis*"))))
+    (select-window (display-buffer (get-buffer emojify-apropos-buffer-name)
+                                   (when in-apropos-buffer-p
+                                     (cons #'display-buffer-same-window nil))))))
 
 ;;;###autoload
 (defun emojify-insert-emoji ()
@@ -1271,21 +1442,21 @@ run the command `emojify-download-emoji'")))
 
 This respects the `emojify-emoji-styles' variable."
   (interactive)
+  (emojify-create-emojify-emojis)
   (let* ((emojify-in-insertion-command-p t)
          (styles (mapcar #'symbol-name emojify-emoji-styles))
          (line-spacing 7)
          (completion-ignore-case t)
          (candidates (let (emojis)
-                       (maphash (lambda (key value)
-                                  (when (member (gethash "style" value) styles)
-                                    (push (format "%s - %s (%s)"
-                                                  key
-                                                  (gethash "name" value)
-                                                  (gethash "style" value))
-                                          emojis)))
-                                emojify-emojis)
+                       (emojify-emojis-each (lambda (key value)
+                                              (when (seq-position styles (ht-get value "style"))
+                                                (push (format "%s - %s (%s)"
+                                                              key
+                                                              (ht-get value "name")
+                                                              (ht-get value "style"))
+                                                      emojis))))
                        emojis)))
-    (insert (car (split-string (completing-read "Apropos Emoji: " candidates)
+    (insert (car (split-string (completing-read "Insert Emoji: " candidates)
                                " ")))))
 
 
