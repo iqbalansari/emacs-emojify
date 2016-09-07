@@ -122,7 +122,7 @@
     - ascii            - Display only plain ascii emojis
     - unicode          - Display only unicode emojis
     - github           - Display only github style emojis
-    - prettify-symbols - Display symbols from ~prettify-symbols-alist~
+    - prettify-symbol  - Display symbols from ~prettify-symbols-alist~
                          (which emojify recognizes) as emojis
 
 *** Configuring how emojis are displayed
