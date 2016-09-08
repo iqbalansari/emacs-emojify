@@ -63,6 +63,10 @@
 (defvar jit-lock-start)
 (defvar jit-lock-end)
 
+;; Used while inserting emojis using helm
+(defvar helm-buffer)
+(defvar helm-after-initialize-hook)
+
 
 
 ;; Compatibility functions
@@ -1435,6 +1439,20 @@ Borrowed from apropos.el"
                                    (when in-apropos-buffer-p
                                      (cons #'display-buffer-same-window nil))))))
 
+(defun emojify--insert-minibuffer-setup-hook ()
+  "Enables `emojify-mode' in minbuffer while inserting emojis.
+
+This ensures `emojify' is enabled even when `global-emojify-mode' is not on."
+  (emojify-mode +1))
+
+(defun emojify--insert-helm-hook ()
+  "Enables `emojify-mode' in helm buffer.
+
+This ensures `emojify' is enabled in helm buffer displaying completion even when
+`global-emojify-mode' is not on."
+  (with-current-buffer helm-buffer
+    (emojify-mode +1)))
+
 ;;;###autoload
 (defun emojify-insert-emoji ()
   "Interactively prompt for Emojis and insert them in the current buffer.
@@ -1454,7 +1472,14 @@ This respects the `emojify-emoji-styles' variable."
                                                               (ht-get value "name")
                                                               (ht-get value "style"))
                                                       emojis))))
-                       emojis)))
+                       emojis))
+         ;; Vanilla Emacs completion and Icicles use the completion list mode to display candidates
+         ;; the following makes sure emojify is enabled in the completion list
+         (completion-list-mode-hook (cons #'emojify--insert-minibuffer-setup-hook completion-list-mode-hook))
+         ;; (Vertical) Ido and Ivy displays candidates in minibuffer this makes sure candidates are emojified
+         ;; when Ido or Ivy are used
+         (minibuffer-setup-hook (cons #'emojify--insert-minibuffer-setup-hook minibuffer-setup-hook))
+         (helm-after-initialize-hook (cons #'emojify--insert-helm-hook (bound-and-true-p helm-after-initialize-hook))))
     (insert (car (split-string (completing-read "Insert Emoji: " candidates)
                                " ")))))
 
