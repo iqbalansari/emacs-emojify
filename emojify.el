@@ -901,62 +901,66 @@ region containing the emoji."
 BEG and END are the beginning and end of the region respectively.
 TODO: Skip emojifying if region is already emojified."
   (emojify-with-saved-buffer-state
-    (seq-doseq (regexp emojify-regexps)
-      (let (case-fold-search)
-        (goto-char beg)
-        (while (and (> end (point))
-                    (search-forward-regexp regexp end t))
-          (let* ((match-beginning (match-beginning 0))
-                 (match-end (match-end 0))
-                 (match (match-string-no-properties 0))
-                 (buffer (current-buffer))
-                 (emoji (emojify-get-emoji match)))
-            (when (and (memql (intern (ht-get emoji "style"))
-                              emojify-emoji-styles)
-                       ;; Skip displaying this emoji if the its bounds are
-                       ;; already part of an existing emoji. Since the emojis
-                       ;; are searched in descending order of length (see
-                       ;; construction of emojify-regexp in `emojify-set-emoji-data'),
-                       ;; this means larger emojis get precedence over smaller
-                       ;; ones
-                       (not (or (get-text-property match-beginning 'emojified)
-                                (get-text-property (1- match-end) 'emojified)))
-                       ;; Display unconditionally in non-prog mode
-                       (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
-                           ;; In prog mode enable respecting `emojify-program-contexts'
-                           (emojify-valid-program-context-p emoji match-beginning match-end))
+    ;; Make sure we halt if displaying emojis takes more than a second
+    (with-timeout (1 (emojify-message "Failed to display emojis under 1 second"))
+      (seq-doseq (regexp emojify-regexps)
+        (let (case-fold-search)
+          (goto-char beg)
+          (while (and (> end (point))
+                      (search-forward-regexp regexp end t))
+            (let* ((match-beginning (match-beginning 0))
+                   (match-end (match-end 0))
+                   (match (match-string-no-properties 0))
+                   (buffer (current-buffer))
+                   (emoji (emojify-get-emoji match)))
+              (when (and (memql (intern (ht-get emoji "style"))
+                                emojify-emoji-styles)
+                         ;; Skip displaying this emoji if the its bounds are
+                         ;; already part of an existing emoji. Since the emojis
+                         ;; are searched in descending order of length (see
+                         ;; construction of emojify-regexp in `emojify-set-emoji-data'),
+                         ;; this means larger emojis get precedence over smaller
+                         ;; ones
+                         (not (or (get-text-property match-beginning 'emojified)
+                                  (get-text-property (1- match-end) 'emojified)))
+                         ;; Display unconditionally in non-prog mode
+                         (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
+                             ;; In prog mode enable respecting `emojify-program-contexts'
+                             (emojify-valid-program-context-p emoji match-beginning match-end))
 
-                       ;; Display ascii emojis conservatively, since they have potential
-                       ;; to be annoying consider d: in head:, except while executing apropos
-                       ;; emoji
-                       (or (not (string= (ht-get emoji "style") "ascii"))
-                           (emojify-valid-ascii-emoji-context-p match-beginning match-end))
+                         ;; Display ascii emojis conservatively, since they have potential
+                         ;; to be annoying consider d: in head:, except while executing apropos
+                         ;; emoji
+                         (or (not (string= (ht-get emoji "style") "ascii"))
+                             (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
-                       (not (emojify-inside-org-src-p match-beginning))
+                         (not (emojify-inside-org-src-p match-beginning))
 
-                       ;; Inhibit possibly inside a list
-                       ;; 41 is ?) but packages get confused by the extra closing paren :)
-                       ;; TODO Report bugs to such packages
-                       (not (and (eq (char-syntax (char-before match-end)) 41)
-                                 (emojify-looking-at-end-of-list-maybe match-end)))
+                         ;; Inhibit possibly inside a list
+                         ;; 41 is ?) but packages get confused by the extra closing paren :)
+                         ;; TODO Report bugs to such packages
+                         (not (and (eq (char-syntax (char-before match-end)) 41)
+                                   (emojify-looking-at-end-of-list-maybe match-end)))
 
-                       (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
+                         (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
 
-              (let ((display-prop (emojify--get-text-display-props emoji match-beginning match-end)))
-                (when display-prop
-                  (add-text-properties match-beginning
-                                       match-end
-                                       (list 'emojified t
-                                             'emojify-display display-prop
-                                             'display display-prop
-                                             'emojify-buffer buffer
-                                             'emojify-text match
-                                             'emojify-beginning (copy-marker match-beginning)
-                                             'emojify-end (copy-marker match-end)
-                                             'yank-handler (list nil match)
-                                             'keymap emojify-emoji-keymap
-                                             'point-entered #'emojify-point-entered-function
-                                             'help-echo #'emojify-help-function)))))))))))
+                (let ((display-prop (emojify--get-text-display-props emoji match-beginning match-end)))
+                  (when display-prop
+                    (add-text-properties match-beginning
+                                         match-end
+                                         (list 'emojified t
+                                               'emojify-display display-prop
+                                               'display display-prop
+                                               'emojify-buffer buffer
+                                               'emojify-text match
+                                               'emojify-beginning (copy-marker match-beginning)
+                                               'emojify-end (copy-marker match-end)
+                                               'yank-handler (list nil match)
+                                               'keymap emojify-emoji-keymap
+                                               'point-entered #'emojify-point-entered-function
+                                               'help-echo #'emojify-help-function)))))))
+          ;; Stop a bit to let `with-timeout' kick in
+          (sit-for 0 t))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
