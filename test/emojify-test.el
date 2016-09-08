@@ -541,7 +541,8 @@
     x = 1
 except:
     raise(Exception)
-
+lambdalambda
+\"lambda\"
 yield 3
 return 4
 "
@@ -555,21 +556,27 @@ return 4
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 5))
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
       (emojify-tests-should-not-be-emojified (line-beginning-position 7))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 8))
       (prettify-symbols-mode +1)
       (emojify-tests-should-be-emojified (point-min))
       (should (equal (get-text-property (point-min) 'emojify-text) "try"))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
       (should (equal (get-text-property (+ (line-beginning-position 4) 5) 'emojify-text) "raise"))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 5))
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
-      (emojify-tests-should-be-emojified (line-beginning-position 7))
-      (should (equal (get-text-property (line-beginning-position 7) 'emojify-text) "return"))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 7))
+      (emojify-tests-should-be-emojified (line-beginning-position 8))
+      (should (equal (get-text-property (line-beginning-position 8) 'emojify-text) "return"))
       (prettify-symbols-mode -1)
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 6))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 5))
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
       (emojify-tests-should-not-be-emojified (line-beginning-position 7)))))
 
