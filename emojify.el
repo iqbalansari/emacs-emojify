@@ -1000,9 +1000,8 @@ BEG and END are the beginning and end of the region respectively"
 Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
-         (end (or end (cdr area)))
-         (region-too-big (> end (+ beg (* 10 (- (window-end) (window-start)))))))
-    (unless region-too-big
+         (end (or end (cdr area))))
+    (unless (> (- end beg) 100000)
       (emojify-execute-ignoring-errors-unless-debug
         (emojify-undisplay-emojis-in-region beg end)
         (emojify-display-emojis-in-region beg end)))))
@@ -1426,8 +1425,8 @@ Borrowed from apropos.el"
                           (ht-get (cadr emoji) "name")
                           (ht-get (cadr emoji) "style")))
           (insert "\n"))
-          (goto-char (point-min))
-          (forward-line (1- 6))
+        (goto-char (point-min))
+        (forward-line (1- 6))
         (emojify-apropos-mode)
         (setq emojify--apropos-last-query (concat query " "))
         (setq-local line-spacing 7)))
