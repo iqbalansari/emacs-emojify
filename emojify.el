@@ -593,6 +593,8 @@ To understand WINDOW, STRING and POS see the function documentation for
 
 ;; Core functions and macros
 
+;; Variables related to user emojis
+
 (defcustom emojify-user-emojis nil
   "User specified custom emojis.
 
@@ -624,20 +626,29 @@ The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png 
                     (\"image\" . \"~/.emacs.d/emojis/neckbeard.png\")
                     (\"style\" . \"github\"))))")
 
-(defvar emojify-emojis nil
-  "Data about the emojis, this contains only the emojis that come with emojify.")
-
-(defvar emojify-pretty-symbol-emojis nil
-  "Emojis extracted from `prettify-symbols-alist'.")
-
 (defvar emojify--user-emojis nil
   "User specified custom emojis.")
 
-(defvar emojify-regexps nil
-  "Regexp to match text to emojified.")
+(defvar emojify--user-emojis-regexp nil
+  "Regexp to match user specified custom emojis.")
 
-(make-variable-buffer-local 'emojify-regexps)
+;; Variables related to prettify-symbols
+;; These are calculated separately for each buffer
+(defvar emojify-pretty-symbol-emojis nil
+  "Emojis extracted from `prettify-symbols-alist'.")
+
+(defvar emojify--pretty-symbol-emojis-regexp nil
+  "Regexp to match emojis extracted from `prettify-symbols-alist'.")
+
 (make-variable-buffer-local 'emojify-pretty-symbol-emojis)
+(make-variable-buffer-local 'emojify--pretty-symbol-emojis-regexp)
+
+;; Variables related to default emojis
+(defvar emojify-emojis nil
+  "Data about the emojis, this contains only the emojis that come with emojify.")
+
+(defvar emojify-regexps nil
+  "List of regexps to match text to be emojified.")
 
 (defun emojify-create-emojify-emojis ()
   "Create `emojify-emojis' if needed."
@@ -686,14 +697,21 @@ This first runs function for `emojify--user-emojis',
                                      (json-object-type 'hash-table))
                                  (json-read-file emojify-emoji-json)))
 
-  ;; Construct emojify-regexps in descending order of length, this is important
-  ;; so that larger emojis are searched first and get precedence over smaller
-  ;; ones (see also `emojify-display-emojis-in-region')
-  (setq-default emojify-regexps (seq-map #'regexp-opt
-                                         (seq-partition (sort (ht-keys emojify-emojis)
-                                                              (lambda (string1 string2) (> (length string1)
-                                                                                           (length string2))))
-                                                        1000)))
+  (let (unicode-emojis ascii-emojis)
+    (ht-each (lambda (emoji data)
+               (when (string= (gethash "style" data) "unicode")
+                 (push emoji unicode-emojis))
+
+               (when (string= (gethash "style" data) "ascii")
+                 (push emoji ascii-emojis)))
+             emojify-emojis)
+
+    ;; Construct emojify-regexps such that github style are searched first
+    ;; followed by unicode and then ascii emojis.
+    (setq emojify-regexps (list ":[[:alnum:]_-]+:"
+                                (regexp-opt unicode-emojis)
+                                (regexp-opt ascii-emojis))))
+
   (when emojify-user-emojis
     (if (emojify--verify-user-emojis emojify-user-emojis)
         ;; Create entries for user emojis
@@ -701,9 +719,8 @@ This first runs function for `emojify--user-emojis',
                                      (cons (car user-emoji)
                                            (ht-from-alist (cdr user-emoji))))
                                    emojify-user-emojis)))
-          (setq-default emojify--user-emojis (ht-from-alist emoji-pairs))
-          (setq-default emojify-regexps (cons (regexp-opt (mapcar #'car emoji-pairs))
-                                              emojify-regexps)))
+          (setq emojify--user-emojis (ht-from-alist emoji-pairs))
+          (setq emojify--user-emojis-regexp (regexp-opt (mapcar #'car emoji-pairs))))
       (message "[emojify] User emojis are not in correct format ignoring them."))))
 
 (defvar emojify-emoji-keymap
@@ -903,7 +920,12 @@ TODO: Skip emojifying if region is already emojified."
   (emojify-with-saved-buffer-state
     ;; Make sure we halt if displaying emojis takes more than a second
     (with-timeout (1 (emojify-message "Failed to display emojis under 1 second"))
-      (seq-doseq (regexp emojify-regexps)
+      (seq-doseq (regexp (apply #'append
+                                (when emojify--user-emojis-regexp
+                                  (list emojify--user-emojis-regexp))
+                                (when emojify--pretty-symbol-emojis-regexp
+                                  (list emojify--pretty-symbol-emojis-regexp))
+                                (list emojify-regexps)))
         (let (case-fold-search)
           (goto-char beg)
           (while (and (> end (point))
