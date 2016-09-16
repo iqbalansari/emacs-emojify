@@ -39,6 +39,7 @@
 (require 'seq)
 (require 'ht)
 
+(require 'subr-x nil)
 (require 'json)
 (require 'regexp-opt)
 (require 'jit-lock)
@@ -112,6 +113,15 @@ priority on lower versions."
                       overlays-at-pos)
           overlays-at-pos))
     (overlays-at pos sorted)))
+
+(defun emojify--string-join (strings &optional separator)
+  "Join all STRINGS using SEPARATOR.
+
+This function is available on Emacs v24.4 and higher, it has been
+backported here for compatibility with older Emacsen."
+  (if (fboundp 'string-join)
+      (apply #'string-join (list strings separator))
+    (mapconcat 'identity strings separator)))
 
 
 
@@ -913,7 +923,7 @@ region containing the emoji."
            end))
 
 (defsubst emojify--get-composed-text (point)
-  (string-join (mapcar #'char-to-string
+  (emojify--string-join (mapcar #'char-to-string
                        (decode-composition-components (nth 2
                                                            (find-composition point
                                                                              nil
