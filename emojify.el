@@ -935,7 +935,8 @@ TODO: Skip emojifying if region is already emojified."
                    (match (match-string-no-properties 0))
                    (buffer (current-buffer))
                    (emoji (emojify-get-emoji match)))
-              (when (and (memql (intern (ht-get emoji "style"))
+              (when (and emoji
+                         (memql (intern (ht-get emoji "style"))
                                 emojify-emoji-styles)
                          ;; Skip displaying this emoji if the its bounds are
                          ;; already part of an existing emoji. Since the emojis
