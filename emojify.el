@@ -1031,9 +1031,10 @@ TODO: Skip emojifying if region is already emojified."
                                              'point-entered #'emojify-point-entered-function
                                              'help-echo #'emojify-help-function)))))
             (setq compose-start (and compose-end (next-single-property-change compose-end
-                                                                             'composition
-                                                                             nil
-                                                                             end))))
+                                                                              'composition
+                                                                              nil
+                                                                              end)))
+            (goto-char compose-end))
           (sit-for 0 t))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
