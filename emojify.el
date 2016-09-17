@@ -403,6 +403,11 @@ buffer where emojis are going to be displayed selected."
   :type 'hook
   :group 'emojify)
 
+(defcustom emojify-composed-text-p t
+  "Should composed text be emojified."
+  :type 'boolean
+  :group 'emojify)
+
 (defun emojify-in-org-tags-p (match _beg _end)
   "Determine whether the point is on `org-mode' tag.
 
@@ -1022,33 +1027,34 @@ should not be a problem 🤞."
           (sit-for 0 t)))
 
       ;; Loop to emojify composed text
-      (goto-char beg)
-      (let ((compose-start (if (get-text-property beg 'composition)
-                               ;; Check `beg' first for composition property
-                               ;; since `next-single-property-change' will
-                               ;; search for region after `beg' for property
-                               ;; change thus skipping any composed text at
-                               ;; `beg'
-                               beg
-                             (next-single-property-change beg
-                                                          'composition
-                                                          nil
-                                                          end))))
-        (while (and (> end (point)) compose-start)
-          (let* ((match (emojify--get-composed-text compose-start))
-                 (emoji (emojify-get-emoji match))
-                 (compose-end (next-single-property-change compose-start 'composition)))
-            ;; Display only composed text that is unicode char
-            (when (and emoji (string= (gethash "style" emoji) "unicode"))
-              (emojify--display-emoji emoji match (current-buffer) compose-start compose-end))
-            ;; Setup the next loop
-            (setq compose-start (and compose-end (next-single-property-change compose-end
-                                                                              'composition
-                                                                              nil
-                                                                              end)))
-            (goto-char compose-end))
-          ;; Stop a bit to let `with-timeout' kick in
-          (sit-for 0 t))))))
+      (when emojify-composed-text-p
+        (goto-char beg)
+        (let ((compose-start (if (get-text-property beg 'composition)
+                                 ;; Check `beg' first for composition property
+                                 ;; since `next-single-property-change' will
+                                 ;; search for region after `beg' for property
+                                 ;; change thus skipping any composed text at
+                                 ;; `beg'
+                                 beg
+                               (next-single-property-change beg
+                                                            'composition
+                                                            nil
+                                                            end))))
+          (while (and (> end (point)) compose-start)
+            (let* ((match (emojify--get-composed-text compose-start))
+                   (emoji (emojify-get-emoji match))
+                   (compose-end (next-single-property-change compose-start 'composition)))
+              ;; Display only composed text that is unicode char
+              (when (and emoji (string= (gethash "style" emoji) "unicode"))
+                (emojify--display-emoji emoji match (current-buffer) compose-start compose-end))
+              ;; Setup the next loop
+              (setq compose-start (and compose-end (next-single-property-change compose-end
+                                                                                'composition
+                                                                                nil
+                                                                                end)))
+              (goto-char compose-end))
+            ;; Stop a bit to let `with-timeout' kick in
+            (sit-for 0 t)))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
   "Undisplay the emojis in region.
