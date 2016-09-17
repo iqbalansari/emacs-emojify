@@ -768,6 +768,19 @@ mark the start and end of region containing the text."
     (goto-char point)
     (cons (current-column) (line-number-at-pos))))
 
+(defun emojify--get-composed-text (point)
+  "Get the text used as composition property at POINT.
+
+This does not check if there is composition property at point the callers should
+make sure the point has a composition property otherwise this function will
+fail."
+  (emojify--string-join (mapcar #'char-to-string
+                                (decode-composition-components (nth 2
+                                                                    (find-composition point
+                                                                                      nil
+                                                                                      nil
+                                                                                      t))))))
+
 ;; These should be bound dynamically by functions calling
 ;; `emojify--inside-rectangle-selection-p' and
 ;; `emojify--inside-non-rectangle-selection-p' to region-beginning and
@@ -922,21 +935,41 @@ region containing the emoji."
            beg
            end))
 
-(defsubst emojify--get-composed-text (point)
-  (emojify--string-join (mapcar #'char-to-string
-                       (decode-composition-components (nth 2
-                                                           (find-composition point
-                                                                             nil
-                                                                             nil
-                                                                             t))))))
+(defun emojify--display-emoji (emoji text buffer start end)
+  "Display EMOJI for TEXT in BUFFER between START and END."
+  (let ((display-prop (emojify--get-text-display-props emoji start end)))
+    (when display-prop
+      (add-text-properties start
+                           end
+                           (list 'emojified t
+                                 'emojify-display display-prop
+                                 'display display-prop
+                                 'emojify-buffer buffer
+                                 'emojify-text text
+                                 'emojify-beginning (copy-marker start)
+                                 'emojify-end (copy-marker end)
+                                 'yank-handler (list nil text)
+                                 'keymap emojify-emoji-keymap
+                                 'point-entered #'emojify-point-entered-function
+                                 'help-echo #'emojify-help-function)))))
 
 (defun emojify-display-emojis-in-region (beg end)
   "Display emojis in region.
 
 BEG and END are the beginning and end of the region respectively.
-TODO: Skip emojifying if region is already emojified."
+
+Displaying happens in two phases, first search based phase displays actual text
+appearing in buffer as emojis.  In the next phase composed text is searched for
+emojis and displayed.
+
+A minor problem here is that if the text is composed after this display loop it
+would not be displayed as emoji, although in practice the two packages that use
+the composition property `prettify-symbol-mode' and `org-bullets' use the
+font-lock machinery which runs before emojify's display loop, so hopefully this
+should not be a problem 🤞."
   (emojify-with-saved-buffer-state
-    ;; Make sure we halt if displaying emojis takes more than a second
+    ;; Make sure we halt if displaying emojis takes more than a second (this
+    ;; might be too large duration)
     (with-timeout (1 (emojify-message "Failed to display emojis under 1 second"))
       (seq-doseq (regexp (apply #'append
                                 (when emojify--user-emojis-regexp
@@ -984,27 +1017,18 @@ TODO: Skip emojifying if region is already emojified."
                                    (emojify-looking-at-end-of-list-maybe match-end)))
 
                          (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
-
-                (let ((display-prop (emojify--get-text-display-props emoji match-beginning match-end)))
-                  (when display-prop
-                    (add-text-properties match-beginning
-                                         match-end
-                                         (list 'emojified t
-                                               'emojify-display display-prop
-                                               'display display-prop
-                                               'emojify-buffer buffer
-                                               'emojify-text match
-                                               'emojify-beginning (copy-marker match-beginning)
-                                               'emojify-end (copy-marker match-end)
-                                               'yank-handler (list nil match)
-                                               'keymap emojify-emoji-keymap
-                                               'point-entered #'emojify-point-entered-function
-                                               'help-echo #'emojify-help-function)))))))
+                (emojify--display-emoji emoji match buffer match-beginning match-end))))
           ;; Stop a bit to let `with-timeout' kick in
           (sit-for 0 t)))
+
       ;; Loop to emojify composed text
       (goto-char beg)
       (let ((compose-start (if (get-text-property beg 'composition)
+                               ;; Check `beg' first for composition property
+                               ;; since `next-single-property-change' will
+                               ;; search for region after `beg' for property
+                               ;; change thus skipping any composed text at
+                               ;; `beg'
                                beg
                              (next-single-property-change beg
                                                           'composition
@@ -1014,27 +1038,16 @@ TODO: Skip emojifying if region is already emojified."
           (let* ((match (emojify--get-composed-text compose-start))
                  (emoji (emojify-get-emoji match))
                  (compose-end (next-single-property-change compose-start 'composition)))
+            ;; Display only composed text that is unicode char
             (when (and emoji (string= (gethash "style" emoji) "unicode"))
-              (let ((display-prop (emojify--get-text-display-props emoji compose-start compose-end)))
-                (when display-prop
-                  (add-text-properties compose-start
-                                       compose-end
-                                       (list 'emojified t
-                                             'emojify-display display-prop
-                                             'display display-prop
-                                             'emojify-buffer (current-buffer)
-                                             'emojify-text match
-                                             'emojify-beginning (copy-marker compose-start)
-                                             'emojify-end (copy-marker compose-end)
-                                             'yank-handler (list nil match)
-                                             'keymap emojify-emoji-keymap
-                                             'point-entered #'emojify-point-entered-function
-                                             'help-echo #'emojify-help-function)))))
+              (emojify--display-emoji emoji match (current-buffer) compose-start compose-end))
+            ;; Setup the next loop
             (setq compose-start (and compose-end (next-single-property-change compose-end
                                                                               'composition
                                                                               nil
                                                                               end)))
             (goto-char compose-end))
+          ;; Stop a bit to let `with-timeout' kick in
           (sit-for 0 t))))))
 
 (defun emojify-undisplay-emojis-in-region (beg end)
