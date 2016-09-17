@@ -444,7 +444,7 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                           (t 'code))))
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
-               ;; If context is code display only unicode emojis
+               ;; Display only unicode or prettify-symbol emojis in code context
                (or (and (string= (ht-get emoji "style") "unicode")
                         (memql 'unicode emojify-emoji-styles))
                    (and (string= (ht-get emoji "style") "prettify-symbol")
@@ -1027,7 +1027,10 @@ should not be a problem 🤞."
           (sit-for 0 t)))
 
       ;; Loop to emojify composed text
-      (when emojify-composed-text-p
+      (when (and emojify-composed-text-p
+                 ;; Skip this if user has disabled unicode style emojis, since
+                 ;; we display only composed text that are unicode emojis
+                 (memql 'unicode emojify-emoji-styles))
         (goto-char beg)
         (let ((compose-start (if (get-text-property beg 'composition)
                                  ;; Check `beg' first for composition property
@@ -1045,7 +1048,8 @@ should not be a problem 🤞."
                    (emoji (emojify-get-emoji match))
                    (compose-end (next-single-property-change compose-start 'composition)))
               ;; Display only composed text that is unicode char
-              (when (and emoji (string= (gethash "style" emoji) "unicode"))
+              (when (and emoji
+                         (string= (gethash "style" emoji) "unicode"))
                 (emojify--display-emoji emoji match (current-buffer) compose-start compose-end))
               ;; Setup the next loop
               (setq compose-start (and compose-end (next-single-property-change compose-end
