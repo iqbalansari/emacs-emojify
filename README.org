@@ -14,6 +14,7 @@
      - [[#searching-emojis][Searching emojis]]
      - [[#inserting-emojis][Inserting emojis]]
    - [[#customizations][Customizations]]
+     - [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
      - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
      - [[#configuring-how-emojis-are-displayed][Configuring how emojis are displayed]]
      - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
@@ -80,13 +81,10 @@
       (add-hook 'after-init-hook #'global-emojify-mode)
     #+END_SRC
 
-    Additionally ~emojify~ can integrate with ~prettify-symbols-mode~ displaying
-    the symbols it recognizes as emojis. This is disabled by default, see
-    [[#integration-with-prettify-symbol-mode][Integration with prettify-symbol-mode]].
-
-    In programming modes ~github~ and ~ascii~ style emojis are displayed only in
-    string and comments, ~unicode~ emojis are displayed in all contexts. The
-    emojis of type ~prettify-symbol~ are displayed only in code context.
+    Emojify integrates with packages like ~prettify-symbol-mode~ and
+    ~org-bullets-mode~ which display text differently, if the alternate text
+    displayed by these packages match an emoji, ~emojify~ will display them too.
+    See [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]] for more details.
 
 *** Searching emojis
     The command ~emojify-apropos-emoji~ can be used to display emojis that match
@@ -110,6 +108,14 @@
     ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
 
 ** Customizations
+*** Displaying composed text as emojis
+    Emacs provides a way to modify how certain text is displayed using the
+    ~composition~ text property. ~prettify-symbol-mode~ and ~org-bullets-mode~
+    are some popular packages that use this feature. If the alternate display
+    matches an emoji then ~emojify~ will display those as emojis too. This is
+    default behaviour. You can disable this behaviour by setting
+    ~emojify-composed-text-p~ to ~nil~.
+
 *** Configuring the types of emojis displayed
     Emojify by default displays plain text emojis (~:)~), unicode emojis (~😄~)
     and github style emojis ~:smile:~. However this is customizable. You can do
@@ -122,8 +128,6 @@
     - ascii            - Display only plain ascii emojis
     - unicode          - Display only unicode emojis
     - github           - Display only github style emojis
-    - prettify-symbol  - Display symbols from ~prettify-symbols-alist~
-                         (which emojify recognizes) as emojis
 
 *** Configuring how emojis are displayed
     By default emojis are displayed using images. However you can instruct emojify
@@ -218,7 +222,6 @@
 
     1) "name"  - The name of the emoji
     2) "style" - This should be one of "github", "ascii" or "github"
-                 Note: "prettify-symbol" is not a valid style for custom emojis
 
     Additionally the alist should contain one of (see [[#configuring-the-types-of-emojis-displayed][emojify-display-style]])
     1) "unicode" - The replacement for the provided emoji for "unicode" display style
@@ -253,12 +256,9 @@
      #+END_SRC
 
 ** Integration with prettify-symbol-mode
-   Emojify can be configured to display symbols from ~prettify-symbols-alist~ as
-   emojis. To do so add ~prettify-symbol~ to [[#configuring-the-types-of-emojis-displayed][emojify-emoji-styles]]. You might
-   need re-enable ~prettify-symbols-mode~ if you are already using it, ~emojify~
-   will automatically display any symbols from ~prettify-symbols-alist~ that it
-   recognizes as emojis. You can use [[#custom-emojis][emojify-user-emojis]] to teach ~emojify~
-   about it any symbol it does not recognize yet.
+   NOTE: The old method of adding ~prettify-symbol~ to ~emojify-emoji-styles~
+   has been replaced with a more general method that works with packages other
+   than ~prettify-symbol-mode~. See [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
 
 ** Known issues
    - Emojis are not properly updated after customizing ~emojify-display-style~ or
