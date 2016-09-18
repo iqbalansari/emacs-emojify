@@ -92,41 +92,6 @@
       (emojify-tests-should-be-emojified (line-beginning-position 4))
       (emojify-tests-should-be-emojified (line-beginning-position 5)))))
 
-(ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
-  :tags '(core after-change)
-  (emojify-tests-with-emojified-buffer ":smile:\n:)"
-    (emacs-lisp-mode)
-    (emojify-redisplay-emojis-in-region)
-    (emojify-mode +1)
-    (emojify-tests-should-not-be-emojified (line-beginning-position))
-    (emojify-tests-should-not-be-emojified (line-beginning-position 2))
-
-    (comment-region (point-min) (point-max))
-    (emojify-redisplay)
-    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
-    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
-
-    (uncomment-region (point-min) (point-max))
-    (emojify-redisplay)
-    (emojify-tests-should-not-be-emojified (line-beginning-position))
-    (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
-
-(ert-deftest emojify-tests-emojifying-on-typing ()
-  :tags '(core after-change)
-  (emojify-tests-with-emojified-buffer ""
-    (emacs-lisp-mode)
-    (emojify-redisplay-emojis-in-region)
-    (emojify-mode +1)
-    (emojify-insert-string "; :)")
-    (emojify-redisplay)
-    (emojify-tests-should-be-emojified 4)
-    (newline)
-    (emojify-insert-string "; :smile")
-    (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
-    (emojify-insert-string ":")
-    (emojify-redisplay)
-    (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
-
 (ert-deftest emojify-tests-emoji-uncovering ()
   :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
@@ -171,46 +136,42 @@
       (setq prettify-symbols-alist
             '(("return" . ?↪)))
 
+      (setq emojify-composed-text-p t)
+
       (when (fboundp 'prettify-symbols-mode)
         (prettify-symbols-mode +1))
 
       (emojify-set-emoji-styles '(ascii))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
-      (emojify-tests-should-not-be-emojified github-emoji-pos)
       (emojify-tests-should-not-be-emojified prettify-emoji-pos)
+      (emojify-tests-should-not-be-emojified github-emoji-pos)
 
       (emojify-set-emoji-styles '(unicode))
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-be-emojified unicode-emoji-pos)
+      (when (fboundp 'prettify-symbols-mode)
+        (emojify-tests-should-be-emojified prettify-emoji-pos))
       (emojify-tests-should-not-be-emojified github-emoji-pos)
-      (emojify-tests-should-not-be-emojified prettify-emoji-pos)
 
       (emojify-set-emoji-styles '(github))
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
-      (emojify-tests-should-be-emojified github-emoji-pos)
       (emojify-tests-should-not-be-emojified prettify-emoji-pos)
+      (emojify-tests-should-be-emojified github-emoji-pos)
 
-      (emojify-set-emoji-styles '(prettify-symbol))
-      (emojify-tests-should-not-be-emojified ascii-emoji-pos)
-      (emojify-tests-should-not-be-emojified unicode-emoji-pos)
-      (emojify-tests-should-not-be-emojified github-emoji-pos)
-      (when (fboundp 'prettify-symbols-mode)
-        (emojify-tests-should-be-emojified prettify-emoji-pos))
-
-      (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
+      (emojify-set-emoji-styles '(ascii unicode github))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
       (emojify-tests-should-be-emojified unicode-emoji-pos)
-      (emojify-tests-should-be-emojified github-emoji-pos)
       (when (fboundp 'prettify-symbols-mode)
         (emojify-tests-should-be-emojified prettify-emoji-pos))
+      (emojify-tests-should-be-emojified github-emoji-pos)
 
       (emojify-set-emoji-styles nil)
       (emojify-tests-should-not-be-emojified ascii-emoji-pos)
       (emojify-tests-should-not-be-emojified unicode-emoji-pos)
-      (emojify-tests-should-not-be-emojified github-emoji-pos)
-      (emojify-tests-should-not-be-emojified prettify-emoji-pos))))
+      (emojify-tests-should-not-be-emojified prettify-emoji-pos)
+      (emojify-tests-should-not-be-emojified github-emoji-pos))))
 
 (ert-deftest emojify-tests-program-contexts ()
   :tags '(core prog contextual)
@@ -541,11 +502,13 @@
     x = 1
 except:
     raise(Exception)
-
+lambdalambda
+\"lambda\"
 yield 3
 return 4
 "
-      (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
+      (setq emojify-composed-text-p t)
+      (emojify-set-emoji-styles '(ascii unicode github))
       (python-mode)
       (setq prettify-symbols-alist
             '(("return" . ?↪)
@@ -555,21 +518,27 @@ return 4
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 5))
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
       (emojify-tests-should-not-be-emojified (line-beginning-position 7))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 8))
       (prettify-symbols-mode +1)
       (emojify-tests-should-be-emojified (point-min))
-      (should (equal (get-text-property (point-min) 'emojify-text) "try"))
+      (should (equal (get-text-property (point-min) 'emojify-text) "😱"))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
-      (should (equal (get-text-property (+ (line-beginning-position 4) 5) 'emojify-text) "raise"))
+      (should (equal (get-text-property (+ (line-beginning-position 4) 5) 'emojify-text) "💥"))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 5))
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
-      (emojify-tests-should-be-emojified (line-beginning-position 7))
-      (should (equal (get-text-property (line-beginning-position 7) 'emojify-text) "return"))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 7))
+      (emojify-tests-should-be-emojified (line-beginning-position 8))
+      (should (equal (get-text-property (line-beginning-position 8) 'emojify-text) "↪"))
       (prettify-symbols-mode -1)
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 6))
+      (emojify-tests-should-not-be-emojified (line-beginning-position 5))
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
       (emojify-tests-should-not-be-emojified (line-beginning-position 7)))))
 
@@ -586,7 +555,8 @@ except:
 yield 3
 return 4
 "
-        (emojify-set-emoji-styles '(ascii unicode github prettify-symbol))
+        (setq emojify-composed-text-p t)
+        (emojify-set-emoji-styles '(ascii unicode github))
         (python-mode)
         (setq prettify-symbols-alist
               '(("return" . ?↪)

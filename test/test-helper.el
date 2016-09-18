@@ -56,12 +56,13 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
          (emojify-saved-show-help emojify-show-help)
-         (emojify-saved-debug-mode emojify-debug-mode)
-         (emojify-debug-mode t))
+         (emojify-saved-composed-text-p emojify-composed-text-p))
      (unwind-protect
          (progn
            (unless (file-exists-p (emojify-image-dir))
              (emojify-download-emoji emojify-emoji-set))
+           (emojify-debug-mode +1)
+           (setq emojify-composed-text-p nil)
            ,@forms)
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-display-style emojify-saved-display-style
@@ -74,9 +75,7 @@ Helps isolate tests from each other's customizations."
              emojify-inhibit-functions emojify-saved-inhibit-functions
              emojify-point-entered-behaviour emojify-saved-point-entered-behaviour
              emojify-show-help emojify-saved-show-help
-             emojify-debug-mode emojify-saved-debug-mode)
-       ;; This as a side-effect also re-reads JSON data so no need to
-       ;; re-adjust changes to emojify-emoji-json
+             emojify-composed-text-p emojify-saved-composed-text-p)
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
 
 (defmacro emojify-tests-with-emojified-buffer (str &rest forms)
@@ -155,21 +154,6 @@ All kinds of dynamic behaviour on buffer are disabled.  See
      (should (get-text-property ,point 'emojify-text))
      (should-not (get-text-property ,point 'point-entered))
      (should-not (get-text-property ,point 'display))))
-
-(defun emojify-insert-string (string)
-  "Insert the STRING."
-  (mapc (lambda (character)
-          (insert character))
-        (string-to-vector string)))
-
-(defun emojify-redisplay ()
-  "Trigger a redisplay."
-  (if noninteractive
-      ;; In noninteractive mode JIT is not called
-      ;; call it
-      (jit-lock-fontify-now)
-    ;; In interactive mode just force redisplay
-    (redisplay t)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here
