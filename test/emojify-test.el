@@ -92,42 +92,6 @@
       (emojify-tests-should-be-emojified (line-beginning-position 4))
       (emojify-tests-should-be-emojified (line-beginning-position 5)))))
 
-(ert-deftest emojify-tests-emojifying-on-comment-uncomment ()
-  :tags '(core after-change)
-  (emojify-tests-with-emojified-buffer ":smile:\n:)"
-    (emacs-lisp-mode)
-    (emojify-mode +1)
-    (emojify-redisplay-emojis-in-region)
-    (emojify-tests-should-not-be-emojified (line-beginning-position))
-    (emojify-tests-should-not-be-emojified (line-beginning-position 2))
-
-    (comment-region (point-min) (point-max))
-    (emojify-redisplay)
-    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position)))
-    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 2)))
-
-    (uncomment-region (point-min) (point-max))
-    (emojify-redisplay)
-    (emojify-tests-should-not-be-emojified (line-beginning-position))
-    (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
-
-;; TODO: For some reason this test fails when run alone :/
-(ert-deftest emojify-tests-emojifying-on-typing ()
-  :tags '(core after-change)
-  (emojify-tests-with-emojified-buffer ""
-    (emacs-lisp-mode)
-    (emojify-mode +1)
-    (emojify-insert-string "; :)")
-    (emojify-redisplay)
-    (emojify-tests-should-be-emojified 4)
-    (newline)
-    (emojify-insert-string "; :smile")
-    (emojify-redisplay)
-    (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
-    (emojify-insert-string ":")
-    (emojify-redisplay)
-    (emojify-tests-should-be-emojified (+ 4 (line-beginning-position)))))
-
 (ert-deftest emojify-tests-emoji-uncovering ()
   :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
@@ -608,26 +572,6 @@ return 4
         (emojify-tests-should-be-emojified (+ (line-beginning-position 4) 5))
         (emojify-tests-should-not-be-emojified (line-beginning-position 6))
         (emojify-tests-should-be-emojified (line-beginning-position 7))))))
-
-(ert-deftest emojify-tests-org-bullets ()
-  :tags '(org-bullets)
-  (emojify-tests-with-emojified-buffer "* A
-** B
-*** C
-"
-    (let ((org-bullets-bullet-list '("🍣" "🐸" "🐳"))
-          (emojify-composed-text-p t))
-      (org-mode)
-      (require 'org-bullets)
-      (org-bullets-mode)
-      (emojify-redisplay)
-      (emojify-tests-should-not-be-emojified (point-min))
-      (emojify-tests-should-not-be-emojified (1+ (line-beginning-position 2)))
-      (emojify-tests-should-not-be-emojified (+ 2 (line-beginning-position 3)))
-      (emojify-redisplay)
-      (emojify-tests-should-be-emojified (point-min))
-      (emojify-tests-should-be-emojified (1+ (line-beginning-position 2)))
-      (emojify-tests-should-be-emojified (+ 2 (line-beginning-position 3))))))
 
 (ert-deftest emojify-tests-apropos ()
   :tags '(apropos)

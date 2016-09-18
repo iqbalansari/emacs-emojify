@@ -155,17 +155,5 @@ All kinds of dynamic behaviour on buffer are disabled.  See
      (should-not (get-text-property ,point 'point-entered))
      (should-not (get-text-property ,point 'display))))
 
-(defun emojify-insert-string (string)
-  "Insert the STRING."
-  (mapc (lambda (character)
-          (let ((last-command-event character))
-            (self-insert-command 1)))
-        (string-to-vector string)))
-
-(defun emojify-redisplay ()
-  "Trigger a redisplay."
-  (jit-lock-fontify-now (point-min) (point-max))
-  (emojify-redisplay-emojis-in-region (point-min) (point-max)))
-
 (provide 'test-helper)
 ;;; test-helper.el ends here
