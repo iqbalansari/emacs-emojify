@@ -56,12 +56,12 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
          (emojify-saved-show-help emojify-show-help)
-         (emojify-saved-debug-mode emojify-debug-mode)
-         (emojify-debug-mode t))
+         (emojify-saved-composed-text-p emojify-composed-text-p))
      (unwind-protect
          (progn
            (unless (file-exists-p (emojify-image-dir))
              (emojify-download-emoji emojify-emoji-set))
+           (emojify-debug-mode +1)
            ,@forms)
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-display-style emojify-saved-display-style
@@ -74,9 +74,7 @@ Helps isolate tests from each other's customizations."
              emojify-inhibit-functions emojify-saved-inhibit-functions
              emojify-point-entered-behaviour emojify-saved-point-entered-behaviour
              emojify-show-help emojify-saved-show-help
-             emojify-debug-mode emojify-saved-debug-mode)
-       ;; This as a side-effect also re-reads JSON data so no need to
-       ;; re-adjust changes to emojify-emoji-json
+             emojify-composed-text-p emojify-saved-composed-text-p)
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
 
 (defmacro emojify-tests-with-emojified-buffer (str &rest forms)
