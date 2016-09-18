@@ -96,8 +96,8 @@
   :tags '(core after-change)
   (emojify-tests-with-emojified-buffer ":smile:\n:)"
     (emacs-lisp-mode)
-    (emojify-redisplay-emojis-in-region)
     (emojify-mode +1)
+    (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (line-beginning-position))
     (emojify-tests-should-not-be-emojified (line-beginning-position 2))
 
@@ -111,17 +111,18 @@
     (emojify-tests-should-not-be-emojified (line-beginning-position))
     (emojify-tests-should-not-be-emojified (line-beginning-position 2))))
 
+;; TODO: For some reason this test fails when run alone :/
 (ert-deftest emojify-tests-emojifying-on-typing ()
   :tags '(core after-change)
   (emojify-tests-with-emojified-buffer ""
     (emacs-lisp-mode)
-    (emojify-redisplay-emojis-in-region)
     (emojify-mode +1)
     (emojify-insert-string "; :)")
     (emojify-redisplay)
     (emojify-tests-should-be-emojified 4)
     (newline)
     (emojify-insert-string "; :smile")
+    (emojify-redisplay)
     (emojify-tests-should-not-be-emojified (+ 4 (line-beginning-position)))
     (emojify-insert-string ":")
     (emojify-redisplay)

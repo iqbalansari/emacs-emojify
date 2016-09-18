@@ -158,17 +158,13 @@ All kinds of dynamic behaviour on buffer are disabled.  See
 (defun emojify-insert-string (string)
   "Insert the STRING."
   (mapc (lambda (character)
-          (insert character))
+          (let ((last-command-event character))
+            (self-insert-command 1)))
         (string-to-vector string)))
 
 (defun emojify-redisplay ()
   "Trigger a redisplay."
-  (if noninteractive
-      ;; In noninteractive mode JIT is not called
-      ;; call it
-      (jit-lock-fontify-now)
-    ;; In interactive mode just force redisplay
-    (redisplay t)))
+  (jit-lock-fontify-now))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here
