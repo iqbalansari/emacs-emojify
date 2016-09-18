@@ -39,7 +39,7 @@
 (require 'seq)
 (require 'ht)
 
-(require 'subr-x nil)
+(require 'subr-x nil :no-error)
 (require 'json)
 (require 'regexp-opt)
 (require 'jit-lock)
@@ -137,8 +137,10 @@ fail. This also turns on jit-debug-mode so that (e)debugging emojify's redisplay
 functions work."
   :init-value nil
   (if emojify-debug-mode
-      (jit-lock-debug-mode +1)
-    (jit-lock-debug-mode -1)))
+      (when (fboundp 'jit-lock-debug-mode)
+        (jit-lock-debug-mode +1))
+    (when (fboundp 'jit-lock-debug-mode)
+      (jit-lock-debug-mode -1))))
 
 (defmacro emojify-execute-ignoring-errors-unless-debug (&rest forms)
   "Execute FORMS ignoring errors unless `emojify-debug-mode' is non-nil."
