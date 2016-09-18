@@ -1043,10 +1043,16 @@ should not be a problem 🤞."
                                                             'composition
                                                             nil
                                                             end))))
-          (while (and (> end (point)) compose-start)
+          (while (and (> end (point))
+                      ;; `end' would be equal to `compose-start' if there was no
+                      ;; text with composition found within `end', this happens
+                      ;; because `next-single-property-change' returns the limit
+                      ;; (and we use `end' as the limit) if no match is found
+                      (> end compose-start)
+                      compose-start)
             (let* ((match (emojify--get-composed-text compose-start))
                    (emoji (emojify-get-emoji match))
-                   (compose-end (next-single-property-change compose-start 'composition)))
+                   (compose-end (next-single-property-change compose-start 'composition nil end)))
               ;; Display only composed text that is unicode char
               (when (and emoji
                          (string= (gethash "style" emoji) "unicode"))
