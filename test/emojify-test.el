@@ -609,6 +609,26 @@ return 4
         (emojify-tests-should-not-be-emojified (line-beginning-position 6))
         (emojify-tests-should-be-emojified (line-beginning-position 7))))))
 
+(ert-deftest emojify-tests-org-bullets ()
+  :tags '(org-bullets)
+  (emojify-tests-with-emojified-buffer "* A
+** B
+*** C
+"
+    (let ((org-bullets-bullet-list '("🍣" "🐸" "🐳"))
+          (emojify-composed-text-p t))
+      (org-mode)
+      (require 'org-bullets)
+      (org-bullets-mode)
+      (emojify-redisplay)
+      (emojify-tests-should-not-be-emojified (point-min))
+      (emojify-tests-should-not-be-emojified (1+ (line-beginning-position 2)))
+      (emojify-tests-should-not-be-emojified (+ 2 (line-beginning-position 3)))
+      (emojify-redisplay)
+      (emojify-tests-should-be-emojified (point-min))
+      (emojify-tests-should-be-emojified (1+ (line-beginning-position 2)))
+      (emojify-tests-should-be-emojified (+ 2 (line-beginning-position 3))))))
+
 (ert-deftest emojify-tests-apropos ()
   :tags '(apropos)
   (emojify-apropos-emoji "squi")

@@ -164,7 +164,8 @@ All kinds of dynamic behaviour on buffer are disabled.  See
 
 (defun emojify-redisplay ()
   "Trigger a redisplay."
-  (jit-lock-fontify-now))
+  (jit-lock-fontify-now (point-min) (point-max))
+  (emojify-redisplay-emojis-in-region (point-min) (point-max)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here
