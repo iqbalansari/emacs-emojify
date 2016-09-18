@@ -62,6 +62,7 @@ Helps isolate tests from each other's customizations."
            (unless (file-exists-p (emojify-image-dir))
              (emojify-download-emoji emojify-emoji-set))
            (emojify-debug-mode +1)
+           (setq emojify-composed-text-p nil)
            ,@forms)
        (setq emojify-emoji-json emojify-saved-emoji-json
              emojify-display-style emojify-saved-display-style
