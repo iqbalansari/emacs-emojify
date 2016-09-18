@@ -369,13 +369,11 @@ These can have one of the following values
 
 `ascii'           - Display only ascii emojis for example ';)'
 `unicode'         - Display only unicode emojis for example '😉'
-`github'          - Display only github style emojis for example ':wink:'
-`prettify-symbol' - Display only emojis extracted from `prettify-symbols-alist'"
+`github'          - Display only github style emojis for example ':wink:'"
   :type '(set
           (const :tag "Display only ascii emojis" ascii)
           (const :tag "Display only github emojis" github)
-          (const :tag "Display only unicode codepoints" unicode)
-          (const :tag "Display only emojis extracted from `prettify-symbols-alist'" prettify-symbol))
+          (const :tag "Display only unicode codepoints" unicode))
   :set (lambda (_ value) (emojify-set-emoji-styles value))
   :group 'emojify)
 
@@ -444,15 +442,9 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                           (t 'code))))
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
-               ;; Display only unicode or prettify-symbol emojis in code context
-               (or (and (string= (ht-get emoji "style") "unicode")
-                        (memql 'unicode emojify-emoji-styles))
-                   (and (string= (ht-get emoji "style") "prettify-symbol")
-                        (bound-and-true-p prettify-symbols-mode)
-                        (memql 'prettify-symbol emojify-emoji-styles)))
-             ;; Display any other style in all contexts except for
-             ;; prettify-symbol emoji
-             (not (string= (ht-get emoji "style") "prettify-symbol")))))))
+               (and (string= (ht-get emoji "style") "unicode")
+                    (memql 'unicode emojify-emoji-styles))
+             t)))))
 
 (defun emojify-inside-org-src-p (point)
   "Return non-nil if POINT is inside `org-mode' src block.
@@ -622,7 +614,6 @@ The inner alist should have atleast (not all keys are strings)
 `name'  - The name of the emoji
 `style' - This should be one of \"github\", \"ascii\" or \"github\"
           (see `emojify-emoji-styles')
-          Note: \"prettify-symbol\" is not a valid style for custom emojis
 
 The alist should contain one of (see `emojify-display-style')
 `unicode' - The replacement for the provided emoji for \"unicode\" display style
@@ -647,17 +638,6 @@ The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png 
 (defvar emojify--user-emojis-regexp nil
   "Regexp to match user specified custom emojis.")
 
-;; Variables related to prettify-symbols
-;; These are calculated separately for each buffer
-(defvar emojify-pretty-symbol-emojis nil
-  "Emojis extracted from `prettify-symbols-alist'.")
-
-(defvar emojify--pretty-symbol-emojis-regexp nil
-  "Regexp to match emojis extracted from `prettify-symbols-alist'.")
-
-(make-variable-buffer-local 'emojify-pretty-symbol-emojis)
-(make-variable-buffer-local 'emojify--pretty-symbol-emojis-regexp)
-
 ;; Variables related to default emojis
 (defvar emojify-emojis nil
   "Data about the emojis, this contains only the emojis that come with emojify.")
@@ -674,22 +654,18 @@ The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png 
   "Get data for given EMOJI.
 
 This first looks for the emoji in `emojify--user-emojis',
-`emojify-pretty-symbol-emojis' and finally in `emojify-emojis'."
+and then in `emojify-emojis'."
   (or (when emojify--user-emojis
         (ht-get emojify--user-emojis emoji))
-      (when emojify-pretty-symbol-emojis
-        (ht-get emojify-pretty-symbol-emojis emoji))
       (ht-get emojify-emojis emoji)))
 
 (defun emojify-emojis-each (function)
   "Execute FUNCTION for each emoji.
 
 This first runs function for `emojify--user-emojis',
-`emojify-pretty-symbol-emojis' and then `emojify-emojis'."
+and then `emojify-emojis'."
   (when emojify--user-emojis
     (ht-each function emojify--user-emojis))
-  (when emojify-pretty-symbol-emojis
-    (ht-each function emojify-pretty-symbol-emojis))
   (ht-each function emojify-emojis))
 
 (defun emojify--verify-user-emojis (emojis)
@@ -979,8 +955,6 @@ should not be a problem 🤞."
       (seq-doseq (regexp (apply #'append
                                 (when emojify--user-emojis-regexp
                                   (list emojify--user-emojis-regexp))
-                                (when emojify--pretty-symbol-emojis-regexp
-                                  (list emojify--pretty-symbol-emojis-regexp))
                                 (list emojify-regexps)))
         (let (case-fold-search)
           (goto-char beg)
@@ -1242,41 +1216,6 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 
 
-;; Integration with prettify-symbols-mode
-
-(defun emojify-populate-emojis-from-prettify-symbol-mode ()
-  "Populate additional text to display from `prettify-symbols-alist'."
-  (when (and (seq-position emojify-emoji-styles 'prettify-symbol)
-             (bound-and-true-p prettify-symbols-alist))
-
-    (let (new-regexps emojis)
-      (dolist (pretty-symbol prettify-symbols-alist)
-        (let* ((symbol-text (make-string 1 (cdr pretty-symbol)))
-               (emojify-symbol-data (emojify-get-emoji symbol-text)))
-          (when emojify-symbol-data
-            (push (cons (car pretty-symbol)
-                        (ht-from-alist (list (cons "style" "prettify-symbol")
-                                             (cons "image" (gethash "image" emojify-symbol-data))
-                                             (cons "unicode" symbol-text)
-                                             (cons "name" (format "Pretty represenation for '%s'" (car pretty-symbol))))))
-                  emojis)
-            (push (car pretty-symbol) new-regexps))))
-
-      (when emojis
-        (setq emojify-pretty-symbol-emojis (ht-from-alist emojis)))
-
-      (when new-regexps
-        (let ((re (regexp-opt new-regexps 'symbols)))
-          (setq emojify-regexps (cons re (delete re emojify-regexps))))))))
-
-(defun emojify-handle-prettify-symbol-mode ()
-  "Redisplay emojis after `prettify-symbol-mode' is enabled/disabled."
-  (when (bound-and-true-p prettify-symbols-mode)
-    (emojify-populate-emojis-from-prettify-symbol-mode))
-  (emojify-redisplay-emojis-in-region))
-
-
-
 ;; Lazy image downloading
 
 (defvar emojify--refused-image-download-p nil
@@ -1368,15 +1307,11 @@ run the command `emojify-download-emoji'")))
     ;; Update emoji backgrounds after when window scrolls
     (add-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t t)
 
+    ;; Redisplay emojis after enabling `prettify-symbol-mode'
+    (add-hook 'prettify-symbols-mode-hook #'emojify-redisplay-emojis-in-region)
+
     ;; Redisplay visible emojis when emoji style changes
-    (add-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
-
-    ;; Add symbols from prettify symbol mode, to displayed emojis and redisplay
-    ;; emojis when prettify-symbols-mode is activated
-    (add-hook 'prettify-symbols-mode-hook #'emojify-handle-prettify-symbol-mode)
-
-    ;; Repopulate emojis from prettify-symbols-alist when style changes
-    (add-hook 'emojify-emoji-style-change-hook #'emojify-handle-prettify-symbol-mode)))
+    (add-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)))
 
 (defun emojify-turn-off-emojify-mode ()
   "Turn off `emojify-mode' in current buffer."
@@ -1394,12 +1329,11 @@ run the command `emojify-download-emoji'")))
   (remove-hook 'deactivate-mark-hook #'emojify-update-visible-emojis-background-after-command t)
   (remove-hook 'window-scroll-functions #'emojify-update-visible-emojis-background-after-window-scroll t)
 
-  ;; Disable display of symbols
-  (remove-hook 'prettify-symbols-mode-hook #'emojify-handle-prettify-symbol-mode)
+  ;; Remove hook to redisplay emojis after enabling `prettify-symbol-mode'
+  (remove-hook 'prettify-symbols-mode-hook #'emojify-redisplay-emojis-in-region)
 
   ;; Remove style change hooks
-  (remove-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region)
-  (remove-hook 'emojify-emoji-style-change-hook #'emojify-handle-prettify-symbol-mode))
+  (remove-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region))
 
 ;;;###autoload
 (define-minor-mode emojify-mode
