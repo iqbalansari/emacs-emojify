@@ -9,6 +9,4 @@
  (depends-on "ecukes")
  (depends-on "ert-runner")
  (depends-on "el-mock")
- (depends-on "noflet")
- ;; Needed for testing emojification of composed text
- (depends-on "org-bullets"))
+ (depends-on "noflet"))
