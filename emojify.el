@@ -550,21 +550,34 @@ Does nothing if the value is anything else."
   :type 'boolean
   :group 'emojify)
 
-(defun emojify--uncover-emoji (buffer match-beginning match-end)
+(defun emojify-point-left-function (old-point _new-point)
+  "Function to be executed when point enters an emojified text.
+
+OLD-POINT and _NEW-POINT are the point before leaving and after leaving."
+  (let ((match-beginning (get-text-property old-point 'emojify-beginning))
+        (match-end (get-text-property old-point 'emojify-end))
+        (buffer (get-text-property old-point 'emojify-buffer)))
+    (when (and (equal buffer (current-buffer))
+               match-beginning)
+      (emojify-with-saved-buffer-state
+        (let ((current-display (get-text-property match-beginning 'emojify-display)))
+          (add-text-properties match-beginning match-end (list 'display current-display
+                                                               'point-left nil
+                                                               'point-entered #'emojify-point-entered-function)))))))
+
+(defun emojify--uncover-emoji (match-beginning match-end)
   "Uncover emoji in BUFFER between MATCH-BEGINNING and MATCH-END."
   (emojify-with-saved-buffer-state
     (add-text-properties match-end
                          match-beginning
                          (list 'display nil
-                               'point-left (emojify--get-point-left-function buffer
-                                                                             match-beginning
-                                                                             match-end)
+                               'point-left #'emojify-point-left-function
                                'point-entered nil))))
 
 (defun emojify-point-entered-function (_old-point new-point)
-  "Create a function to be executed when point enters an emojified text.
+  "Function to be executed when point enters an emojified text.
 
-OLD-POINT and NEW-POINT are the point before entering and after entering."
+_OLD-POINT and NEW-POINT are the point before entering and after entering."
   (let* ((text-props (text-properties-at new-point))
          (buffer (plist-get text-props 'emojify-buffer))
          (match (plist-get text-props 'emojify-text))
@@ -578,14 +591,14 @@ OLD-POINT and NEW-POINT are the point before entering and after entering."
                   (not (current-message)))
              (message (substring-no-properties match)))
             ((eq emojify-point-entered-behaviour 'uncover)
-             (emojify--uncover-emoji buffer match-beginning match-end))
+             (emojify--uncover-emoji match-beginning match-end))
             ((functionp 'emojify-point-entered-behaviour)
              (funcall emojify-point-entered-behaviour buffer match match-beginning match-end)))
 
       ;; Uncover at point anyway in isearch-mode
       (when (and isearch-mode
                  (not (eq emojify-point-entered-behaviour 'uncover)))
-        (emojify--uncover-emoji buffer match-beginning match-end)))))
+        (emojify--uncover-emoji match-beginning match-end)))))
 
 (defun emojify-help-function (_window _string pos)
   "Function to get help string to be echoed when point/mouse into the point.
@@ -729,21 +742,6 @@ and then `emojify-emojis'."
   "Get the path to directory containing images for currently selected emoji set."
   (expand-file-name emojify-emoji-set
                     emojify-emojis-dir))
-
-(defun emojify--get-point-left-function (buffer match-beginning match-end)
-  "Create a function that can be executed in point-left hook for emoji text.
-
-BUFFER is the buffer where the text is from, MATCH-BEGINNING and MATCH-END.
-mark the start and end of region containing the text."
-  (lambda (_old-point new-point)
-    (when (and (equal buffer (current-buffer))
-               (or (< match-end new-point)
-                   (< new-point match-beginning)))
-      (emojify-with-saved-buffer-state
-        (let ((current-display (get-text-property match-beginning 'emojify-display)))
-          (add-text-properties match-beginning match-end (list 'display current-display
-                                                               'point-left nil
-                                                               'point-entered #'emojify-point-entered-function)))))))
 
 (defun emojify--get-point-col-and-line (point)
   "Return a cons of containing the column number and line at POINT."
