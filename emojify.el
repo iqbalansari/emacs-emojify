@@ -1089,10 +1089,9 @@ Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
          (beg (or beg (car area)))
          (end (or end (cdr area))))
-    (unless (> (- end beg) 100000)
-      (emojify-execute-ignoring-errors-unless-debug
-        (emojify-undisplay-emojis-in-region beg end)
-        (emojify-display-emojis-in-region beg end)))))
+    (emojify-execute-ignoring-errors-unless-debug
+      (emojify-undisplay-emojis-in-region beg end)
+      (emojify-display-emojis-in-region beg end))))
 
 (defun emojify-after-change-extend-region-function (beg end _len)
   "Extend the region to be emojified.
