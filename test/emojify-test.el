@@ -133,13 +133,16 @@
           (github-emoji-pos (+ (point-min) (length ":) 😄 ")))
           (prettify-emoji-pos (+ (point-min) (length ":) 😄 :smile: "))))
 
+      (setq emojify-composed-text-p t)
       (setq prettify-symbols-alist
             '(("return" . ?↪)))
 
       (setq emojify-composed-text-p t)
 
       (when (fboundp 'prettify-symbols-mode)
-        (prettify-symbols-mode +1))
+        (prettify-symbols-mode +1)
+        ;; On Emacs 25.1 fontification does not happen automatically
+        (when (fboundp 'font-lock-ensure) (font-lock-ensure)))
 
       (emojify-set-emoji-styles '(ascii))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
@@ -510,11 +513,11 @@ return 4
       (setq emojify-composed-text-p t)
       (emojify-set-emoji-styles '(ascii unicode github))
       (python-mode)
-      (setq prettify-symbols-alist
-            '(("return" . ?↪)
-              ("try" . ?😱)
-              ("except" . ?⛐)
-              ("raise" . ?💥)))
+      (setq-local prettify-symbols-alist
+                  '(("return" . ?↪)
+                    ("try" . ?😱)
+                    ("except" . ?⛐)
+                    ("raise" . ?💥)))
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
@@ -523,6 +526,10 @@ return 4
       (emojify-tests-should-not-be-emojified (line-beginning-position 7))
       (emojify-tests-should-not-be-emojified (line-beginning-position 8))
       (prettify-symbols-mode +1)
+      ;; On Emacs 25.1 fontification does not happen automatically
+      (when (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+        (emojify-redisplay-emojis-in-region))
       (emojify-tests-should-be-emojified (point-min))
       (should (equal (get-text-property (point-min) 'emojify-text) "😱"))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
@@ -534,6 +541,10 @@ return 4
       (emojify-tests-should-be-emojified (line-beginning-position 8))
       (should (equal (get-text-property (line-beginning-position 8) 'emojify-text) "↪"))
       (prettify-symbols-mode -1)
+      ;; On Emacs 25.1 fontification does not happen automatically
+      (when (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+        (emojify-redisplay-emojis-in-region))
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
@@ -558,14 +569,18 @@ return 4
         (setq emojify-composed-text-p t)
         (emojify-set-emoji-styles '(ascii unicode github))
         (python-mode)
-        (setq prettify-symbols-alist
-              '(("return" . ?↪)
-                ("try" . ?😱)
-                ("except" . ?⛐)
-                ("lambda" . ?λ)
-                ("raise" . ?💥)))
+        (setq-local prettify-symbols-alist
+                    '(("return" . ?↪)
+                      ("try" . ?😱)
+                      ("except" . ?⛐)
+                      ("lambda" . ?λ)
+                      ("raise" . ?💥)))
         (emojify-tests-should-not-be-emojified (+ (line-beginning-position 2) 5))
         (prettify-symbols-mode +1)
+        ;; On Emacs 25.1 fontification does not happen automatically
+        (when (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+          (emojify-redisplay-emojis-in-region))
         (emojify-tests-should-be-emojified (point-min))
         (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 5))
         (emojify-tests-should-not-be-emojified (line-beginning-position 3))
