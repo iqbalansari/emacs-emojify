@@ -117,43 +117,34 @@ All kinds of dynamic behaviour on buffer are disabled.  See
      (emojify-with-saved-buffer-state
        ,@forms)))
 
-(defmacro emojify-tests-should-be-emojified (point)
+(defun emojify-tests-should-be-emojified (point)
   "Assert there is an emoji at POINT."
-  `(progn
-     (should-not (get-text-property ,point 'point-left))
-     (should (get-text-property ,point 'emojified))
-     (should (get-text-property ,point 'emojify-display))
-     (should (get-text-property ,point 'emojify-buffer))
-     (should (get-text-property ,point 'emojify-beginning))
-     (should (get-text-property ,point 'emojify-end))
-     (should (get-text-property ,point 'emojify-text))
-     (should (get-text-property ,point 'display))
-     (should (get-text-property ,point 'point-entered))))
+  (should (get-text-property point 'emojified))
+  (should (get-text-property point 'emojify-display))
+  (should (get-text-property point 'emojify-buffer))
+  (should (get-text-property point 'emojify-beginning))
+  (should (get-text-property point 'emojify-end))
+  (should (get-text-property point 'emojify-text))
+  (should (get-text-property point 'display)))
 
-(defmacro emojify-tests-should-not-be-emojified (point)
+(defun emojify-tests-should-not-be-emojified (point)
   "Assert there is not emoji at POINT."
-  `(progn
-     (should-not (get-text-property ,point 'point-left))
-     (should-not (get-text-property ,point 'emojified))
-     (should-not (get-text-property ,point 'emojify-display))
-     (should-not (get-text-property ,point 'emojify-buffer))
-     (should-not (get-text-property ,point 'emojify-beginning))
-     (should-not (get-text-property ,point 'emojify-end))
-     (should-not (get-text-property ,point 'emojify-text))
-     (should-not (get-text-property ,point 'display))
-     (should-not (get-text-property ,point 'point-entered))))
+  (should-not (get-text-property point 'emojified))
+  (should-not (get-text-property point 'emojify-display))
+  (should-not (get-text-property point 'emojify-buffer))
+  (should-not (get-text-property point 'emojify-beginning))
+  (should-not (get-text-property point 'emojify-end))
+  (should-not (get-text-property point 'emojify-text))
+  (should-not (get-text-property point 'display)))
 
-(defmacro emojify-tests-should-be-uncovered (point)
+(defun emojify-tests-should-be-uncovered (point)
   "Assert the emoji at POINT is uncovered."
-  `(progn
-     (should (get-text-property ,point 'point-left))
-     (should (get-text-property ,point 'emojified))
-     (should (get-text-property ,point 'emojify-buffer))
-     (should (get-text-property ,point 'emojify-beginning))
-     (should (get-text-property ,point 'emojify-end))
-     (should (get-text-property ,point 'emojify-text))
-     (should-not (get-text-property ,point 'point-entered))
-     (should-not (get-text-property ,point 'display))))
+  (should (get-text-property point 'emojified))
+  (should (get-text-property point 'emojify-buffer))
+  (should (get-text-property point 'emojify-beginning))
+  (should (get-text-property point 'emojify-end))
+  (should (get-text-property point 'emojify-text))
+  (should-not (get-text-property point 'display)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here
