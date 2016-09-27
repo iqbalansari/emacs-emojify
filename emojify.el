@@ -544,6 +544,9 @@ Does nothing if the value is anything else."
                 (const :tag "Uncover (undisplay) the underlying emoji text" uncover))
   :group 'emojify)
 
+(defcustom emojify-reveal-on-isearch t
+  "Should underlying emoji be displayed when point enters emoji while in isearch mode.")
+
 (defcustom emojify-show-help t
   "If non-nil the underlying text is displayed in a popup when mouse moves over it."
   :type 'boolean
@@ -562,7 +565,7 @@ Does nothing if the value is anything else."
         ((functionp 'emojify-point-entered-behaviour)
          (funcall emojify-point-entered-behaviour beginning end)))
 
-  (when isearch-mode
+  (when (and isearch-mode emojify-reveal-on-isearch)
     (put-text-property beginning end 'display nil)))
 
 (defun emojify-on-emoji-exit (beginning end)
