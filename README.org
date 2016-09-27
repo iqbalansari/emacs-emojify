@@ -192,13 +192,12 @@
     values
 
     - echo    - Display the emojified text in the minibuffer
-    - uncover - Temporary undisplay the emoji while point is in the emojified text
+    - uncover - Temporarily display the underlying text while point is in the emojified text
 
     Additionally it can be set to a custom function, the function is called with
-    four parameters
+    two parameters (the buffer where the emoji appears is selected while running
+    the function)
 
-    - buffer - The buffer where the emoji is displayed
-    - text   - The text that is displayed as emoji
     - beg    - The beginning position of the text displayed as emoji
     - end    - The ending position of the text displayed as emoji
 
