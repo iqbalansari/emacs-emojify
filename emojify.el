@@ -1075,8 +1075,15 @@ BEG and END are the beginning and end of the region respectively"
 
 Redisplay emojis in the visible region if BEG and END are not specified"
   (let* ((area (emojify--get-relevant-region))
-         (beg (or beg (car area)))
-         (end (or end (cdr area))))
+         (beg (save-excursion
+                (goto-char (or beg (car area)))
+                (line-beginning-position)))
+         (end (save-excursion
+                (goto-char (or end (cdr area)))
+                (line-end-position))))
+    (save-excursion
+      (goto-char 1)
+      (line-beginning-position))
     (emojify-execute-ignoring-errors-unless-debug
       (emojify-undisplay-emojis-in-region beg end)
       (emojify-display-emojis-in-region beg end))))
