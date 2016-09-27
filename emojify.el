@@ -578,7 +578,10 @@ Does nothing if the value is anything else."
 (defvar-local emojify--last-emoji-pos nil)
 
 (defun emojify-detect-emoji-entry/exit ()
-  "Detect emoji entry and exit and run appropriate handlers."
+  "Detect emoji entry and exit and run appropriate handlers.
+
+This is inspired by `prettify-symbol-mode's logic for
+`prettify-symbols-unprettify-at-point'."
   (while-no-input
     (emojify-with-saved-buffer-state
       (when emojify--last-emoji-pos
