@@ -20,6 +20,7 @@
      - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
      - [[#configuring-the-texts-that-are-displayed-as-emojis][Configuring the texts that are displayed as emojis]]
      - [[#controlling-behaviour-when-point-enters-an-emoji][Controlling behaviour when point enters an emoji]]
+     - [[#controlling-behaviour-during-isearch-mode][Controlling behaviour during isearch-mode]]
      - [[#controlling-behaviour-when-mouse-hovers-over-an-emoji][Controlling behaviour when mouse hovers over an emoji]]
      - [[#custom-emojis][Custom emojis]]
    - [[#integration-with-prettify-symbol-mode][Integration with prettify-symbol-mode]]
@@ -206,6 +207,12 @@
     *Note:* The custom function will be called for once for each character in an
     emoji as point moves through them. Avoid manipulating the buffer in these
     functions
+
+*** Controlling behaviour during isearch-mode
+    By default in isearch-mode the underlying emoji is displayed temporarily
+    when point enters the emoji while searching (similar to ~uncover~ behaviour
+    mentioned [[#controlling-behaviour-when-point-enters-an-emoji][above]]). This can be disabled by setting
+    ~emojify-reveal-on-isearch~ to ~nil~.
 
 *** Controlling behaviour when mouse hovers over an emoji
     When mouse hovers over a emoji, the underlying text is displayed in a help
