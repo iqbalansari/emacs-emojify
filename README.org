@@ -19,9 +19,9 @@
      - [[#configuring-how-emojis-are-displayed][Configuring how emojis are displayed]]
      - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
      - [[#configuring-the-texts-that-are-displayed-as-emojis][Configuring the texts that are displayed as emojis]]
-     - [[#controlling-behaviour-when-point-enters-an-emoji][Controlling behaviour when point enters an emoji]]
-     - [[#controlling-behaviour-during-isearch-mode][Controlling behaviour during isearch-mode]]
-     - [[#controlling-behaviour-when-mouse-hovers-over-an-emoji][Controlling behaviour when mouse hovers over an emoji]]
+     - [[#customizing-the-behaviour-when-point-enters-an-emoji][Customizing the behaviour when point enters an emoji]]
+     - [[#customizing-the-behaviour-during-isearch-mode][Customizing the behaviour during isearch-mode]]
+     - [[#customizing-the-behaviour-when-mouse-hovers-over-an-emoji][Customizing the behaviour when mouse hovers over an emoji]]
      - [[#custom-emojis][Custom emojis]]
    - [[#integration-with-prettify-symbol-mode][Integration with prettify-symbol-mode]]
    - [[#known-issues][Known issues]]
@@ -32,7 +32,8 @@
 
 ** What is this?
    Emojify is an Emacs extension to display emojis. It can display github style
-   emojis like ~:smile:~ or plain ascii ones like ~:)~.
+   emojis like ~:smile:~ or plain ascii ones like ~:)~. It tries to be as
+   efficient as possible, while also providing a lot of [[#customizations][flexibility]]
 
 ** What does it look like?
    Here is how the commit log of this project looks with emojify mode enabled
@@ -187,7 +188,7 @@
      These functions are called with the buffer where emoji is being displayed
      selected.
 
-*** Controlling behaviour when point enters an emoji
+*** Customizing the behaviour when point enters an emoji
     The behaviour when point enters an emoji can be customized using the
     variable ~emojify-point-entered-behaviour~. It can have one of the following
     values
@@ -208,13 +209,13 @@
     emoji as point moves through them. Avoid manipulating the buffer in these
     functions
 
-*** Controlling behaviour during isearch-mode
+*** Customizing the behaviour during isearch-mode
     By default in isearch-mode the underlying emoji is displayed temporarily
     when point enters the emoji while searching (similar to ~uncover~ behaviour
     mentioned [[#controlling-behaviour-when-point-enters-an-emoji][above]]). This can be disabled by setting
     ~emojify-reveal-on-isearch~ to ~nil~.
 
-*** Controlling behaviour when mouse hovers over an emoji
+*** Customizing the behaviour when mouse hovers over an emoji
     When mouse hovers over a emoji, the underlying text is displayed in a help
     popup. This behaviour can be disabled by setting ~emojify-show-help~ to nil.
 
