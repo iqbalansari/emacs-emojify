@@ -22,6 +22,8 @@
 ;; Libs required for tests
 (require 'ert)
 (require 'el-mock)
+(eval-when-compile
+  (require 'cl))
 (require 'cl-lib)
 (require 'noflet)
 
@@ -56,6 +58,7 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
          (emojify-saved-show-help emojify-show-help)
+         (emojify-saved-reveal-on-isearch emojify-reveal-on-isearch)
          (emojify-saved-composed-text-p emojify-composed-text-p))
      (unwind-protect
          (progn
@@ -75,6 +78,7 @@ Helps isolate tests from each other's customizations."
              emojify-inhibit-functions emojify-saved-inhibit-functions
              emojify-point-entered-behaviour emojify-saved-point-entered-behaviour
              emojify-show-help emojify-saved-show-help
+             emojify-reveal-on-isearch emojify-saved-reveal-on-isearch
              emojify-composed-text-p emojify-saved-composed-text-p)
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
 
