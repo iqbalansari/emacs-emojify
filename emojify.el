@@ -532,11 +532,10 @@ the visible area."
 It can be one of the following
 `echo'    - Echo the underlying text in the minibuffer
 `uncover' - Display the underlying text while point is on it
-function  - It is called with 4 arguments
-            1) buffer where emoji text is
-            2) the emoji text
-            3) starting position of emoji text
-            4) ending position of emoji text
+function  - It is called with 2 arguments (the buffer where emoji appears is
+            current during execution)
+            1) starting position of emoji text
+            2) ending position of emoji text
 
 Does nothing if the value is anything else."
   ;; TODO: Mention custom function
@@ -550,55 +549,45 @@ Does nothing if the value is anything else."
   :type 'boolean
   :group 'emojify)
 
-(defun emojify-point-left-function (old-point _new-point)
-  "Function to be executed when point enters an emojified text.
+(defun emojify-on-emoji-enter (beginning end)
+  "Executed when point enters emojified text between BEGINNING and END."
+  (cond ((and (eq emojify-point-entered-behaviour 'echo)
+              ;; Do not echo in isearch-mode
+              (not isearch-mode)
+              (not (active-minibuffer-window))
+              (not (current-message)))
+         (message (substring-no-properties (get-text-property beginning 'emojify-text))))
+        ((eq emojify-point-entered-behaviour 'uncover)
+         (put-text-property beginning end 'display nil))
+        ((functionp 'emojify-point-entered-behaviour)
+         (funcall emojify-point-entered-behaviour beginning end)))
 
-OLD-POINT and _NEW-POINT are the point before leaving and after leaving."
-  (let ((match-beginning (get-text-property old-point 'emojify-beginning))
-        (match-end (get-text-property old-point 'emojify-end))
-        (buffer (get-text-property old-point 'emojify-buffer)))
-    (when (and (equal buffer (current-buffer))
-               match-beginning)
-      (emojify-with-saved-buffer-state
-        (let ((current-display (get-text-property match-beginning 'emojify-display)))
-          (add-text-properties match-beginning match-end (list 'display current-display
-                                                               'point-left nil
-                                                               'point-entered #'emojify-point-entered-function)))))))
+  (when isearch-mode
+    (put-text-property beginning end 'display nil)))
 
-(defun emojify--uncover-emoji (match-beginning match-end)
-  "Uncover emoji in BUFFER between MATCH-BEGINNING and MATCH-END."
+(defun emojify-on-emoji-exit (beginning end)
+  "Executed when point exits emojified text between BEGINNING and END."
+  (put-text-property beginning
+                     end
+                     'display
+                     (get-text-property beginning 'emojify-display)))
+
+(defvar-local emojify--last-emoji-pos nil)
+
+(defun emojify-detect-emoji-entry/exit ()
+  "Detect emoji entry and exit and run appropriate handlers."
   (emojify-with-saved-buffer-state
-    (add-text-properties match-end
-                         match-beginning
-                         (list 'display nil
-                               'point-left #'emojify-point-left-function
-                               'point-entered nil))))
+    (when emojify--last-emoji-pos
+      (emojify-on-emoji-exit (car emojify--last-emoji-pos) (cdr emojify--last-emoji-pos)))
 
-(defun emojify-point-entered-function (_old-point new-point)
-  "Function to be executed when point enters an emojified text.
-
-_OLD-POINT and NEW-POINT are the point before entering and after entering."
-  (let* ((text-props (text-properties-at new-point))
-         (buffer (plist-get text-props 'emojify-buffer))
-         (match (plist-get text-props 'emojify-text))
-         (match-beginning (plist-get text-props 'emojify-beginning))
-         (match-end (plist-get text-props 'emojify-end)))
-    (when (eq buffer (current-buffer))
-      (cond ((and (eq emojify-point-entered-behaviour 'echo)
-                  ;; Do not echo in isearch-mode
-                  (not isearch-mode)
-                  (not (active-minibuffer-window))
-                  (not (current-message)))
-             (message (substring-no-properties match)))
-            ((eq emojify-point-entered-behaviour 'uncover)
-             (emojify--uncover-emoji match-beginning match-end))
-            ((functionp 'emojify-point-entered-behaviour)
-             (funcall emojify-point-entered-behaviour buffer match match-beginning match-end)))
-
-      ;; Uncover at point anyway in isearch-mode
-      (when (and isearch-mode
-                 (not (eq emojify-point-entered-behaviour 'uncover)))
-        (emojify--uncover-emoji match-beginning match-end)))))
+    (when (get-text-property (point) 'emojified)
+      (let* ((text-props (text-properties-at (point)))
+             (buffer (plist-get text-props 'emojify-buffer))
+             (match-beginning (plist-get text-props 'emojify-beginning))
+             (match-end (plist-get text-props 'emojify-end)))
+        (when (eq buffer (current-buffer))
+          (emojify-on-emoji-enter match-beginning match-end)
+          (setq emojify--last-emoji-pos (cons match-beginning match-end)))))))
 
 (defun emojify-help-function (_window _string pos)
   "Function to get help string to be echoed when point/mouse into the point.
@@ -931,7 +920,6 @@ region containing the emoji."
                                  'emojify-end (copy-marker end)
                                  'yank-handler (list nil text)
                                  'keymap emojify-emoji-keymap
-                                 'point-entered #'emojify-point-entered-function
                                  'help-echo #'emojify-help-function)))))
 
 (defun emojify-display-emojis-in-region (beg end)
@@ -1067,8 +1055,6 @@ BEG and END are the beginning and end of the region respectively"
           (remove-text-properties emoji-start emoji-end (append (list 'emojified t
                                                                       'display t
                                                                       'emojify-display t
-                                                                      'point-entered t
-                                                                      'point-left t
                                                                       'emojify-buffer t
                                                                       'emojify-text t
                                                                       'emojify-beginning t
@@ -1296,6 +1282,9 @@ run the command `emojify-download-emoji'")))
     (jit-lock-register #'emojify-redisplay-emojis-in-region)
     (add-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t t)
 
+    ;; Handle point entered behaviour
+    (add-hook 'post-command-hook #'emojify-detect-emoji-entry/exit t t)
+
     ;; Update emoji backgrounds after each command
     (add-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t t)
 
@@ -1322,6 +1311,8 @@ run the command `emojify-download-emoji'")))
   ;; Uninstall our jit-lock function
   (jit-lock-unregister #'emojify-redisplay-emojis-in-region)
   (remove-hook 'jit-lock-after-change-extend-region-functions #'emojify-after-change-extend-region-function t)
+
+  (remove-hook 'post-command-hook #'emojify-detect-emoji-entry/exit t)
 
   ;; Disable hooks to update emoji backgrounds
   (remove-hook 'post-command-hook #'emojify-update-visible-emojis-background-after-command t)
@@ -1539,28 +1530,6 @@ an update of emoji backgrounds.  Not the cleanest but the only way I can think o
     (emojify-update-visible-emojis-background-after-command)))
 
 (ad-activate #'mouse--drag-set-mark-and-point)
-
-(defadvice isearch-repeat (around emojify-redisplay-after-isearch-left (direction))
-  "Advice `isearch-repeat' to run emojify's point motion hooks.
-
-By default isearch disables point-motion hooks while repeating (see
-`isearch-invisible') breaking emojify's uncovering logic, this advice explicitly
-runs (only emojify's) point motion hooks."
-  (let ((old-pos (point)))
-    (prog1 ad-do-it
-      (when emojify-mode
-        (let ((old-pos-props (text-properties-at old-pos))
-              (new-pos-props (text-properties-at (point))))
-          (unless (equal old-pos (point))
-            (when (and (plist-get old-pos-props 'emojified)
-                       (plist-get old-pos-props 'point-left))
-              (funcall (plist-get old-pos-props 'point-left) old-pos (point)))
-            (when (and (plist-get new-pos-props 'emojified)
-                       (plist-get new-pos-props 'point-entered))
-              (funcall (plist-get new-pos-props 'point-entered) old-pos (point)))))))))
-
-
-(ad-activate #'isearch-repeat)
 
 (defadvice text-scale-increase (after emojify-resize-emojis (&rest ignored))
   "Advice `text-scale-increase' to resize emojis on text resize."
