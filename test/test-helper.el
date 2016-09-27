@@ -22,6 +22,8 @@
 ;; Libs required for tests
 (require 'ert)
 (require 'el-mock)
+(eval-when-compile
+  (require 'cl))
 (require 'cl-lib)
 (require 'noflet)
 
@@ -56,6 +58,7 @@ Helps isolate tests from each other's customizations."
          (emojify-saved-inhibit-functions emojify-inhibit-functions)
          (emojify-saved-point-entered-behaviour emojify-point-entered-behaviour)
          (emojify-saved-show-help emojify-show-help)
+         (emojify-saved-reveal-on-isearch emojify-reveal-on-isearch)
          (emojify-saved-composed-text-p emojify-composed-text-p))
      (unwind-protect
          (progn
@@ -75,6 +78,7 @@ Helps isolate tests from each other's customizations."
              emojify-inhibit-functions emojify-saved-inhibit-functions
              emojify-point-entered-behaviour emojify-saved-point-entered-behaviour
              emojify-show-help emojify-saved-show-help
+             emojify-reveal-on-isearch emojify-saved-reveal-on-isearch
              emojify-composed-text-p emojify-saved-composed-text-p)
        (emojify-set-emoji-styles emojify-saved-emoji-style))))
 
@@ -117,43 +121,34 @@ All kinds of dynamic behaviour on buffer are disabled.  See
      (emojify-with-saved-buffer-state
        ,@forms)))
 
-(defmacro emojify-tests-should-be-emojified (point)
+(defun emojify-tests-should-be-emojified (point)
   "Assert there is an emoji at POINT."
-  `(progn
-     (should-not (get-text-property ,point 'point-left))
-     (should (get-text-property ,point 'emojified))
-     (should (get-text-property ,point 'emojify-display))
-     (should (get-text-property ,point 'emojify-buffer))
-     (should (get-text-property ,point 'emojify-beginning))
-     (should (get-text-property ,point 'emojify-end))
-     (should (get-text-property ,point 'emojify-text))
-     (should (get-text-property ,point 'display))
-     (should (get-text-property ,point 'point-entered))))
+  (should (get-text-property point 'emojified))
+  (should (get-text-property point 'emojify-display))
+  (should (get-text-property point 'emojify-buffer))
+  (should (get-text-property point 'emojify-beginning))
+  (should (get-text-property point 'emojify-end))
+  (should (get-text-property point 'emojify-text))
+  (should (get-text-property point 'display)))
 
-(defmacro emojify-tests-should-not-be-emojified (point)
+(defun emojify-tests-should-not-be-emojified (point)
   "Assert there is not emoji at POINT."
-  `(progn
-     (should-not (get-text-property ,point 'point-left))
-     (should-not (get-text-property ,point 'emojified))
-     (should-not (get-text-property ,point 'emojify-display))
-     (should-not (get-text-property ,point 'emojify-buffer))
-     (should-not (get-text-property ,point 'emojify-beginning))
-     (should-not (get-text-property ,point 'emojify-end))
-     (should-not (get-text-property ,point 'emojify-text))
-     (should-not (get-text-property ,point 'display))
-     (should-not (get-text-property ,point 'point-entered))))
+  (should-not (get-text-property point 'emojified))
+  (should-not (get-text-property point 'emojify-display))
+  (should-not (get-text-property point 'emojify-buffer))
+  (should-not (get-text-property point 'emojify-beginning))
+  (should-not (get-text-property point 'emojify-end))
+  (should-not (get-text-property point 'emojify-text))
+  (should-not (get-text-property point 'display)))
 
-(defmacro emojify-tests-should-be-uncovered (point)
+(defun emojify-tests-should-be-uncovered (point)
   "Assert the emoji at POINT is uncovered."
-  `(progn
-     (should (get-text-property ,point 'point-left))
-     (should (get-text-property ,point 'emojified))
-     (should (get-text-property ,point 'emojify-buffer))
-     (should (get-text-property ,point 'emojify-beginning))
-     (should (get-text-property ,point 'emojify-end))
-     (should (get-text-property ,point 'emojify-text))
-     (should-not (get-text-property ,point 'point-entered))
-     (should-not (get-text-property ,point 'display))))
+  (should (get-text-property point 'emojified))
+  (should (get-text-property point 'emojify-buffer))
+  (should (get-text-property point 'emojify-beginning))
+  (should (get-text-property point 'emojify-end))
+  (should (get-text-property point 'emojify-text))
+  (should-not (get-text-property point 'display)))
 
 (provide 'test-helper)
 ;;; test-helper.el ends here
