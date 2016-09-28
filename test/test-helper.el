@@ -27,6 +27,9 @@
 (require 'cl-lib)
 (require 'noflet)
 
+(when (require 'undercover nil t)
+  (undercover "*.el"))
+
 ;; Load emojify
 (require 'emojify)
 
