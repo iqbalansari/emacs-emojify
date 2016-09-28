@@ -1084,9 +1084,7 @@ Redisplay emojis in the visible region if BEG and END are not specified"
          (end (save-excursion
                 (goto-char (or end (cdr area)))
                 (line-end-position))))
-    (save-excursion
-      (goto-char 1)
-      (line-beginning-position))
+
     (emojify-execute-ignoring-errors-unless-debug
       (emojify-undisplay-emojis-in-region beg end)
       (emojify-display-emojis-in-region beg end))))
@@ -1353,6 +1351,17 @@ run the command `emojify-download-emoji'")))
 (define-globalized-minor-mode global-emojify-mode
   emojify-mode emojify-mode
   :init-value nil)
+
+(defadvice set-buffer-multibyte (after emojify-disable-for-unibyte-buffers (&rest ignored))
+  "Disable emojify when buffer changes to a unibyte encoding, reenable it when
+buffer changes back to multibyte encoding."
+  (ignore-errors
+    (if enable-multibyte-characters
+        (emojify-mode -1)
+      (when global-emojify-mode
+        (emojify-mode +1)))))
+
+(ad-activate #'set-buffer-multibyte)
 
 
 
