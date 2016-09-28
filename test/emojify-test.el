@@ -7,8 +7,7 @@
 ;;; Code:
 
 ;; For interactive testing
-(unless noninteractive
-  (require 'test-helper (expand-file-name "test-helper.el")))
+(require 'test-helper (expand-file-name "test-helper.el"))
 
 ;; Used for testing integration with programming modes
 (require 'org)
@@ -96,7 +95,7 @@
   :tags '(behaviour point-motion)
   (emojify-tests-with-emojified-buffer " :)"
     (setq emojify-point-entered-behaviour 'uncover)
-    (goto-char (1+ (point-min)))
+    (execute-kbd-macro (kbd "C-f") 2)
     (emojify-tests-should-be-uncovered (point))))
 
 (ert-deftest emojify-tests-emoji-echoing ()
@@ -107,11 +106,10 @@
       ;; before echoing the emoji, we need to stub out current-message
       ;; too otherwise emojify does not echo the message since messages
       ;; from other tests are being displayed
-      (unless noninteractive
-        (stub current-message => nil))
+      (stub current-message => nil)
       (mock (message ":)"))
       (setq emojify-point-entered-behaviour 'echo)
-      (goto-char (1+ (point-min)))
+      (execute-kbd-macro (kbd "C-f"))
       (emojify-tests-should-be-emojified (point)))))
 
 (ert-deftest emojify-tests-custom-point-entered-function ()
@@ -133,13 +131,16 @@
           (github-emoji-pos (+ (point-min) (length ":) 😄 ")))
           (prettify-emoji-pos (+ (point-min) (length ":) 😄 :smile: "))))
 
+      (setq emojify-composed-text-p t)
       (setq prettify-symbols-alist
             '(("return" . ?↪)))
 
       (setq emojify-composed-text-p t)
 
       (when (fboundp 'prettify-symbols-mode)
-        (prettify-symbols-mode +1))
+        (prettify-symbols-mode +1)
+        ;; On Emacs 25.1 fontification does not happen automatically
+        (when (fboundp 'font-lock-ensure) (font-lock-ensure)))
 
       (emojify-set-emoji-styles '(ascii))
       (emojify-tests-should-be-emojified ascii-emoji-pos)
@@ -396,49 +397,27 @@
   :tags '(isearch)
   (emojify-tests-with-emojified-buffer "Testing isearch\n:books:"
     (with-mock
+      (setq emojify-reveal-on-isearch t)
       ;; We do not want to be bothered with isearch messages
       (stub message => nil)
       (emojify-tests-should-be-emojified (line-beginning-position 2))
       (isearch-mode +1)
-      (execute-kbd-macro ":book")
+      (execute-kbd-macro "boo")
       ;; Emoji should be uncovered when point enters it in isearch-mode
       (emojify-tests-should-be-uncovered (line-beginning-position))
-      (isearch-exit)
       ;; Emoji should be restored on leaving the underlying text
-      (goto-char (point-min))
-      (emojify-tests-should-be-emojified (line-beginning-position 2)))))
+      (execute-kbd-macro "")
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
 
-(ert-deftest emojify-tests-uncover-on-isearch-multiple-matches ()
-  :tags '(isearch)
-  (emojify-tests-with-emojified-buffer "Testing isearch\n:book:\n:books:"
-    (let ((first-emoji-pos (line-beginning-position 2))
-          (second-emoji-pos (line-beginning-position 3)))
-      (with-mock
-        ;; We do not want to be bothered with isearch messages
-        (stub message => nil)
-        (emojify-tests-should-be-emojified first-emoji-pos)
-        (emojify-tests-should-be-emojified second-emoji-pos)
-
-        (isearch-mode +1)
-        ;; isearch-printing-char in Emacs 24.3 did not accept
-        ;; any arguments
-        (let ((last-command-event ?b)) (isearch-printing-char))
-        (let ((last-command-event ?o)) (isearch-printing-char))
-
-        ;; TODO: For some reason first one actually repeats backwards when
-        ;; called non-interactively As such 2 more repeats are needed first to
-        ;; go back to first match and second to actually search forward
-        (isearch-repeat 'forward)
-        (isearch-repeat 'forward)
-        (isearch-repeat 'forward)
-
-        (emojify-tests-should-be-emojified first-emoji-pos)
-        (emojify-tests-should-be-uncovered second-emoji-pos)
-        (isearch-exit)
-        ;; Emoji should be restored on leaving the underlying text
-        (goto-char (point-min))
-        (emojify-tests-should-be-emojified first-emoji-pos)
-        (emojify-tests-should-be-emojified second-emoji-pos)))))
+      ;; Turn off revealing on isearch
+      (setq emojify-reveal-on-isearch nil)
+      ;; We do not want to be bothered with isearch messages
+      (stub message => nil)
+      (emojify-tests-should-be-emojified (line-beginning-position 2))
+      (isearch-mode +1)
+      (execute-kbd-macro "boo")
+      ;; Emoji should be uncovered when point enters it in isearch-mode
+      (emojify-tests-should-be-emojified (line-beginning-position)))))
 
 (ert-deftest emojify-tests-electric-delete ()
   :tags '(electric-delete)
@@ -510,11 +489,11 @@ return 4
       (setq emojify-composed-text-p t)
       (emojify-set-emoji-styles '(ascii unicode github))
       (python-mode)
-      (setq prettify-symbols-alist
-            '(("return" . ?↪)
-              ("try" . ?😱)
-              ("except" . ?⛐)
-              ("raise" . ?💥)))
+      (setq-local prettify-symbols-alist
+                  '(("return" . ?↪)
+                    ("try" . ?😱)
+                    ("except" . ?⛐)
+                    ("raise" . ?💥)))
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
@@ -523,6 +502,10 @@ return 4
       (emojify-tests-should-not-be-emojified (line-beginning-position 7))
       (emojify-tests-should-not-be-emojified (line-beginning-position 8))
       (prettify-symbols-mode +1)
+      ;; On Emacs 25.1 fontification does not happen automatically
+      (when (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+        (emojify-redisplay-emojis-in-region))
       (emojify-tests-should-be-emojified (point-min))
       (should (equal (get-text-property (point-min) 'emojify-text) "😱"))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
@@ -534,6 +517,10 @@ return 4
       (emojify-tests-should-be-emojified (line-beginning-position 8))
       (should (equal (get-text-property (line-beginning-position 8) 'emojify-text) "↪"))
       (prettify-symbols-mode -1)
+      ;; On Emacs 25.1 fontification does not happen automatically
+      (when (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+        (emojify-redisplay-emojis-in-region))
       (emojify-tests-should-not-be-emojified (point-min))
       (emojify-tests-should-not-be-emojified (line-beginning-position 3))
       (emojify-tests-should-not-be-emojified (+ (line-beginning-position 4) 5))
@@ -558,14 +545,18 @@ return 4
         (setq emojify-composed-text-p t)
         (emojify-set-emoji-styles '(ascii unicode github))
         (python-mode)
-        (setq prettify-symbols-alist
-              '(("return" . ?↪)
-                ("try" . ?😱)
-                ("except" . ?⛐)
-                ("lambda" . ?λ)
-                ("raise" . ?💥)))
+        (setq-local prettify-symbols-alist
+                    '(("return" . ?↪)
+                      ("try" . ?😱)
+                      ("except" . ?⛐)
+                      ("lambda" . ?λ)
+                      ("raise" . ?💥)))
         (emojify-tests-should-not-be-emojified (+ (line-beginning-position 2) 5))
         (prettify-symbols-mode +1)
+        ;; On Emacs 25.1 fontification does not happen automatically
+        (when (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+          (emojify-redisplay-emojis-in-region))
         (emojify-tests-should-be-emojified (point-min))
         (emojify-tests-should-be-emojified (+ (line-beginning-position 2) 5))
         (emojify-tests-should-not-be-emojified (line-beginning-position 3))
