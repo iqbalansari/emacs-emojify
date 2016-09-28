@@ -1357,9 +1357,9 @@ run the command `emojify-download-emoji'")))
 buffer changes back to multibyte encoding."
   (ignore-errors
     (if enable-multibyte-characters
-        (emojify-mode -1)
-      (when global-emojify-mode
-        (emojify-mode +1)))))
+        (when global-emojify-mode
+          (emojify-mode +1))
+      (emojify-mode -1))))
 
 (ad-activate #'set-buffer-multibyte)
 
