@@ -961,6 +961,8 @@ should not be a problem 🤞."
                    (buffer (current-buffer))
                    (emoji (emojify-get-emoji match)))
               (when (and emoji
+                         (not (or (get-text-property match-beginning 'emojify-inhibit)
+                                  (get-text-property match-end 'emojify-inhibit)))
                          (memql (intern (ht-get emoji "style"))
                                 emojify-emoji-styles)
                          ;; Skip displaying this emoji if the its bounds are
@@ -1537,6 +1539,25 @@ This respects the `emojify-emoji-styles' variable."
          (helm-after-initialize-hook (cons #'emojify--insert-helm-hook (bound-and-true-p helm-after-initialize-hook))))
     (insert (car (split-string (completing-read "Insert Emoji: " candidates)
                                " ")))))
+
+(defun emojify-describe-emoji-at-point ()
+  (interactive)
+  (if (not (get-text-property (point) 'emojified))
+      (user-error "No emoji at point!")
+    (let* ((emoji-text (get-text-property (point) 'emojify-text))
+           (emoji (emojify-get-emoji emoji-text)))
+      (with-electric-help
+       (lambda ()
+         (insert (propertize emoji-text 'emojify-inhibit t)
+                 " - Displayed as "
+                 emoji-text
+                 "\n\n")
+         (insert "Name       - " (ht-get emoji "name") "\n")
+         (insert "Style      - " (ht-get emoji "style") "\n")
+         (insert "Image used - "
+                 (expand-file-name (ht-get emoji "image")
+                                   (emojify-image-dir)))
+         (emojify-redisplay-emojis-in-region))))))
 
 
 
