@@ -72,6 +72,12 @@
 
 ;; Compatibility functions
 
+(defun emojify-user-error (format &rest args)
+  "Signal a pilot error, making a message by passing FORMAT and ARGS to ‘format-message’."
+  (if (fboundp 'user-error)
+      (apply #'user-error format args)
+    (apply #'error format args)))
+
 (defun emojify-default-font-height ()
   "Return the height in pixels of the current buffer's default face font.
 
@@ -1384,7 +1390,7 @@ buffer changes back to multibyte encoding."
   (save-excursion
     (goto-char (line-beginning-position))
     (if (not (get-text-property (point) 'emojified))
-        (user-error "No emoji at point")
+        (emojify-user-error "No emoji at point")
       (kill-new (get-text-property (point) 'emojify-text))
       (message "Copied emoji to kill ring!"))))
 
@@ -1431,9 +1437,7 @@ Borrowed from apropos.el"
                               emojify--apropos-last-query)))
     (if (string-equal (regexp-quote pattern) pattern)
         (or (split-string pattern "[ \t]+" t)
-            (if (fboundp 'user-error)
-                (apply #'user-error "No word list given")
-              (apply #'error "No word list given")))
+            (emojify-user-error "No word list given"))
       pattern)))
 
 ;;;###autoload
