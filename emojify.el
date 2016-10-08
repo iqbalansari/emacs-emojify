@@ -1373,7 +1373,7 @@ buffer changes back to multibyte encoding."
 
 
 
-;; Searching and inserting emojis
+;; Searching emojis
 
 (defvar emojify-apropos-buffer-name "*Apropos Emojis*")
 
@@ -1496,9 +1496,13 @@ Borrowed from apropos.el"
         (setq emojify--apropos-last-query (concat query " "))
         (setq-local line-spacing 7)))
 
-    (select-window (display-buffer (get-buffer emojify-apropos-buffer-name)
-                                   (when in-apropos-buffer-p
-                                     (cons #'display-buffer-same-window nil))))))
+    (pop-to-buffer (get-buffer emojify-apropos-buffer-name)
+                   (when in-apropos-buffer-p
+                     (cons #'display-buffer-same-window nil)))))
+
+
+
+;; Inserting emojis
 
 (defun emojify--insert-minibuffer-setup-hook ()
   "Enables `emojify-mode' in minbuffer while inserting emojis.
@@ -1544,24 +1548,55 @@ This respects the `emojify-emoji-styles' variable."
     (insert (car (split-string (completing-read "Insert Emoji: " candidates)
                                " ")))))
 
+
+
+;; Help for emoji at point
+
+(defvar emojify-help-buffer-name "*Emoji Help*")
+
 (defun emojify-describe-emoji-at-point ()
+  "Display help for EMOJI displayed at point."
   (interactive)
   (if (not (get-text-property (point) 'emojified))
-      (user-error "No emoji at point!")
+      (emojify-user-error "No emoji at point!")
     (let* ((emoji-text (get-text-property (point) 'emojify-text))
            (emoji (emojify-get-emoji emoji-text)))
-      (with-electric-help
-       (lambda ()
-         (insert (propertize emoji-text 'emojify-inhibit t)
-                 " - Displayed as "
-                 emoji-text
-                 "\n\n")
-         (insert "Name       - " (ht-get emoji "name") "\n")
-         (insert "Style      - " (ht-get emoji "style") "\n")
-         (insert "Image used - "
-                 (expand-file-name (ht-get emoji "image")
-                                   (emojify-image-dir)))
-         (emojify-redisplay-emojis-in-region))))))
+      (with-current-buffer (get-buffer-create emojify-help-buffer-name)
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (save-excursion
+            (insert (propertize emoji-text 'emojify-inhibit t)
+                    " - Displayed as "
+                    emoji-text
+                    "\n\n")
+            (insert (propertize "Name" 'face 'font-lock-keyword-face)
+                    ": "
+                    (ht-get emoji "name") "\n")
+            (insert (propertize "Style" 'face 'font-lock-keyword-face)
+                    ": "
+                    (ht-get emoji "style") "\n")
+            (insert (propertize "Image used" 'face 'font-lock-keyword-face)
+                    ": "
+                    (expand-file-name (ht-get emoji "image")
+                                      (emojify-image-dir))
+                    "\n")
+            (when (and (not (string= (ht-get emoji "style") "unicode"))
+                       (ht-get emoji "unicode"))
+              (insert (propertize "Unicode representation"
+                                  'face 'font-lock-keyword-face)
+                      ": "
+                      (propertize (ht-get emoji "unicode") 'emojify-inhibit t)
+                      "\n"))
+            (when (and (not (string= (ht-get emoji "style") "ascii"))
+                       (ht-get emoji "ascii"))
+              (insert (propertize "Ascii representation"
+                                  'face 'font-lock-keyword-face)
+                      ": "
+                      (propertize (ht-get emoji "ascii") 'emojify-inhibit t)
+                      "\n"))))
+        (emojify-redisplay-emojis-in-region)
+        (view-mode +1))
+      (display-buffer (get-buffer emojify-help-buffer-name)))))
 
 
 
