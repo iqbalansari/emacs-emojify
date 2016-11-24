@@ -72,6 +72,12 @@
 
 ;; Compatibility functions
 
+(defun emojify-user-error (format &rest args)
+  "Signal a pilot error, making a message by passing FORMAT and ARGS to ‘format-message’."
+  (if (fboundp 'user-error)
+      (apply #'user-error format args)
+    (apply #'error format args)))
+
 (defun emojify-default-font-height ()
   "Return the height in pixels of the current buffer's default face font.
 
@@ -710,7 +716,7 @@ and then `emojify-emojis'."
 
     ;; Construct emojify-regexps such that github style are searched first
     ;; followed by unicode and then ascii emojis.
-    (setq emojify-regexps (list ":[[:alnum:]_-]+:"
+    (setq emojify-regexps (list ":[[:alnum:]+_-]+:"
                                 (regexp-opt unicode-emojis)
                                 (regexp-opt ascii-emojis))))
 
@@ -730,6 +736,7 @@ and then `emojify-emojis'."
     (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
     (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
     (define-key map [remap backward-delete-char] #'emojify-delete-emoji-backward)
+    (define-key map [remap org-delete-backward-char] #'emojify-delete-emoji-backward)
     (define-key map [remap delete-backward-char] #'emojify-delete-emoji-backward)
     (define-key map [remap backward-delete-char-untabify] #'emojify-delete-emoji-backward)
     map))
@@ -961,6 +968,8 @@ should not be a problem 🤞."
                    (buffer (current-buffer))
                    (emoji (emojify-get-emoji match)))
               (when (and emoji
+                         (not (or (get-text-property match-beginning 'emojify-inhibit)
+                                  (get-text-property match-end 'emojify-inhibit)))
                          (memql (intern (ht-get emoji "style"))
                                 emojify-emoji-styles)
                          ;; Skip displaying this emoji if the its bounds are
@@ -1084,10 +1093,10 @@ Redisplay emojis in the visible region if BEG and END are not specified"
          (end (save-excursion
                 (goto-char (or end (cdr area)))
                 (line-end-position))))
-
-    (emojify-execute-ignoring-errors-unless-debug
-      (emojify-undisplay-emojis-in-region beg end)
-      (emojify-display-emojis-in-region beg end))))
+    (unless (> (- end beg) 5000)
+      (emojify-execute-ignoring-errors-unless-debug
+        (emojify-undisplay-emojis-in-region beg end)
+        (emojify-display-emojis-in-region beg end)))))
 
 (defun emojify-after-change-extend-region-function (beg end _len)
   "Extend the region to be emojified.
@@ -1365,7 +1374,7 @@ buffer changes back to multibyte encoding."
 
 
 
-;; Searching and inserting emojis
+;; Searching emojis
 
 (defvar emojify-apropos-buffer-name "*Apropos Emojis*")
 
@@ -1382,7 +1391,7 @@ buffer changes back to multibyte encoding."
   (save-excursion
     (goto-char (line-beginning-position))
     (if (not (get-text-property (point) 'emojified))
-        (user-error "No emoji at point")
+        (emojify-user-error "No emoji at point")
       (kill-new (get-text-property (point) 'emojify-text))
       (message "Copied emoji to kill ring!"))))
 
@@ -1429,9 +1438,7 @@ Borrowed from apropos.el"
                               emojify--apropos-last-query)))
     (if (string-equal (regexp-quote pattern) pattern)
         (or (split-string pattern "[ \t]+" t)
-            (if (fboundp 'user-error)
-                (apply #'user-error "No word list given")
-              (apply #'error "No word list given")))
+            (emojify-user-error "No word list given"))
       pattern)))
 
 ;;;###autoload
@@ -1490,9 +1497,13 @@ Borrowed from apropos.el"
         (setq emojify--apropos-last-query (concat query " "))
         (setq-local line-spacing 7)))
 
-    (select-window (display-buffer (get-buffer emojify-apropos-buffer-name)
-                                   (when in-apropos-buffer-p
-                                     (cons #'display-buffer-same-window nil))))))
+    (pop-to-buffer (get-buffer emojify-apropos-buffer-name)
+                   (when in-apropos-buffer-p
+                     (cons #'display-buffer-same-window nil)))))
+
+
+
+;; Inserting emojis
 
 (defun emojify--insert-minibuffer-setup-hook ()
   "Enables `emojify-mode' in minbuffer while inserting emojis.
@@ -1537,6 +1548,56 @@ This respects the `emojify-emoji-styles' variable."
          (helm-after-initialize-hook (cons #'emojify--insert-helm-hook (bound-and-true-p helm-after-initialize-hook))))
     (insert (car (split-string (completing-read "Insert Emoji: " candidates)
                                " ")))))
+
+
+
+;; Help for emoji at point
+
+(defvar emojify-help-buffer-name "*Emoji Help*")
+
+(defun emojify-describe-emoji-at-point ()
+  "Display help for EMOJI displayed at point."
+  (interactive)
+  (if (not (get-text-property (point) 'emojified))
+      (emojify-user-error "No emoji at point!")
+    (let* ((emoji-text (get-text-property (point) 'emojify-text))
+           (emoji (emojify-get-emoji emoji-text)))
+      (with-current-buffer (get-buffer-create emojify-help-buffer-name)
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (save-excursion
+            (insert (propertize emoji-text 'emojify-inhibit t)
+                    " - Displayed as "
+                    emoji-text
+                    "\n\n")
+            (insert (propertize "Name" 'face 'font-lock-keyword-face)
+                    ": "
+                    (ht-get emoji "name") "\n")
+            (insert (propertize "Style" 'face 'font-lock-keyword-face)
+                    ": "
+                    (ht-get emoji "style") "\n")
+            (insert (propertize "Image used" 'face 'font-lock-keyword-face)
+                    ": "
+                    (expand-file-name (ht-get emoji "image")
+                                      (emojify-image-dir))
+                    "\n")
+            (when (and (not (string= (ht-get emoji "style") "unicode"))
+                       (ht-get emoji "unicode"))
+              (insert (propertize "Unicode representation"
+                                  'face 'font-lock-keyword-face)
+                      ": "
+                      (propertize (ht-get emoji "unicode") 'emojify-inhibit t)
+                      "\n"))
+            (when (and (not (string= (ht-get emoji "style") "ascii"))
+                       (ht-get emoji "ascii"))
+              (insert (propertize "Ascii representation"
+                                  'face 'font-lock-keyword-face)
+                      ": "
+                      (propertize (ht-get emoji "ascii") 'emojify-inhibit t)
+                      "\n"))))
+        (emojify-redisplay-emojis-in-region)
+        (view-mode +1))
+      (display-buffer (get-buffer emojify-help-buffer-name)))))
 
 
 
