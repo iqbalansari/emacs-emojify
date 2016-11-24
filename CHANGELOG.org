@@ -7,6 +7,9 @@
 
 *** Fixed
     - Do not try emojifying areas larger than 5000 points
+    - Fix display of emojis containing the plus sign (eg. ~:+1:~)
+*** Added
+    - New command ~emojify-describe-emoji-at-point~ can be used to view help about emoji displayed at point.
 
 ** v0.4 - 2016-09-28
    See [[https://github.com/iqbalansari/emacs-emojify/compare/v0.3...v0.4][Changes]]

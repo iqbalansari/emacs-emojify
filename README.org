@@ -13,6 +13,7 @@
      - [[#displaying-emojis][Displaying emojis]]
      - [[#searching-emojis][Searching emojis]]
      - [[#inserting-emojis][Inserting emojis]]
+     - [[#describing-emojis][Describing emojis]]
    - [[#customizations][Customizations]]
      - [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
      - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
@@ -108,6 +109,10 @@
     command are not displayed by ~emojify~, this might happen if you have newer
     emoji data but old set of images. Download the latest emoji image using
     ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
+
+*** Describing emojis
+    The command ~emojify-describe-emoji-at-point~ can be used to view
+    explanation about the command displayed at point.
 
 ** Customizations
 *** Displaying composed text as emojis
