@@ -716,7 +716,7 @@ and then `emojify-emojis'."
 
     ;; Construct emojify-regexps such that github style are searched first
     ;; followed by unicode and then ascii emojis.
-    (setq emojify-regexps (list ":[[:alnum:]_-]+:"
+    (setq emojify-regexps (list ":[[:alnum:]+_-]+:"
                                 (regexp-opt unicode-emojis)
                                 (regexp-opt ascii-emojis))))
 
