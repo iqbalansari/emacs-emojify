@@ -736,6 +736,7 @@ and then `emojify-emojis'."
     (define-key map [remap delete-char] #'emojify-delete-emoji-forward)
     (define-key map [remap delete-forward-char] #'emojify-delete-emoji-forward)
     (define-key map [remap backward-delete-char] #'emojify-delete-emoji-backward)
+    (define-key map [remap org-delete-backward-char] #'emojify-delete-emoji-backward)
     (define-key map [remap delete-backward-char] #'emojify-delete-emoji-backward)
     (define-key map [remap backward-delete-char-untabify] #'emojify-delete-emoji-backward)
     map))

@@ -8,6 +8,7 @@
 *** Fixed
     - Do not try emojifying areas larger than 5000 points
     - Fix display of emojis containing the plus sign (eg. ~:+1:~)
+    - Fix backspace to delete complete emojis in ~org-mode~
 *** Added
     - New command ~emojify-describe-emoji-at-point~ can be used to view help about emoji displayed at point.
 
