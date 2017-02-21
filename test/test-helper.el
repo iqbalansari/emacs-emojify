@@ -153,5 +153,4 @@ All kinds of dynamic behaviour on buffer are disabled.  See
   (should (get-text-property point 'emojify-text))
   (should-not (get-text-property point 'display)))
 
-(provide 'test-helper)
 ;;; test-helper.el ends here
