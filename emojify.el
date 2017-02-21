@@ -1,6 +1,6 @@
 ;;; emojify.el --- Display emojis in Emacs           -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015  Iqbal Ansari
+;; Copyright (C) 2015-2017  Iqbal Ansari
 
 ;; Author: Iqbal Ansari <iqbalansari02@yahoo.com>
 ;; Keywords: multimedia, convenience
