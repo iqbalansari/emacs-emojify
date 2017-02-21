@@ -7,7 +7,8 @@
 ;;; Code:
 
 ;; For interactive testing
-(require 'test-helper (expand-file-name "test-helper.el"))
+(unless noninteractive
+  (load (expand-file-name "test-helper.el") t))
 
 ;; Used for testing integration with programming modes
 (require 'org)
