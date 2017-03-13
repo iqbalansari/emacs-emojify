@@ -707,10 +707,11 @@ and then `emojify-emojis'."
 
   (let (unicode-emojis ascii-emojis)
     (ht-each (lambda (emoji data)
-               (when (string= (gethash "style" data) "unicode")
+
+               (when (string= (ht-get data "style") "unicode")
                  (push emoji unicode-emojis))
 
-               (when (string= (gethash "style" data) "ascii")
+               (when (string= (ht-get data "style") "ascii")
                  (push emoji ascii-emojis)))
              emojify-emojis)
 
@@ -1033,7 +1034,7 @@ should not be a problem 🤞."
                    (compose-end (next-single-property-change compose-start 'composition nil end)))
               ;; Display only composed text that is unicode char
               (when (and emoji
-                         (string= (gethash "style" emoji) "unicode"))
+                         (string= (ht-get emoji "style") "unicode"))
                 (emojify--display-emoji emoji match (current-buffer) compose-start compose-end))
               ;; Setup the next loop
               (setq compose-start (and compose-end (next-single-property-change compose-end
