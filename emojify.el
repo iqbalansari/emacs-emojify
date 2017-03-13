@@ -312,8 +312,8 @@ This is a buffer local variable that can be set to inhibit enabling of
 emojify in a buffer.")
 (make-variable-buffer-local 'emojify-inhibit-emojify-in-current-buffer-p)
 
-(defvar emojify-in-insertion-command-p nil
-  "Are we currently executing emojify apropos command?")
+(defvar emojify-minibuffer-reading-emojis-p nil
+  "Are we currently reading emojis using minibuffer?")
 
 (defun emojify-ephemeral-buffer-p (buffer)
   "Determine if BUFFER is an ephemeral/temporary buffer."
@@ -329,12 +329,12 @@ Returns non-nil if the buffer's major mode is part of `emojify-inhibit-major-mod
 
 (defun emojify-helm-buffer-p (buffer)
   "Determine if the current BUFFER is a helm buffer."
-  (unless emojify-in-insertion-command-p
+  (unless emojify-minibuffer-reading-emojis-p
     (string-match-p "\\*helm" (buffer-name buffer))))
 
 (defun emojify-minibuffer-p (buffer)
   "Determine if the current BUFFER is a minibuffer."
-  (unless emojify-in-insertion-command-p
+  (unless emojify-minibuffer-reading-emojis-p
     (minibufferp buffer)))
 
 (defun emojify-buffer-p (buffer)
@@ -1505,13 +1505,13 @@ Borrowed from apropos.el"
 
 ;; Inserting emojis
 
-(defun emojify--insert-minibuffer-setup-hook ()
+(defun emojify--completing-read-minibuffer-setup-hook ()
   "Enables `emojify-mode' in minbuffer while inserting emojis.
 
 This ensures `emojify' is enabled even when `global-emojify-mode' is not on."
   (emojify-mode +1))
 
-(defun emojify--insert-helm-hook ()
+(defun emojify--completing-read-helm-hook ()
   "Enables `emojify-mode' in helm buffer.
 
 This ensures `emojify' is enabled in helm buffer displaying completion even when
@@ -1519,14 +1519,14 @@ This ensures `emojify' is enabled in helm buffer displaying completion even when
   (with-current-buffer helm-buffer
     (emojify-mode +1)))
 
-;;;###autoload
-(defun emojify-insert-emoji ()
-  "Interactively prompt for Emojis and insert them in the current buffer.
+(defun emojify-completing-read (prompt &optional predicate require-match initial-input hist def inherit-input-method)
+  "Read emoji from the user and return the selected emoji.
 
-This respects the `emojify-emoji-styles' variable."
-  (interactive)
+PROMPT is a string to prompt with, PREDICATE, REQUIRE-MATCH, INITIAL-INPUT,
+HIST, DEF, INHERIT-INPUT-METHOD correspond to the arguments for
+`completing-read' and are passed to completing-read without any interpretation."
   (emojify-create-emojify-emojis)
-  (let* ((emojify-in-insertion-command-p t)
+  (let* ((emojify-minibuffer-reading-emojis-p t)
          (styles (mapcar #'symbol-name emojify-emoji-styles))
          (line-spacing 7)
          (completion-ignore-case t)
@@ -1541,13 +1541,31 @@ This respects the `emojify-emoji-styles' variable."
                        emojis))
          ;; Vanilla Emacs completion and Icicles use the completion list mode to display candidates
          ;; the following makes sure emojify is enabled in the completion list
-         (completion-list-mode-hook (cons #'emojify--insert-minibuffer-setup-hook completion-list-mode-hook))
+         (completion-list-mode-hook (cons #'emojify--completing-read-minibuffer-setup-hook
+                                          completion-list-mode-hook))
          ;; (Vertical) Ido and Ivy displays candidates in minibuffer this makes sure candidates are emojified
          ;; when Ido or Ivy are used
-         (minibuffer-setup-hook (cons #'emojify--insert-minibuffer-setup-hook minibuffer-setup-hook))
-         (helm-after-initialize-hook (cons #'emojify--insert-helm-hook (bound-and-true-p helm-after-initialize-hook))))
-    (insert (car (split-string (completing-read "Insert Emoji: " candidates)
-                               " ")))))
+         (minibuffer-setup-hook (cons #'emojify--completing-read-minibuffer-setup-hook
+                                      minibuffer-setup-hook))
+         (helm-after-initialize-hook (cons #'emojify--completing-read-helm-hook
+                                           (bound-and-true-p helm-after-initialize-hook))))
+    (car (split-string (completing-read prompt
+                                        candidates
+                                        predicate
+                                        require-match
+                                        initial-input
+                                        hist
+                                        def
+                                        inherit-input-method)
+                       " "))))
+
+;;;###autoload
+(defun emojify-insert-emoji ()
+  "Interactively prompt for Emojis and insert them in the current buffer.
+
+This respects the `emojify-emoji-styles' variable."
+  (interactive)
+  (insert (emojify-completing-read "Insert Emoji: ")))
 
 
 
