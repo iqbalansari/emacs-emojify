@@ -1506,6 +1506,31 @@ Borrowed from apropos.el"
 
 ;; Inserting emojis
 
+(defvar emojify--completing-candidates-cache nil
+  "Cached values for completing read candidates calculated for `emojify-completing-read'.")
+
+(defun emojify--get-completing-read-candidates ()
+  "Get the candidates to be used for `emojify-completing-read'.
+
+The candidates are calculated according to currently active
+`emojify-emoji-styles' and cached"
+  (let ((styles (mapcar #'symbol-name emojify-emoji-styles)))
+    (unless (and emojify--completing-candidates-cache
+                 (equal styles (car emojify--completing-candidates-cache)))
+      (setq emojify--completing-candidates-cache
+            (cons styles
+                  (let ((emojis (ht-create #'equal)))
+                    (emojify-emojis-each (lambda (key value)
+                                           (when (seq-position styles (ht-get value "style"))
+                                             (ht-set! emojis
+                                                      (format "%s - %s (%s)"
+                                                              key
+                                                              (ht-get value "name")
+                                                              (ht-get value "style"))
+                                                      value))))
+                    emojis))))
+    (cdr emojify--completing-candidates-cache)))
+
 (defun emojify--completing-read-minibuffer-setup-hook ()
   "Enables `emojify-mode' in minbuffer while inserting emojis.
 
@@ -1531,15 +1556,7 @@ HIST, DEF, INHERIT-INPUT-METHOD correspond to the arguments for
          (styles (mapcar #'symbol-name emojify-emoji-styles))
          (line-spacing 7)
          (completion-ignore-case t)
-         (candidates (let (emojis)
-                       (emojify-emojis-each (lambda (key value)
-                                              (when (seq-position styles (ht-get value "style"))
-                                                (push (format "%s - %s (%s)"
-                                                              key
-                                                              (ht-get value "name")
-                                                              (ht-get value "style"))
-                                                      emojis))))
-                       emojis))
+         (candidates (emojify--get-completing-read-candidates))
          ;; Vanilla Emacs completion and Icicles use the completion list mode to display candidates
          ;; the following makes sure emojify is enabled in the completion list
          (completion-list-mode-hook (cons #'emojify--completing-read-minibuffer-setup-hook
