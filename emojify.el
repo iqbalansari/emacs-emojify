@@ -1493,7 +1493,9 @@ Re-enable it when buffer changes back to multibyte encoding."
 
 \\{emojify-apropos-mode-map}"
   (emojify-mode +1)
-  (read-only-mode +1))
+  ;; view mode being a minor mode eats up our bindings avoid it
+  (let (view-read-only)
+    (read-only-mode +1)))
 
 (put 'emojify-apropos-mode 'mode-class 'special)
 
