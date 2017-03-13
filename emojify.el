@@ -1465,7 +1465,8 @@ Re-enable it when buffer changes back to multibyte encoding."
     (if (not (get-text-property (point) 'emojified))
         (emojify-user-error "No emoji at point")
       (kill-new (get-text-property (point) 'emojify-text))
-      (message "Copied emoji to kill ring!"))))
+      (message "Copied emoji (%s) to kill ring!"
+               (get-text-property (point) 'emojify-text)))))
 
 (defun emojify-apropos-describe-emoji ()
   "Copy the emoji being displayed at current line in apropos results."
