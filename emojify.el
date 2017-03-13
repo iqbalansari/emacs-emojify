@@ -761,7 +761,9 @@ and then `emojify-emojis'."
                          ;; Add the emoji text to data, this makes the values
                          ;; of the `emojify-emojis' standalone containing all
                          ;; data about the emoji
-                         (ht-set! data "emoji" emoji)))
+                         (ht-set! data "emoji" emoji)
+                         (ht-set! data "custom" (and emojify--user-emojis
+                                                     (ht-get emojify--user-emojis emoji)))))
 
   ;; Clear completion candidates cache
   (setq emojify--completing-candidates-cache nil))
