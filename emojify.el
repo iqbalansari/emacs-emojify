@@ -688,9 +688,12 @@ The candidates are calculated according to currently active
                     emojis))))
     (cdr emojify--completing-candidates-cache)))
 
-(defun emojify-create-emojify-emojis ()
-  "Create `emojify-emojis' if needed."
-  (unless emojify-emojis
+(defun emojify-create-emojify-emojis (&optional force)
+  "Create `emojify-emojis' if needed.
+
+The function avoids reading emoji data if it has already been read unless FORCE
+in which case emoji data is re-read."
+  (when (or force (not emojify-emojis))
     (emojify-set-emoji-data)))
 
 (defun emojify-get-emoji (emoji)
