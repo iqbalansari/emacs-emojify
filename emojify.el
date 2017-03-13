@@ -437,16 +437,18 @@ The arguments IGNORED are, well ignored"
        (org-at-item-p)))
 
 (defun emojify-valid-program-context-p (emoji beg end)
-  "Determine if emoji should be displayed for text between BEG and END.
+  "Determine if EMOJI should be displayed for text between BEG and END.
 
 This returns non-nil if the region is valid according to `emojify-program-contexts'"
   (when emojify-program-contexts
     (let* ((syntax-beg (syntax-ppss beg))
            (syntax-end (syntax-ppss end))
            (context (cond ((and (nth 3 syntax-beg)
-                                (nth 3 syntax-end)) 'string)
+                                (nth 3 syntax-end))
+                           'string)
                           ((and (nth 4 syntax-beg)
-                                (nth 4 syntax-end)) 'comments)
+                                (nth 4 syntax-end))
+                           'comments)
                           (t 'code))))
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
@@ -1329,6 +1331,8 @@ run the command `emojify-download-emoji'")))
 
 
 
+;; Minor mode definitions
+
 (defun emojify-turn-on-emojify-mode ()
   "Turn on `emojify-mode' in current buffer."
 
@@ -1402,8 +1406,8 @@ run the command `emojify-download-emoji'")))
   :init-value nil)
 
 (defadvice set-buffer-multibyte (after emojify-disable-for-unibyte-buffers (&rest ignored))
-  "Disable emojify when buffer changes to a unibyte encoding, reenable it when
-buffer changes back to multibyte encoding."
+  "Disable emojify when buffer changes to a unibyte encoding.
+Re-enable it when buffer changes back to multibyte encoding."
   (ignore-errors
     (if enable-multibyte-characters
         (when global-emojify-mode
@@ -1567,7 +1571,6 @@ HIST, DEF, INHERIT-INPUT-METHOD correspond to the arguments for
 `completing-read' and are passed to completing-read without any interpretation."
   (emojify-create-emojify-emojis)
   (let* ((emojify-minibuffer-reading-emojis-p t)
-         (styles (mapcar #'symbol-name emojify-emoji-styles))
          (line-spacing 7)
          (completion-ignore-case t)
          (candidates (emojify--get-completing-read-candidates))
@@ -1601,7 +1604,7 @@ This respects the `emojify-emoji-styles' variable."
 
 
 
-;; Help for emoji at point
+;; Describing emojis
 
 (defvar emojify-help-buffer-name "*Emoji Help*")
 
