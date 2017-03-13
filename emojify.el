@@ -662,6 +662,32 @@ The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png 
 (defvar emojify-regexps nil
   "List of regexps to match text to be emojified.")
 
+(defvar emojify--completing-candidates-cache nil
+  "Cached values for completing read candidates calculated for `emojify-completing-read'.")
+
+;; Cache for emoji completing read candidates
+(defun emojify--get-completing-read-candidates ()
+  "Get the candidates to be used for `emojify-completing-read'.
+
+The candidates are calculated according to currently active
+`emojify-emoji-styles' and cached"
+  (let ((styles (mapcar #'symbol-name emojify-emoji-styles)))
+    (unless (and emojify--completing-candidates-cache
+                 (equal styles (car emojify--completing-candidates-cache)))
+      (setq emojify--completing-candidates-cache
+            (cons styles
+                  (let ((emojis (ht-create #'equal)))
+                    (emojify-emojis-each (lambda (key value)
+                                           (when (seq-position styles (ht-get value "style"))
+                                             (ht-set! emojis
+                                                      (format "%s - %s (%s)"
+                                                              key
+                                                              (ht-get value "name")
+                                                              (ht-get value "style"))
+                                                      value))))
+                    emojis))))
+    (cdr emojify--completing-candidates-cache)))
+
 (defun emojify-create-emojify-emojis ()
   "Create `emojify-emojis' if needed."
   (unless emojify-emojis
@@ -737,13 +763,8 @@ and then `emojify-emojis'."
                          ;; data about the emoji
                          (ht-set! data "emoji" emoji)))
 
-          (ht-each (lambda (emoji data)
-                     ;; Add the emoji text to data, this makes the values
-                     ;; of the `emojify-emojis' standalone containing all
-                     ;; data about the emoji
-                     (ht-set! data "emoji" emoji))
-                   emojify--user-emojis))
-      (message "[emojify] User emojis are not in correct format ignoring them."))))
+  ;; Clear completion candidates cache
+  (setq emojify--completing-candidates-cache nil))
 
 (defvar emojify-emoji-keymap
   (let ((map (make-sparse-keymap)))
@@ -1518,31 +1539,6 @@ Borrowed from apropos.el"
 
 
 ;; Inserting emojis
-
-(defvar emojify--completing-candidates-cache nil
-  "Cached values for completing read candidates calculated for `emojify-completing-read'.")
-
-(defun emojify--get-completing-read-candidates ()
-  "Get the candidates to be used for `emojify-completing-read'.
-
-The candidates are calculated according to currently active
-`emojify-emoji-styles' and cached"
-  (let ((styles (mapcar #'symbol-name emojify-emoji-styles)))
-    (unless (and emojify--completing-candidates-cache
-                 (equal styles (car emojify--completing-candidates-cache)))
-      (setq emojify--completing-candidates-cache
-            (cons styles
-                  (let ((emojis (ht-create #'equal)))
-                    (emojify-emojis-each (lambda (key value)
-                                           (when (seq-position styles (ht-get value "style"))
-                                             (ht-set! emojis
-                                                      (format "%s - %s (%s)"
-                                                              key
-                                                              (ht-get value "name")
-                                                              (ht-get value "style"))
-                                                      value))))
-                    emojis))))
-    (cdr emojify--completing-candidates-cache)))
 
 (defun emojify--completing-read-minibuffer-setup-hook ()
   "Enables `emojify-mode' in minbuffer while inserting emojis.
