@@ -1600,15 +1600,15 @@ This respects the `emojify-emoji-styles' variable."
 
 (defvar emojify-help-buffer-name "*Emoji Help*")
 
-(defun emojify--display-emoji-description-buffer (emoji-text emoji)
-  "Display description for the EMOJI-TEXT and corresponding EMOJI."
+(defun emojify--display-emoji-description-buffer (emoji)
+  "Display description for EMOJI."
   (with-current-buffer (get-buffer-create emojify-help-buffer-name)
     (let ((inhibit-read-only t))
       (erase-buffer)
       (save-excursion
-        (insert (propertize emoji-text 'emojify-inhibit t)
+        (insert (propertize (ht-get emoji "emoji") 'emojify-inhibit t)
                 " - Displayed as "
-                emoji-text
+                (ht-get emoji "emoji")
                 "\n\n")
         (insert (propertize "Name" 'face 'font-lock-keyword-face)
                 ": "
@@ -1656,9 +1656,8 @@ This respects the `emojify-emoji-styles' variable."
 (defun emojify-describe-emoji (emoji-text)
   "Display description for EMOJI-TEXT."
   (interactive (list (emojify-completing-read "Describe Emoji: ")))
-  (if (ht-get emojify-emojis emoji-text)
-      (emojify--display-emoji-description-buffer emoji-text
-                                                 (ht-get emojify-emojis emoji-text))
+  (if (emojify-get-emoji emoji-text)
+      (emojify--display-emoji-description-buffer (emojify-get-emoji emoji-text))
     (emojify-user-error "No emoji found for '%s'" emoji-text)))
 
 (defun emojify-describe-emoji-at-point ()
@@ -1666,9 +1665,7 @@ This respects the `emojify-emoji-styles' variable."
   (interactive)
   (if (not (get-text-property (point) 'emojified))
       (emojify-user-error "No emoji at point!")
-    (let* ((emoji-text (get-text-property (point) 'emojify-text))
-           (emoji (emojify-get-emoji emoji-text)))
-      (emojify--display-emoji-description-buffer emoji-text emoji))))
+    (emojify--display-emoji-description-buffer (emojify-get-emoji (get-text-property (point) 'emojify-text)))))
 
 
 
