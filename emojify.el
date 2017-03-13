@@ -215,6 +215,34 @@ visible in the selected window."
          (end (min (+ (point) window-size) (point-max))))
     (cons start end)))
 
+(defun emojify-quit-buffer ()
+  "Hide the current buffer.
+There are windows other than the one the current buffer is displayed in quit the
+current window too."
+  (interactive)
+  (if (= (length (window-list)) 1)
+      (bury-buffer)
+    (quit-window)))
+
+(defvar emojify-common-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "q" #'emojify-quit-buffer)
+    (define-key map "n" #'next-line)
+    (define-key map "p" #'previous-line)
+    (define-key map "r" #'isearch-backward)
+    (define-key map "s" #'isearch-forward)
+    (define-key map ">" #'end-of-buffer)
+    (define-key map "<" #'beginning-of-buffer)
+
+    (dolist (key '("?" "h" "H"))
+      (define-key map key #'describe-mode))
+
+    (dolist (number (number-sequence 0 9))
+      (define-key map (number-to-string number) #'digit-argument))
+
+    map)
+  "Common keybindings available in all special emojify buffers.")
+
 
 
 ;; Customizations for control how emojis are displayed
@@ -1450,25 +1478,12 @@ Re-enable it when buffer changes back to multibyte encoding."
 
 (defvar emojify-apropos-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "q" #'emojify-apropos-quit)
+    (set-keymap-parent map emojify-common-mode-map)
     (define-key map "c" #'emojify-apropos-copy-emoji)
     (define-key map "w" #'emojify-apropos-copy-emoji)
     (define-key map "d" #'emojify-apropos-describe-emoji)
     (define-key map (kbd "RET") #'emojify-apropos-describe-emoji)
-    (define-key map "n" #'next-line)
-    (define-key map "p" #'previous-line)
-    (define-key map "r" #'isearch-backward)
-    (define-key map "s" #'isearch-forward)
     (define-key map "g" #'emojify-apropos-emoji)
-    (define-key map ">" 'end-of-buffer)
-    (define-key map "<" 'beginning-of-buffer)
-
-    (dolist (key '("?" "h" "H"))
-      (define-key map key #'describe-mode))
-
-    (dolist (number (number-sequence 0 9))
-      (define-key map (number-to-string number) #'digit-argument))
-
     map)
   "Keymap used in `emojify-apropos-mode'.")
 
