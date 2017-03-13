@@ -1573,6 +1573,59 @@ This respects the `emojify-emoji-styles' variable."
 
 (defvar emojify-help-buffer-name "*Emoji Help*")
 
+(defun emojify--display-emoji-description-buffer (emoji-text emoji)
+  "Display description for the EMOJI-TEXT and corresponding EMOJI."
+  (with-current-buffer (get-buffer-create emojify-help-buffer-name)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (save-excursion
+        (insert (propertize emoji-text 'emojify-inhibit t)
+                " - Displayed as "
+                emoji-text
+                "\n\n")
+        (insert (propertize "Name" 'face 'font-lock-keyword-face)
+                ": "
+                (ht-get emoji "name") "\n")
+        (insert (propertize "Style" 'face 'font-lock-keyword-face)
+                ": "
+                (ht-get emoji "style") "\n")
+        (insert (propertize "Image used" 'face 'font-lock-keyword-face)
+                ": "
+                (expand-file-name (ht-get emoji "image")
+                                  (emojify-image-dir))
+                "\n")
+        (when (and (not (string= (ht-get emoji "style") "unicode"))
+                   (ht-get emoji "unicode"))
+          (insert (propertize "Unicode representation"
+                              'face 'font-lock-keyword-face)
+                  ": "
+                  (propertize (ht-get emoji "unicode") 'emojify-inhibit t)
+                  "\n"))
+        (when (and (not (string= (ht-get emoji "style") "ascii"))
+                   (ht-get emoji "ascii"))
+          (insert (propertize "Ascii representation"
+                              'face 'font-lock-keyword-face)
+                  ": "
+                  (propertize (ht-get emoji "ascii") 'emojify-inhibit t)
+                  "\n"))
+        (insert (propertize "Emojipedia" 'face 'font-lock-keyword-face)
+                ": "
+                (let* ((tone-stripped (replace-regexp-in-string "- *[Tt]one *\\([0-9]+\\)$"
+                                                                "- type \\1"
+                                                                (ht-get emoji "name")))
+                       (non-alphanumeric-stripped (replace-regexp-in-string "[^0-9a-zA-Z]"
+                                                                            " "
+                                                                            tone-stripped))
+                       (words (split-string non-alphanumeric-stripped " " t " ")))
+                  (concat "http://emojipedia.org/"
+                          (downcase (emojify--string-join words "-"))))
+                "\n")))
+    (emojify-redisplay-emojis-in-region)
+    (view-mode +1)
+    (goto-address-mode +1))
+  (display-buffer (get-buffer emojify-help-buffer-name))
+  (get-buffer emojify-help-buffer-name))
+
 (defun emojify-describe-emoji-at-point ()
   "Display help for EMOJI displayed at point."
   (interactive)
@@ -1580,55 +1633,7 @@ This respects the `emojify-emoji-styles' variable."
       (emojify-user-error "No emoji at point!")
     (let* ((emoji-text (get-text-property (point) 'emojify-text))
            (emoji (emojify-get-emoji emoji-text)))
-      (with-current-buffer (get-buffer-create emojify-help-buffer-name)
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (save-excursion
-            (insert (propertize emoji-text 'emojify-inhibit t)
-                    " - Displayed as "
-                    emoji-text
-                    "\n\n")
-            (insert (propertize "Name" 'face 'font-lock-keyword-face)
-                    ": "
-                    (ht-get emoji "name") "\n")
-            (insert (propertize "Style" 'face 'font-lock-keyword-face)
-                    ": "
-                    (ht-get emoji "style") "\n")
-            (insert (propertize "Image used" 'face 'font-lock-keyword-face)
-                    ": "
-                    (expand-file-name (ht-get emoji "image")
-                                      (emojify-image-dir))
-                    "\n")
-            (when (and (not (string= (ht-get emoji "style") "unicode"))
-                       (ht-get emoji "unicode"))
-              (insert (propertize "Unicode representation"
-                                  'face 'font-lock-keyword-face)
-                      ": "
-                      (propertize (ht-get emoji "unicode") 'emojify-inhibit t)
-                      "\n"))
-            (when (and (not (string= (ht-get emoji "style") "ascii"))
-                       (ht-get emoji "ascii"))
-              (insert (propertize "Ascii representation"
-                                  'face 'font-lock-keyword-face)
-                      ": "
-                      (propertize (ht-get emoji "ascii") 'emojify-inhibit t)
-                      "\n"))
-            (insert (propertize "Emojipedia" 'face 'font-lock-keyword-face)
-                    ": "
-                    (let* ((tone-stripped (replace-regexp-in-string "- *[Tt]one *\\([0-9]+\\)$"
-                                                                    "- type \\1"
-                                                                    (ht-get emoji "name")))
-                           (non-alphanumeric-stripped (replace-regexp-in-string "[^0-9a-zA-Z]"
-                                                                                " "
-                                                                                tone-stripped))
-                           (words (split-string non-alphanumeric-stripped " " t " ")))
-                      (concat "http://emojipedia.org/"
-                              (downcase (emojify--string-join words "-"))))
-                    "\n")))
-        (emojify-redisplay-emojis-in-region)
-        (view-mode +1)
-        (goto-address-mode +1))
-      (display-buffer (get-buffer emojify-help-buffer-name)))))
+      (emojify--display-emoji-description-buffer emoji-text emoji))))
 
 
 
