@@ -1640,6 +1640,11 @@ This respects the `emojify-emoji-styles' variable."
                   ": "
                   (propertize (ht-get emoji "ascii") 'emojify-inhibit t)
                   "\n"))
+        (insert (propertize "User defined"
+                            'face 'font-lock-keyword-face)
+                ": "
+                (if (ht-get emoji "custom") "Yes" "No")
+                "\n")
         (insert (propertize "Emojipedia" 'face 'font-lock-keyword-face)
                 ": "
                 (let* ((tone-stripped (replace-regexp-in-string "- *[Tt]one *\\([0-9]+\\)$"
