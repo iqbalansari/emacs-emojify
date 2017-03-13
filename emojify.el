@@ -1594,9 +1594,22 @@ This respects the `emojify-emoji-styles' variable."
                                   'face 'font-lock-keyword-face)
                       ": "
                       (propertize (ht-get emoji "ascii") 'emojify-inhibit t)
-                      "\n"))))
+                      "\n"))
+            (insert (propertize "Emojipedia" 'face 'font-lock-keyword-face)
+                    ": "
+                    (let* ((tone-stripped (replace-regexp-in-string "- *[Tt]one *\\([0-9]+\\)$"
+                                                                    "- type \\1"
+                                                                    (ht-get emoji "name")))
+                           (non-alphanumeric-stripped (replace-regexp-in-string "[^0-9a-zA-Z]"
+                                                                                " "
+                                                                                tone-stripped))
+                           (words (split-string non-alphanumeric-stripped " " t " ")))
+                      (concat "http://emojipedia.org/"
+                              (downcase (emojify--string-join words "-"))))
+                    "\n")))
         (emojify-redisplay-emojis-in-region)
-        (view-mode +1))
+        (view-mode +1)
+        (goto-address-mode +1))
       (display-buffer (get-buffer emojify-help-buffer-name)))))
 
 
