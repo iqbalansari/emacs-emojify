@@ -707,7 +707,6 @@ and then `emojify-emojis'."
 
   (let (unicode-emojis ascii-emojis)
     (ht-each (lambda (emoji data)
-
                (when (string= (ht-get data "style") "unicode")
                  (push emoji unicode-emojis))
 
@@ -730,6 +729,20 @@ and then `emojify-emojis'."
                                    emojify-user-emojis)))
           (setq emojify--user-emojis (ht-from-alist emoji-pairs))
           (setq emojify--user-emojis-regexp (regexp-opt (mapcar #'car emoji-pairs))))
+      (message "[emojify] User emojis are not in correct format ignoring them.")))
+
+  (emojify-emojis-each (lambda (emoji data)
+                         ;; Add the emoji text to data, this makes the values
+                         ;; of the `emojify-emojis' standalone containing all
+                         ;; data about the emoji
+                         (ht-set! data "emoji" emoji)))
+
+          (ht-each (lambda (emoji data)
+                     ;; Add the emoji text to data, this makes the values
+                     ;; of the `emojify-emojis' standalone containing all
+                     ;; data about the emoji
+                     (ht-set! data "emoji" emoji))
+                   emojify--user-emojis))
       (message "[emojify] User emojis are not in correct format ignoring them."))))
 
 (defvar emojify-emoji-keymap
