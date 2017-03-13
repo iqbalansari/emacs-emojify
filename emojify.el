@@ -1633,6 +1633,35 @@ This respects the `emojify-emoji-styles' variable."
 
 (defvar emojify-help-buffer-name "*Emoji Help*")
 
+(defvar-local emojify-described-emoji nil)
+
+(defun emojify-description-copy-emoji ()
+  "Copy the emoji being displayed at current line in apropos results."
+  (interactive)
+  (save-excursion
+    (kill-new emojify-described-emoji)
+    (message "Copied emoji (%s) to kill ring!" emojify-described-emoji)))
+
+(defvar emojify-description-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map emojify-common-mode-map)
+    (define-key map "c" #'emojify-description-copy-emoji)
+    (define-key map "w" #'emojify-description-copy-emoji)
+    map)
+  "Keymap used in `emojify-description-mode'.")
+
+(define-derived-mode emojify-description-mode fundamental-mode "Describe Emoji"
+  "Mode used to display results of description for emojis.
+
+\\{emojify-description-mode-map}"
+  (emojify-mode +1)
+  ;; view mode being a minor mode eats up our bindings avoid it
+  (let (view-read-only)
+    (read-only-mode +1))
+  (goto-address-mode +1))
+
+(put 'emojify-description-mode 'mode-class 'special)
+
 (defun emojify--display-emoji-description-buffer (emoji)
   "Display description for EMOJI."
   (with-current-buffer (get-buffer-create emojify-help-buffer-name)
@@ -1685,9 +1714,8 @@ This respects the `emojify-emoji-styles' variable."
                   (concat "http://emojipedia.org/"
                           (downcase (emojify--string-join words "-"))))
                 "\n")))
-    (emojify-redisplay-emojis-in-region)
-    (view-mode +1)
-    (goto-address-mode +1))
+    (emojify-description-mode)
+    (setq emojify-described-emoji (ht-get emoji "emoji")))
   (display-buffer (get-buffer emojify-help-buffer-name))
   (get-buffer emojify-help-buffer-name))
 
