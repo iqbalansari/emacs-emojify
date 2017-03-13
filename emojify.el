@@ -1742,6 +1742,106 @@ This respects the `emojify-emoji-styles' variable."
 
 
 
+;; Listing emojis
+
+(defun emojify-list-copy-emoji ()
+  "Copy the emoji being displayed at current line in apropos results."
+  (interactive)
+  (save-excursion
+    (let ((emoji (get-text-property (point) 'tabulated-list-id)))
+      (if (not emoji)
+          (emojify-user-error "No emoji at point")
+        (kill-new emoji)
+        (message "Copied emoji (%s) to kill ring!" emoji)))))
+
+(defun emojify-list-describe-emoji ()
+  "Copy the emoji being displayed at current line in apropos results."
+  (interactive)
+  (save-excursion
+    (let ((emoji (get-text-property (point) 'tabulated-list-id)))
+      (if (not emoji)
+          (emojify-user-error "No emoji at point")
+        (emojify-describe-emoji emoji)))))
+
+(defvar emojify-list-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map emojify-common-mode-map)
+    (define-key map "c" #'emojify-list-copy-emoji)
+    (define-key map "w" #'emojify-list-copy-emoji)
+    (define-key map "d" #'emojify-list-describe-emoji)
+    (define-key map (kbd "RET") #'emojify-list-describe-emoji)
+    map)
+  "Keymap used in `emojify-apropos-mode'.")
+
+(defun emojify-list-printer (id cols)
+  "Printer used to print the emoji rows in tabulated list.
+
+See `tabulated-list-print-entry' to understand the arguments ID and COLS."
+  (let ((beg (point))
+        (padding (max tabulated-list-padding 0))
+        (inhibit-read-only t))
+    (when (> tabulated-list-padding 0)
+      (insert (make-string padding ?\s)))
+    ;; Inhibit display of first column as emoji
+    (tabulated-list-print-col 0
+                              (propertize (aref cols 0) 'emojify-inhibit t)
+                              (current-column))
+
+    ;; Is this a custom emoji
+    (tabulated-list-print-col 1
+                              (aref cols 1)
+                              (current-column))
+
+    ;; The type of this emoji
+    (tabulated-list-print-col 2
+                              (aref cols 2)
+                              (current-column))
+
+    ;; Force display of last column as emoji
+    (tabulated-list-print-col 3
+                              (propertize (aref cols 3) 'emojify-force-display t)
+                              (current-column))
+
+    (insert ?\n)
+    (add-text-properties beg
+                         (point)
+                         `(tabulated-list-id ,id tabulated-list-entry ,cols))))
+
+(defun emojify-list-entries ()
+  "Return entries to display in tabulated list."
+  (let (entries)
+    (emojify-emojis-each (lambda (emoji data)
+                           (push (list emoji (vector emoji
+                                                     (if (ht-get data "custom") "Yes" "No")
+                                                     (ht-get data "style")
+                                                     emoji))
+                                 entries)))
+    entries))
+
+(define-derived-mode emojify-list-mode tabulated-list-mode "Emoji-List"
+  "Major mode for listing emojis.
+\\{emojify-list-mode-map}"
+  (setq line-spacing 7
+        tabulated-list-format [("Text" 20 t)
+                               ("Custom" 10 t)
+                               ("Style" 10 t)
+                               ("Display" 10 nil)]
+        tabulated-list-sort-key (cons "Text" nil)
+        tabulated-list-padding 2
+        tabulated-list-entries #'emojify-list-entries
+        tabulated-list-printer #'emojify-list-printer)
+  (tabulated-list-init-header))
+
+(defun emojify-list-emojis ()
+  "List emojis in a tabulated view."
+  (interactive)
+  (let ((buffer (get-buffer-create "*Emojis*")))
+    (pop-to-buffer buffer)
+    (emojify-list-mode)
+    (tabulated-list-print)))
+
+
+
 ;; Integration with some miscellaneous functionality
 
 (defadvice mouse--drag-set-mark-and-point (after emojify-update-emoji-background (&rest ignored))
