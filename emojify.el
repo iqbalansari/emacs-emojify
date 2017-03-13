@@ -1036,7 +1036,8 @@ should not be a problem 🤞."
                    (match-end (match-end 0))
                    (match (match-string-no-properties 0))
                    (buffer (current-buffer))
-                   (emoji (emojify-get-emoji match)))
+                   (emoji (emojify-get-emoji match))
+                   (force-display (get-text-property match-beginning 'emojify-force-display)))
               (when (and emoji
                          (not (or (get-text-property match-beginning 'emojify-inhibit)
                                   (get-text-property match-end 'emojify-inhibit)))
@@ -1059,15 +1060,18 @@ should not be a problem 🤞."
                          ;; to be annoying consider d: in head:, except while executing apropos
                          ;; emoji
                          (or (not (string= (ht-get emoji "style") "ascii"))
+                             force-display
                              (emojify-valid-ascii-emoji-context-p match-beginning match-end))
 
-                         (not (emojify-inside-org-src-p match-beginning))
+                         (or force-display
+                             (not (emojify-inside-org-src-p match-beginning)))
 
                          ;; Inhibit possibly inside a list
                          ;; 41 is ?) but packages get confused by the extra closing paren :)
                          ;; TODO Report bugs to such packages
-                         (not (and (eq (char-syntax (char-before match-end)) 41)
-                                   (emojify-looking-at-end-of-list-maybe match-end)))
+                         (or force-display
+                             (not (and (eq (char-syntax (char-before match-end)) 41)
+                                       (emojify-looking-at-end-of-list-maybe match-end))))
 
                          (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
                 (emojify--display-emoji emoji match buffer match-beginning match-end))))
@@ -1673,7 +1677,7 @@ This respects the `emojify-emoji-styles' variable."
       (save-excursion
         (insert (propertize (ht-get emoji "emoji") 'emojify-inhibit t)
                 " - Displayed as "
-                (ht-get emoji "emoji")
+                (propertize (ht-get emoji "emoji") 'emojify-force-display t)
                 "\n\n")
         (insert (propertize "Name" 'face 'font-lock-keyword-face)
                 ": "
