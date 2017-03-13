@@ -1626,6 +1626,14 @@ This respects the `emojify-emoji-styles' variable."
   (display-buffer (get-buffer emojify-help-buffer-name))
   (get-buffer emojify-help-buffer-name))
 
+(defun emojify-describe-emoji (emoji-text)
+  "Display description for EMOJI-TEXT."
+  (interactive (list (emojify-completing-read "Describe Emoji: ")))
+  (if (ht-get emojify-emojis emoji-text)
+      (emojify--display-emoji-description-buffer emoji-text
+                                                 (ht-get emojify-emojis emoji-text))
+    (emojify-user-error "No emoji found for '%s'" emoji-text)))
+
 (defun emojify-describe-emoji-at-point ()
   "Display help for EMOJI displayed at point."
   (interactive)
