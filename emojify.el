@@ -1439,12 +1439,22 @@ Re-enable it when buffer changes back to multibyte encoding."
       (kill-new (get-text-property (point) 'emojify-text))
       (message "Copied emoji to kill ring!"))))
 
+(defun emojify-apropos-describe-emoji ()
+  "Copy the emoji being displayed at current line in apropos results."
+  (interactive)
+  (save-excursion
+    (goto-char (line-beginning-position))
+    (if (not (get-text-property (point) 'emojified))
+        (emojify-user-error "No emoji at point")
+      (emojify-describe-emoji (get-text-property (point) 'emojify-text)))))
+
 (defvar emojify-apropos-mode-map
   (let ((map (make-sparse-keymap)))
-
     (define-key map "q" #'emojify-apropos-quit)
     (define-key map "c" #'emojify-apropos-copy-emoji)
     (define-key map "w" #'emojify-apropos-copy-emoji)
+    (define-key map "d" #'emojify-apropos-describe-emoji)
+    (define-key map (kbd "RET") #'emojify-apropos-describe-emoji)
     (define-key map "n" #'next-line)
     (define-key map "p" #'previous-line)
     (define-key map "r" #'isearch-backward)
