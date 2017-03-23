@@ -1782,14 +1782,14 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
         (inhibit-read-only t))
     (when (> tabulated-list-padding 0)
       (insert (make-string padding ?\s)))
-    ;; Inhibit display of first column as emoji
+
     (tabulated-list-print-col 0
                               (propertize (aref cols 0) 'emojify-inhibit t)
                               (current-column))
 
-    ;; Is this a custom emoji
+    ;; Inhibit display of second column ("Text") as emoji
     (tabulated-list-print-col 1
-                              (aref cols 1)
+                              (propertize (aref cols 1) 'emojify-inhibit t)
                               (current-column))
 
     ;; The type of this emoji
@@ -1797,9 +1797,14 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
                               (aref cols 2)
                               (current-column))
 
-    ;; Force display of last column as emoji
+    ;; Is this a custom emoji
     (tabulated-list-print-col 3
-                              (propertize (aref cols 3) 'emojify-force-display t)
+                              (aref cols 3)
+                              (current-column))
+
+    ;; Force display of last column ("Display") as emoji
+    (tabulated-list-print-col 4
+                              (propertize (aref cols 4) 'emojify-force-display t)
                               (current-column))
 
     (insert ?\n)
@@ -1812,8 +1817,10 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
   (let (entries)
     (emojify-emojis-each (lambda (emoji data)
                            (push (list emoji (vector emoji
-                                                     (if (ht-get data "custom") "Yes" "No")
+                           (push (list emoji (vector (ht-get data "name")
+                                                     emoji
                                                      (ht-get data "style")
+                                                     (if (ht-get data "custom") "Yes" "No")
                                                      emoji))
                                  entries)))
     entries))
@@ -1822,11 +1829,12 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
   "Major mode for listing emojis.
 \\{emojify-list-mode-map}"
   (setq line-spacing 7
-        tabulated-list-format [("Text" 20 t)
-                               ("Custom" 10 t)
+        tabulated-list-format [("Name" 30 t)
+                               ("Text" 20 t)
                                ("Style" 10 t)
-                               ("Display" 10 nil)]
-        tabulated-list-sort-key (cons "Text" nil)
+                               ("Custom" 10 t)
+                               ("Display" 20 nil)]
+        tabulated-list-sort-key (cons "Name" nil)
         tabulated-list-padding 2
         tabulated-list-entries #'emojify-list-entries
         tabulated-list-printer #'emojify-list-printer)
