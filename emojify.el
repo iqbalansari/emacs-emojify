@@ -1810,20 +1810,26 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
     (insert ?\n)
     (add-text-properties beg
                          (point)
-                         `(tabulated-list-id ,id tabulated-list-entry ,cols))))
+                         `(tabulated-list-id ,id tabulated-list-entry ,cols))
+
+    (message "Listing emojis (%d of %d) ..." (1- (line-number-at-pos)) (aref cols 5))))
 
 (defun emojify-list-entries ()
   "Return entries to display in tabulated list."
-  (let (entries)
+  (let (entries count)
     (emojify-emojis-each (lambda (emoji data)
-                           (push (list emoji (vector emoji
                            (push (list emoji (vector (ht-get data "name")
                                                      emoji
                                                      (ht-get data "style")
                                                      (if (ht-get data "custom") "Yes" "No")
                                                      emoji))
                                  entries)))
-    entries))
+
+    (setq count (length entries))
+
+    (mapcar (lambda (entry)
+              (list (car entry) (vconcat (cadr entry) (vector count))))
+            entries)))
 
 (define-derived-mode emojify-list-mode tabulated-list-mode "Emoji-List"
   "Major mode for listing emojis.
