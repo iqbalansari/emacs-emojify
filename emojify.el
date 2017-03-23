@@ -1763,15 +1763,28 @@ This respects the `emojify-emoji-styles' variable."
           (emojify-user-error "No emoji at point")
         (emojify-describe-emoji emoji)))))
 
+(defvar-local emojify-list--emojis-displayed nil
+  "Record that emojis have been successfully displayed in the current buffer.
+
+`emojify-list-emojis' checks to this decide if it should print the entries
+again.")
+
+(defun emojify-list-force-refresh ()
+  "Force emoji list to be refreshed."
+  (interactive)
+  (setq emojify-list--emojis-displayed nil)
+  (emojify-list-emojis))
+
 (defvar emojify-list-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map emojify-common-mode-map)
     (define-key map "c" #'emojify-list-copy-emoji)
     (define-key map "w" #'emojify-list-copy-emoji)
     (define-key map "d" #'emojify-list-describe-emoji)
+    (define-key map "g" #'emojify-list-force-refresh)
     (define-key map (kbd "RET") #'emojify-list-describe-emoji)
     map)
-  "Keymap used in `emojify-apropos-mode'.")
+  "Keymap used in `emojify-list-mode'.")
 
 (defun emojify-list-printer (id cols)
   "Printer used to print the emoji rows in tabulated list.
@@ -1850,9 +1863,12 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
   "List emojis in a tabulated view."
   (interactive)
   (let ((buffer (get-buffer-create "*Emojis*")))
-    (pop-to-buffer buffer)
-    (emojify-list-mode)
-    (tabulated-list-print)))
+    (with-current-buffer buffer
+      (unless emojify-list--emojis-displayed
+        (emojify-list-mode)
+        (tabulated-list-print)
+        (setq emojify-list--emojis-displayed t))
+      (pop-to-buffer buffer))))
 
 
 
