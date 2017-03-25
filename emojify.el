@@ -1709,18 +1709,29 @@ This respects the `emojify-emoji-styles' variable."
                 ": "
                 (if (ht-get emoji "custom") "Yes" "No")
                 "\n")
-        (insert (propertize "Emojipedia" 'face 'font-lock-keyword-face)
-                ": "
-                (let* ((tone-stripped (replace-regexp-in-string "- *[Tt]one *\\([0-9]+\\)$"
-                                                                "- type \\1"
-                                                                (ht-get emoji "name")))
-                       (non-alphanumeric-stripped (replace-regexp-in-string "[^0-9a-zA-Z]"
-                                                                            " "
-                                                                            tone-stripped))
-                       (words (split-string non-alphanumeric-stripped " " t " ")))
-                  (concat "http://emojipedia.org/"
-                          (downcase (emojify--string-join words "-"))))
-                "\n")))
+        (unless (ht-get emoji "custom")
+          (when (or (ht-get emoji "unicode")
+                    (string= (ht-get emoji "style") "unicode"))
+            (insert (propertize "Unicode Consortium" 'face 'font-lock-keyword-face)
+                    ": "
+                    (concat "http://www.unicode.org/emoji/charts-beta/full-emoji-list.html#"
+                            (string-join (mapcar (apply-partially #'format "%x")
+                                                 (string-to-list (or (ht-get emoji "unicode")
+                                                                     (ht-get emoji "emoji"))))
+                                         "_"))
+                    "\n"))
+          (insert (propertize "Emojipedia" 'face 'font-lock-keyword-face)
+                  ": "
+                  (let* ((tone-stripped (replace-regexp-in-string "- *[Tt]one *\\([0-9]+\\)$"
+                                                                  "- type \\1"
+                                                                  (ht-get emoji "name")))
+                         (non-alphanumeric-stripped (replace-regexp-in-string "[^0-9a-zA-Z]"
+                                                                              " "
+                                                                              tone-stripped))
+                         (words (split-string non-alphanumeric-stripped " " t " ")))
+                    (concat "http://emojipedia.org/"
+                            (downcase (emojify--string-join words "-"))))
+                  "\n"))))
     (emojify-description-mode)
     (setq emojify-described-emoji (ht-get emoji "emoji")))
   (display-buffer (get-buffer emojify-help-buffer-name))
