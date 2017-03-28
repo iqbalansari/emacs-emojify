@@ -1840,6 +1840,8 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
 
 (defun emojify-list-entries ()
   "Return entries to display in tabulated list."
+  (emojify-create-emojify-emojis)
+
   (let (entries count)
     (emojify-emojis-each (lambda (emoji data)
                            (push (list emoji (vector (ht-get data "name")
