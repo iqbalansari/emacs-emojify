@@ -1205,6 +1205,49 @@ lines ensures that all the possibly affected emojis are redisplayed."
 
 
 
+;; Emojify standalone strings
+
+(defun emojify-string (string &optional styles target-buffer)
+  "Create a propertized version of STRING, to display emojis belonging STYLES.
+
+TARGET-BUFFER is the buffer where STRING would be displayed, properties like
+font-height are inherited from that buffer."
+  (emojify-create-emojify-emojis)
+  (let ((target-buffer (or target-buffer (current-buffer))))
+    (with-temp-buffer
+      (insert string)
+      (let ((beg (point-min))
+            (end (point-max))
+            (styles (or styles '(unicode))))
+        (seq-doseq (regexp (apply #'append
+                                  (when emojify--user-emojis-regexp
+                                    (list emojify--user-emojis-regexp))
+                                  (list emojify-regexps)))
+          (goto-char beg)
+          (while (and (> end (point))
+                      (search-forward-regexp regexp end t))
+            (let* ((match-beginning (match-beginning 0))
+                   (match-end (match-end 0))
+                   (match (match-string-no-properties 0))
+                   (buffer (current-buffer))
+                   (emoji (emojify-get-emoji match)))
+              (when (and emoji
+                         (not (or (get-text-property match-beginning 'emojify-inhibit)
+                                  (get-text-property match-end 'emojify-inhibit)))
+                         (memql (intern (ht-get emoji "style")) styles)
+                         ;; Skip displaying this emoji if the its bounds are
+                         ;; already part of an existing emoji. Since the emojis
+                         ;; are searched in descending order of length (see
+                         ;; construction of emojify-regexp in `emojify-set-emoji-data'),
+                         ;; this means larger emojis get precedence over smaller
+                         ;; ones
+                         (not (or (get-text-property match-beginning 'emojified)
+                                  (get-text-property (1- match-end) 'emojified))))
+                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end target-buffer))))))
+      (buffer-string))))
+
+
+
 ;; Electric delete functionality
 
 (defun emojify--find-key-binding-ignoring-emojify-keymap (key)
