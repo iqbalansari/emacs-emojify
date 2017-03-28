@@ -1084,9 +1084,9 @@ should not be a problem 🤞."
                                        (emojify-looking-at-end-of-list-maybe match-end))))
 
                          (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
-                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end))))
-          ;; Stop a bit to let `with-timeout' kick in
-          (sit-for 0 t)))
+                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end)))
+            ;; Stop a bit to let `with-timeout' kick in
+            (sit-for 0 t))))
 
       ;; Loop to emojify composed text
       (when (and emojify-composed-text-p
