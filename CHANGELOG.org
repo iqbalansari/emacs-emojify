@@ -11,6 +11,12 @@
     - Fix backspace to delete complete emojis in ~org-mode~
 *** Added
     - New command ~emojify-describe-emoji-at-point~ can be used to view help about emoji displayed at point.
+    - New command ~emojify-describe-emoji~ can be used to view help about a emoji.
+    - New command ~emojify-list-entries~ for listing all the emojis
+    - New function ~emojify-completing-read~ to read an emoji from the user
+    - New function ~emojify-string~ can be used to add relevant text-properties to strings so that emojis in them are displayed
+    - Support for new text property ~emojify-inhibit~ it can be set by third party packages to inhibit the display of certain parts of buffer as emoji
+    - Support for new text property ~emojify-force-display~ it can be set by third party packages to force the display of certain parts of buffer as emoji
 
 ** v0.4 - 2016-09-28
    See [[https://github.com/iqbalansari/emacs-emojify/compare/v0.3...v0.4][Changes]]
