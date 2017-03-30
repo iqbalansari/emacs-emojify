@@ -149,7 +149,7 @@ functions work."
       (jit-lock-debug-mode -1))))
 
 (defmacro emojify-execute-ignoring-errors-unless-debug (&rest forms)
-  "Execute FORMS ignoring errors unless `emojify-debug-mode' is non-nil."
+  "Execute FORMS ignoring errors unless variable `emojify-debug-mode' is non-nil."
   (declare (debug t) (indent 0))
   `(if emojify-debug-mode
        (progn
@@ -327,9 +327,9 @@ Possible values are
   '(emojify-minibuffer-p emojify-helm-buffer-p)
   "Functions used inhibit emojify-mode in a buffer.
 
-These functions are called with one argument, the buffer where emojify-mode
-is about to be enabled, emojify is not enabled if any of the functions return
-a non-nil value."
+These functions are called with one argument, the buffer where command
+‘emojify-mode’ is about to be enabled, emojify is not enabled if any of the
+functions return a non-nil value."
   :type 'hook
   :group 'emojify)
 
@@ -1653,7 +1653,22 @@ This ensures `emojify' is enabled in helm buffer displaying completion even when
 
 PROMPT is a string to prompt with, PREDICATE, REQUIRE-MATCH, INITIAL-INPUT,
 HIST, DEF, INHERIT-INPUT-METHOD correspond to the arguments for
-`completing-read' and are passed to completing-read without any interpretation."
+`completing-read' and are passed to ‘completing-read’ without any
+interpretation.
+
+For each possible emoji PREDICATE is called with emoji text and data about the
+emoji as a hash-table, the predate should return nil if it the emoji should
+not be displayed for selection.
+
+For example the following can be used to display only github style emojis for
+selection
+
+\(emojify-completing-read \"Select a Github style emoji: \"
+                         (lambda (emoji data)
+                           (equal (gethash \"style\" data) \"github\")))
+
+This function sets up `ido', `icicles', `helm', `ivy' and vanilla Emacs
+completion UI to display properly emojis."
   (emojify-create-emojify-emojis)
   (let* ((emojify-minibuffer-reading-emojis-p t)
          (line-spacing 7)
