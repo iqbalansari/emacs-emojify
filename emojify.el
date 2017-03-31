@@ -865,7 +865,7 @@ and end of region respectively."
                (<= (cdr emoji-end-pos) (cdr rect-end)))))))
 
 (defun emojify--inside-non-rectangle-selection-p (beg end)
-  "Check if region marked by BEG and END is inside a regular selection.
+  "Check if region marked by BEG and END is inside a non-regular selection.
 
 In addition to the explicit parameters BEG and END, calling functions should
 also dynamically bind `emojify-region-beg' and `emojify-region-end' to beginning
@@ -873,9 +873,9 @@ and end of region respectively."
   (when (and emojify-region-beg
              (region-active-p)
              (not (bound-and-true-p rectangle-mark-mode)))
-    (or (and (<= emojify-region-beg beg)
+    (or (and (<  emojify-region-beg beg)
              (<= beg emojify-region-end))
-        (and (<= emojify-region-beg end)
+        (and (<  emojify-region-beg end)
              (<= end emojify-region-end)))))
 
 (defun emojify--region-background-face-maybe (beg end)
