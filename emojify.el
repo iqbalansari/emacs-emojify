@@ -914,26 +914,17 @@ directly defined on the face."
                                                  (emojify-overlays-at beg t)))))
     (car (last overlay-backgrounds))))
 
-(defun emojify--face-background-at-point (beg)
-  "Get the background color for emoji at BEG."
-  (save-excursion
-    (goto-char beg)
-    (let ((point-face (face-at-point)))
-      (when point-face
-        (face-background point-face)))))
-
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END.
 
 Ideally `emojify--overlay-background' should have been enough to handle
 selection, but for some reason it does not work well."
-  (or (emojify--region-background-face-maybe beg end)
-      ;; TODO: `emojify--face-background-at-point' might already be
-      ;; handling overlay faces as such `emojify--overlay-background'
-      ;; might be redundant, need to verify this though
-      (emojify--overlay-background beg)
-      (emojify--face-background-at-point beg)
-      (face-background 'default)))
+  ;; We do a separate check for region since `background-color-at-point'
+  ;; does not always detect background color inside regions properly
+  (or (emojify--region-background-face-maybe beg end) 
+      (save-excursion
+        (goto-char beg)
+        (background-color-at-point))))
 
 (defun emojify--get-image-display (data buffer beg end &optional target-buffer)
   "Get the display text property to display the emoji as an image.
