@@ -14,8 +14,10 @@
      - [[#searching-emojis][Searching emojis]]
      - [[#inserting-emojis][Inserting emojis]]
      - [[#describing-emojis][Describing emojis]]
+     - [[#listing-all-emojis][Listing all emojis]]
    - [[#customizations][Customizations]]
      - [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
+     - [[#displaying-emojis-in-company-mode-tooltips][Displaying emojis in company mode tooltips]]
      - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
      - [[#configuring-how-emojis-are-displayed][Configuring how emojis are displayed]]
      - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
@@ -24,7 +26,6 @@
      - [[#customizing-the-behaviour-during-isearch-mode][Customizing the behaviour during isearch-mode]]
      - [[#customizing-the-behaviour-when-mouse-hovers-over-an-emoji][Customizing the behaviour when mouse hovers over an emoji]]
      - [[#custom-emojis][Custom emojis]]
-   - [[#integration-with-prettify-symbol-mode][Integration with prettify-symbol-mode]]
    - [[#known-issues][Known issues]]
    - [[#contributing][Contributing]]
    - [[#thanks][Thanks]]
@@ -87,17 +88,14 @@
     Emojify integrates with packages like ~prettify-symbol-mode~ and
     ~org-bullets-mode~ which display text differently, if the alternate text
     displayed by these packages match an emoji, ~emojify~ will display them too.
-    See [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]] for more details.
+    See [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]] for more details. Emojify can also
+    display emojis in ~company-mode~ tooltips, see [[#displaying-emojis-in-company-mode-tooltips][Displaying emojis in company mode tooltips]]
+    for more details.
 
 *** Searching emojis
     The command ~emojify-apropos-emoji~ can be used to display emojis that match
     given regexp/apropos pattern. The results are displayed in a specialized
     buffer, where ~w~ or ~c~ can be used to copy emojis to the kill ring.
-
-    *NOTE* - You might notice that some of the emojis prompted in the above
-    command are not displayed by ~emojify~, this might happen if you have newer
-    emoji data but old set of images. Download the latest emoji image using
-    ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
 
 *** Inserting emojis
     The command ~emojify-insert-emoji~ can be used to insert emojis
@@ -105,23 +103,32 @@
     the experience would be better with something like [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/abo-abo/swiper][Ivy]], [[https://www.emacswiki.org/emacs/Icicles][Icicles]] or Ido
     depending on you preference.
 
-    *NOTE* - You might notice that some of the emojis prompted in the above
-    command are not displayed by ~emojify~, this might happen if you have newer
-    emoji data but old set of images. Download the latest emoji image using
-    ~emojify-download-emoji~ and set ~emojify-emoji-set~ to the downloaded set.
-
 *** Describing emojis
     The command ~emojify-describe-emoji-at-point~ can be used to view
-    explanation about the command displayed at point.
+    explanation about the command displayed at point. Additionally the command
+    ~emojify-describe-emoji~ can be used to display description for an arbitrary
+    emoji.
+
+*** Listing all emojis
+    The command ~emojify-list-emojis~ can be used to view all the available emojis
+    in a list form.
 
 ** Customizations
 *** Displaying composed text as emojis
-    Emacs provides a way to modify how certain text is displayed using the
-    ~composition~ text property. ~prettify-symbol-mode~ and ~org-bullets-mode~
-    are some popular packages that use this feature. If the alternate display
-    matches an emoji then ~emojify~ will display those as emojis too. This is
-    default behaviour. You can disable this behaviour by setting
-    ~emojify-composed-text-p~ to ~nil~.
+    Emacs provides a way to modify how some parts of buffer are displayed using
+    the ~composition~ text property. ~prettify-symbol-mode~ and
+    ~org-bullets-mode~ are some popular packages that use this feature to
+    display certain text in the buffer differently.
+
+    If the alternate display matches an emoji then ~emojify~ will display those
+    as emojis too. This is default behaviour. You can disable this behaviour by
+    setting ~emojify-composed-text-p~ to ~nil~.
+
+*** Displaying emojis in company mode tooltips
+    Emojify can also display emojis that are part of company-mode's completion
+    tooltip (see [[https://github.com/dunn/company-emoji][company-emoji]] for an example of such tooltips). However this
+    feature is turned off by default. To turn it on set
+    ~emojify-company-tooltips-p~ to ~t~.
 
 *** Configuring the types of emojis displayed
     Emojify by default displays plain text emojis (~:)~), unicode emojis (~😄~)
@@ -267,15 +274,14 @@
          (emojify-set-emoji-data))
      #+END_SRC
 
-** Integration with prettify-symbol-mode
-   NOTE: The old method of adding ~prettify-symbol~ to ~emojify-emoji-styles~
-   has been replaced with a more general method that works with packages other
-   than ~prettify-symbol-mode~. See [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
-
 ** Known issues
    - Emojis are not properly updated after customizing ~emojify-display-style~ or
      ~emojify-program-contexts~. For time being you will be fine as long as you
      set these variables before ~emojify~ has loaded.
+   - Some of the emojis prompted in the commands like ~emojify-insert-emoji~ might
+     not be displayed by ~emojify~, this might happen if you have newer emoji
+     data but old set of images. Download the latest emoji image using ~emojify-download-emoji~
+     and set ~emojify-emoji-set~ to the downloaded set.
 
 ** Contributing
    Code as well as documentation contributions are welcome.
