@@ -442,6 +442,11 @@ buffer where emojis are going to be displayed selected."
   :type 'boolean
   :group 'emojify)
 
+(defcustom emojify-company-tooltips-p nil
+  "Should company mode tooltips be emojified."
+  :type 'boolean
+  :group 'emojify)
+
 (defun emojify-in-org-tags-p (match _beg _end)
   "Determine whether the point is on `org-mode' tag.
 
@@ -1941,6 +1946,37 @@ See `tabulated-list-print-entry' to understand the arguments ID and COLS."
         (tabulated-list-print)
         (setq emojify-list--emojis-displayed t))
       (pop-to-buffer buffer))))
+
+
+
+;; Integration with company mode
+
+(defadvice company-pseudo-tooltip-unhide (after emojify-display-emojis-in-company-tooltip (&rest ignored))
+  "Advice to display emojis in company mode tooltips.
+
+This function does two things, first it adds text properties to the completion
+tooltip to make it display the emojis, secondly it makes company always render
+the completion tooltip using `after-string' overlay property rather than
+`display' text property.
+
+The second step is needed because emojify displays the emojis using `display'
+text property, similarly company-mode in some cases uses `display' overlay
+property to render its pop, this results into a `display' property inside
+`display' property, however Emacs ignores recursive text properties.  Using
+`after-string' works as well as `display' while allowing the emojis to be
+displayed."
+  (when (and emojify-mode emojify-company-tooltips-p company-pseudo-tooltip-overlay)
+    (let* ((ov company-pseudo-tooltip-overlay)
+           (disp (or (overlay-get ov 'display)
+                     (overlay-get ov 'after-string)))
+           (emojified-display (when disp
+                                (emojify-string disp))))
+      (when disp
+        (overlay-put ov 'after-string nil)
+        (overlay-put ov 'display (propertize " " 'invisible t))
+        (overlay-put ov 'after-string emojified-display)))))
+
+(ad-activate #'company-pseudo-tooltip-unhide)
 
 
 
