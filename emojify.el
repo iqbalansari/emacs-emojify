@@ -81,6 +81,18 @@
       (apply #'user-error format args)
     (apply #'error format args)))
 
+(defun emojify-face-height (face)
+  "Get font height for the FACE."
+  (let ((face-font (face-font face)))
+    (cond
+     ((and (display-multi-font-p)
+           ;; Avoid calling font-info if the frame's default font was
+           ;; not changed since the frame was created.  That's because
+           ;; font-info is expensive for some fonts, see bug #14838.
+           (not (string= (frame-parameter nil 'font) face-font)))
+      (aref (font-info face-font) 3))
+     (t (frame-char-height)))))
+
 (defun emojify-default-font-height ()
   "Return the height in pixels of the current buffer's default face font.
 
@@ -88,15 +100,7 @@
 This provides a compatibility version for previous versions."
   (if (fboundp 'default-font-height)
       (default-font-height)
-    (let ((default-font (face-font 'default)))
-      (cond
-       ((and (display-multi-font-p)
-             ;; Avoid calling font-info if the frame's default font was
-             ;; not changed since the frame was created.  That's because
-             ;; font-info is expensive for some fonts, see bug #14838.
-             (not (string= (frame-parameter nil 'font) default-font)))
-        (aref (font-info default-font) 3))
-       (t (frame-char-height))))))
+    (emojify-face-height 'default)))
 
 (defun emojify-overlays-at (pos &optional sorted)
   "Return a list of the overlays that contain the character at POS.
@@ -929,17 +933,20 @@ Ideally `emojify--overlay-background' should have been enough to handle
 selection, but for some reason it does not work well."
   ;; We do a separate check for region since `background-color-at-point'
   ;; does not always detect background color inside regions properly
-  (or (emojify--region-background-face-maybe beg end) 
+  (or (emojify--region-background-face-maybe beg end)
       (save-excursion
         (goto-char beg)
         (background-color-at-point))))
 
-(defun emojify--get-image-display (data buffer beg end &optional target-buffer)
+(defun emojify--get-image-display (data buffer beg end &optional target)
   "Get the display text property to display the emoji as an image.
 
 DATA holds the emoji data, _BUFFER is the target buffer where the emoji is to be
-displayed, BEG and END delimit the region where emoji will be displayed.  If The
-display is adjusted to match the TARGET-BUFFER, if provided, falling back BUFFER."
+displayed, BEG and END delimit the region where emoji will be displayed.  For
+explanation of TARGET see the documentation of `emojify--get-text-display-props'.
+
+TODO: Perhaps TARGET should be generalized to work with overlays, buffers and
+other different display constructs, for now this works."
   (when (ht-get data "image")
     (let* ((image-file (expand-file-name (ht-get data "image")
                                          (emojify-image-dir)))
@@ -954,10 +961,17 @@ display is adjusted to match the TARGET-BUFFER, if provided, falling back BUFFER
                       nil
                       :ascent 'center
                       :heuristic-mask t
-                      :background (emojify--get-image-background beg end)
+                      :background (cond ((equal target 'mode-line)
+                                         (face-background 'mode-line nil 'default))
+                                        (t (emojify--get-image-background beg end)))
                       ;; no-op if imagemagick is  not available
-                      :height (with-current-buffer (or target-buffer buffer)
-                                (emojify-default-font-height)))))))
+                      :height (cond ((bufferp target)
+                                     (with-current-buffer target
+                                       (emojify-default-font-height)))
+                                    ((equal target 'mode-line)
+                                     (emojify-face-height 'mode-line))
+                                    (t (with-current-buffer buffer
+                                         (emojify-default-font-height)))))))))
 
 (defun emojify--get-unicode-display (data &rest ignored)
   "Get the display text property to display the emoji as an unicode character.
@@ -975,13 +989,13 @@ DATA holds the emoji data, rest of the arguments IGNORED are ignored"
 DATA holds the emoji data, rest of the arguments IGNORED are ignored."
   (ht-get data "ascii"))
 
-(defun emojify--get-text-display-props (emoji buffer beg end &optional target-buffer)
+(defun emojify--get-text-display-props (emoji buffer beg end &optional target)
   "Get the display property for an EMOJI.
 
-TEXT is the text to be displayed as emoji, BUFFER is the target buffer where
-emoji will be displayed, BEG and END delimit the region containing the emoji.
-The display is adjusted to match the TARGET-BUFFER, if provided, falling back
-BUFFER."
+BUFFER is the buffer currently holding the EMOJI, BEG and END delimit the region
+containing the emoji.  TARGET can either be a buffer object or a special value
+mode-line.  It is used to indicate where EMOJI would be displayed, properties
+like font-height are inherited from TARGET if provided."
   (funcall (pcase emojify-display-style
              (`image #'emojify--get-image-display)
              (`unicode #'emojify--get-unicode-display)
@@ -990,16 +1004,16 @@ BUFFER."
            buffer
            beg
            end
-           target-buffer))
+           target))
 
-(defun emojify--propertize-text-for-emoji (emoji text buffer start end &optional target-buffer)
+(defun emojify--propertize-text-for-emoji (emoji text buffer start end &optional target)
   "Display EMOJI for TEXT in BUFFER between START and END.
 
-TARGET-BUFFER if provided should be buffer where the string would be displayed,
-when TARGET-BUFFER is provided it is assumed that text would not be part of
-buffer so text properties that are relevant only in buffers are not added."
-  (let ((display-prop (emojify--get-text-display-props emoji buffer start end target-buffer))
-        (buffer-props (unless target-buffer
+For explanation of TARGET see the documentation of
+`emojify--get-text-display-props'."
+  (let ((display-prop
+         (emojify--get-text-display-props emoji buffer start end target))
+        (buffer-props (unless target
                         (list 'emojify-buffer buffer
                               'emojify-beginning (copy-marker start)
                               'emojify-end (copy-marker end)
@@ -1206,13 +1220,14 @@ lines ensures that all the possibly affected emojis are redisplayed."
 
 ;; Emojify standalone strings
 
-(defun emojify-string (string &optional styles target-buffer)
+(defun emojify-string (string &optional styles target)
   "Create a propertized version of STRING, to display emojis belonging STYLES.
 
-TARGET-BUFFER is the buffer where STRING would be displayed, properties like
-font-height are inherited from that buffer."
+TARGET can either be a buffer object or a special value mode-line.  It is used
+to indicate where EMOJI would be displayed, properties like font-height are
+inherited from TARGET if provided.  See also `emojify--get-text-display-props'."
   (emojify-create-emojify-emojis)
-  (let ((target-buffer (or target-buffer (current-buffer))))
+  (let ((target (or target (current-buffer))))
     (with-temp-buffer
       (insert string)
       (let ((beg (point-min))
@@ -1242,7 +1257,7 @@ font-height are inherited from that buffer."
                          ;; ones
                          (not (or (get-text-property match-beginning 'emojified)
                                   (get-text-property (1- match-end) 'emojified))))
-                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end target-buffer))))))
+                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end target))))))
       (buffer-string))))
 
 
