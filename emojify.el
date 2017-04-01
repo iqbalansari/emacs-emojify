@@ -60,6 +60,9 @@
 (declare-function org-element-type "org-element")
 (declare-function org-element-at-point "org-element")
 
+;; Required for integration with company-mode
+(declare-function company-pseudo-tooltip-unhide "company")
+
 ;; Shouldn't require 'jit-lock be enough :/
 (defvar jit-lock-start)
 (defvar jit-lock-end)
