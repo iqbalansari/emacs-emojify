@@ -1983,7 +1983,7 @@ property to render its pop, this results into a `display' property inside
 `display' property, however Emacs ignores recursive text properties.  Using
 `after-string' works as well as `display' while allowing the emojis to be
 displayed."
-  (when (and emojify-mode emojify-company-tooltips-p company-pseudo-tooltip-overlay)
+  (when (and emojify-mode emojify-company-tooltips-p (overlayp (bound-and-true-p company-pseudo-tooltip-overlay)))
     (let* ((ov company-pseudo-tooltip-overlay)
            (disp (or (overlay-get ov 'display)
                      (overlay-get ov 'after-string)))
