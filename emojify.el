@@ -174,7 +174,10 @@ functions work."
 This saves point and mark, `match-data' and buffer modification state it also
 inhibits buffer change, point motion hooks."
   (declare (debug t) (indent 0))
-  `(let ((inhibit-point-motion-hooks t))
+  `(let ((inhibit-point-motion-hooks t)
+         (emojify-current-point (point))
+         (emojify-region-beg (when (region-active-p) (region-beginning)))
+         (emojify-region-end (when (region-active-p) (region-end))))
      (with-silent-modifications
        (save-match-data
          (save-excursion
@@ -855,6 +858,11 @@ fail."
 (defvar emojify-region-beg nil)
 (defvar emojify-region-end nil)
 
+;; This should be bound dynamically to the location of point before emojify's
+;; display loop, this since getting the point after point moves during
+;; processing is impossible
+(defvar emojify-current-point nil)
+
 (defun emojify--inside-rectangle-selection-p (beg end)
   "Check if region marked by BEG and END is inside a rectangular selection.
 
@@ -890,7 +898,7 @@ and end of region respectively."
         (and (<  emojify-region-beg end)
              (<= end emojify-region-end)))))
 
-(defun emojify--region-background-face-maybe (beg end)
+(defun emojify--region-background-maybe (beg end)
   "If the BEG and END falls inside an active region return the region face.
 
 This returns nil if the emojis between BEG and END do not fall in region."
@@ -901,39 +909,22 @@ This returns nil if the emojis between BEG and END do not fall in region."
                  (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
-(defun emojify--overlay-face-background (face)
-  "Get background for given overlay FACE.
-
-This similar to `face-background' except it handles different values possible
-for overlay face including anonymous faces and list of faces.  Unlike
-`face-background' it always looks up inherited faces if background is not
-directly defined on the face."
-  (if (memq (type-of face) '(string symbol))
-      (and (facep face)
-           (face-background face nil 'default))
-    (and (consp face)
-         ;; Handle anonymous faces
-         (or (or (plist-get face :background)
-                 (face-background (car (plist-get face :inherit)) nil 'default ))
-             ;; Possibly a list of faces
-             (emojify--overlay-face-background (car face))))))
-
-(defun emojify--overlay-background (beg)
-  "Get the overlay face for point BEG."
-  (let* ((overlay-backgrounds (delq nil (seq-map (lambda (overlay)
-                                                   (and (overlay-get overlay 'face)
-                                                        (emojify--overlay-face-background (overlay-get overlay 'face))))
-                                                 (emojify-overlays-at beg t)))))
-    (car (last overlay-backgrounds))))
+(defun emojify--cursor-background-maybe (beg end)
+  "If the BEG and END fall inside a cursor return the background color for cursor."
+  (when (and emojify-current-point
+             (or (and (equal cursor-type t)
+		      (equal (frame-parameter nil 'cursor-type) 'box))
+		 (equal cursor-type 'box))
+             (and (<= beg emojify-current-point)
+                  (< emojify-current-point end)))
+    (face-background 'cursor)))
 
 (defun emojify--get-image-background (beg end)
-  "Get the color to be used as background for emoji between BEG and END.
-
-Ideally `emojify--overlay-background' should have been enough to handle
-selection, but for some reason it does not work well."
+  "Get the color to be used as background for emoji between BEG and END."
   ;; We do a separate check for region since `background-color-at-point'
   ;; does not always detect background color inside regions properly
-  (or (emojify--region-background-face-maybe beg end)
+  (or (emojify--cursor-background-maybe beg end)
+      (emojify--region-background-maybe beg end)
       (save-excursion
         (goto-char beg)
         (background-color-at-point))))
@@ -1311,13 +1302,11 @@ which is not what we want when falling back in `emojify-delete-emoji'"
   "Update the background color for emojis between BEG and END."
   (when (equal emojify-display-style 'image)
     (emojify-with-saved-buffer-state
-      (let ((emojify-region-beg (when (region-active-p) (region-beginning)))
-            (emojify-region-end (when (region-active-p) (region-end))))
-        (emojify-do-for-emojis-in-region beg end
-          (plist-put (cdr (get-text-property emoji-start 'display))
-                     :background
-                     (emojify--get-image-background emoji-start
-                                                    emoji-end)))))))
+      (emojify-do-for-emojis-in-region beg end
+        (plist-put (cdr (get-text-property emoji-start 'display))
+                   :background
+                   (emojify--get-image-background emoji-start
+                                                  emoji-end))))))
 
 (defun emojify--update-emojis-background-in-region-starting-at (point)
   "Update background color for emojis in buffer starting at POINT.
