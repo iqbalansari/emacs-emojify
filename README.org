@@ -92,6 +92,11 @@
     display emojis in ~company-mode~ tooltips, see [[#displaying-emojis-in-company-mode-tooltips][Displaying emojis in company mode tooltips]]
     for more details.
 
+    *[EXPERIMENTAL]* Emojify can be used for displaying emojis in the mode-line,
+    to enable/disable it for individual buffers use the command
+    ~emojify-mode-line-mode~, to enable/disable it globally use the command
+    ~global-emojify-mode-line-mode~.
+
 *** Searching emojis
     The command ~emojify-apropos-emoji~ can be used to display emojis that match
     given regexp/apropos pattern. The results are displayed in a specialized
