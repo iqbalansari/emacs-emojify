@@ -169,6 +169,19 @@ functions work."
 
 ;; Utility functions
 
+;; These should be bound dynamically by functions calling
+;; `emojify--inside-rectangle-selection-p' and
+;; `emojify--inside-non-rectangle-selection-p' to region-beginning and
+;; region-end respectively. This is needed mark the original region which is
+;; impossible to get after point moves during processing.
+(defvar emojify-region-beg nil)
+(defvar emojify-region-end nil)
+
+;; This should be bound dynamically to the location of point before emojify's
+;; display loop, this since getting the point after point moves during
+;; processing is impossible
+(defvar emojify-current-point nil)
+
 (defmacro emojify-with-saved-buffer-state (&rest forms)
   "Execute FORMS saving current buffer state.
 
@@ -851,19 +864,6 @@ fail."
                                                                                       nil
                                                                                       t))))))
 
-;; These should be bound dynamically by functions calling
-;; `emojify--inside-rectangle-selection-p' and
-;; `emojify--inside-non-rectangle-selection-p' to region-beginning and
-;; region-end respectively. This is needed mark the original region which is
-;; impossible to get after point moves during processing.
-(defvar emojify-region-beg nil)
-(defvar emojify-region-end nil)
-
-;; This should be bound dynamically to the location of point before emojify's
-;; display loop, this since getting the point after point moves during
-;; processing is impossible
-(defvar emojify-current-point nil)
-
 (defun emojify--inside-rectangle-selection-p (beg end)
   "Check if region marked by BEG and END is inside a rectangular selection.
 
@@ -1495,7 +1495,7 @@ run the command `emojify-download-emoji'")))
   :init-value nil)
 
 (defadvice set-buffer-multibyte (after emojify-disable-for-unibyte-buffers (&rest ignored))
-  "Disable emojify when buffer changes to a unibyte encoding.
+  "Disable emojify when unibyte encoding is enabled for a buffer.
 Re-enable it when buffer changes back to multibyte encoding."
   (ignore-errors
     (if enable-multibyte-characters
