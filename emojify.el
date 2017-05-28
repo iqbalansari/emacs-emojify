@@ -40,6 +40,7 @@
 (require 'ht)
 
 (require 'subr-x nil :no-error)
+(require 'cl-lib)
 (require 'json)
 (require 'regexp-opt)
 (require 'jit-lock)
@@ -1503,6 +1504,66 @@ Re-enable it when buffer changes back to multibyte encoding."
       (emojify-mode -1))))
 
 (ad-activate #'set-buffer-multibyte)
+
+
+
+;; Displaying emojis in mode-line
+
+(defun emojify--emojied-mode-line (format)
+  "Return an emojified version of mode-line FORMAT.
+
+The format is converted to the actual string to be displayed using
+`format-mode-line' and the unicode characters are replaced by images."
+  (if emojify-mode
+      ;; Remove "%e" from format since we keep it as first part of the
+      ;; emojified mode-line, see `emojify-emojify-mode-line'
+      (emojify-string (format-mode-line (delq "%e" format)) nil 'mode-line)
+    (format-mode-line format)))
+
+(defun emojify-mode-line-emojified-p ()
+  "Check if the mode-line is already emojified.
+
+If the `mode-line-format' is of following format
+
+\(\"%e\" (:eval (emojify-emojied-mode-line ... )))
+
+We can assume the mode-line is already emojified."
+  (and (consp mode-line-format)
+       (equal (ignore-errors (cl-caadr mode-line-format))
+              :eval)
+       (equal (ignore-errors (car (cl-cadadr mode-line-format)))
+              'emojify--emojied-mode-line)))
+
+(defun emojify-emojify-mode-line ()
+  "Emojify unicode characters in the mode-line.
+
+This updates `mode-line-format' to a modified version which emojifies the
+mode-line before it is displayed."
+  (unless (emojify-mode-line-emojified-p)
+    (setq mode-line-format `("%e" (:eval
+                                   (emojify--emojied-mode-line ',mode-line-format))))))
+
+(defun emojify-unemojify-mode-line ()
+  "Restore `mode-line-format' to unemojified version.
+
+This basically reverses the effect of `emojify-emojify-mode-line'."
+  (when (emojify-mode-line-emojified-p)
+    (setq mode-line-format (cl-cadadr (cl-cadadr mode-line-format)))))
+
+;;;###autoload
+(define-minor-mode emojify-mode-line-mode
+  "Emojify mode line"
+  :init-value nil
+  (if emojify-mode-line-mode
+      ;; Turn on
+      (emojify-emojify-mode-line)
+    ;; Turn off
+    (emojify-unemojify-mode-line)))
+
+;;;###autoload
+(define-globalized-minor-mode global-emojify-mode-line-mode
+  emojify-mode-line-mode emojify-mode-line-mode
+  :init-value nil)
 
 
 
