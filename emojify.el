@@ -2038,8 +2038,13 @@ displayed."
            (disp (or (overlay-get ov 'display)
                      (overlay-get ov 'after-string)))
            (emojified-display (when disp
-                                (emojify-string disp))))
-      (when disp
+                                (emojify-string disp)))
+           (emojified-p (when emojified-display
+                          (text-property-any 0 (1- (length emojified-display))
+                                             'emojified t
+                                             emojified-display))))
+      ;; Do not switch to after-string if menu is not emojified
+      (when (and disp emojified-p)
         (overlay-put ov 'after-string nil)
         (overlay-put ov 'display (propertize " " 'invisible t))
         (overlay-put ov 'after-string emojified-display)))))
