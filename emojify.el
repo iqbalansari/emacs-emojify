@@ -466,7 +466,7 @@ buffer where emojis are going to be displayed selected."
   :type 'boolean
   :group 'emojify)
 
-(defcustom emojify-company-tooltips-p nil
+(defcustom emojify-company-tooltips-p t
   "Should company mode tooltips be emojified."
   :type 'boolean
   :group 'emojify)
