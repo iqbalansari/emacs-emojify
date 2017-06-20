@@ -1067,7 +1067,7 @@ should not be a problem 🤞."
                          (not (or (get-text-property match-beginning 'emojified)
                                   (get-text-property (1- match-end) 'emojified)))
                          ;; Display unconditionally in non-prog mode
-                         (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode))
+                         (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
                              ;; In prog mode enable respecting `emojify-program-contexts'
                              (emojify-valid-program-context-p emoji match-beginning match-end))
 
