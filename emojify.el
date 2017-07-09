@@ -493,14 +493,14 @@ way to guarantee that we run after font-lock"
                 (and (search-forward-regexp "\\s-" (line-end-position) t)
                      (search-forward-regexp "[^\s-]" (line-end-position) t)))))))
 
-(defun emojify-in-org-list-p (text &rest ignored)
+(defun emojify-in-org-list-p (text beg &rest ignored)
   "Determine whether the point is in `org-mode' list.
 
-TEXT is the text which is supposed to rendered a an emoji.  The arguments
-IGNORED are ignored."
+TEXT is the text which is supposed to rendered a an emoji.  BEG is the beginning
+of the emoji text in the buffer.  The arguments IGNORED are ignored."
   (and (eq major-mode 'org-mode)
        (equal text "8)")
-       (org-at-item-p)))
+       (equal (org-list-get-item-begin) beg)))
 
 (defun emojify-valid-program-context-p (emoji beg end)
   "Determine if EMOJI should be displayed for text between BEG and END.
