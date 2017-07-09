@@ -471,7 +471,7 @@ buffer where emojis are going to be displayed selected."
   :type 'boolean
   :group 'emojify)
 
-(defun emojify-in-org-tags-p (match _beg _end)
+(defun emojify-in-org-tags-p (match beg end)
   "Determine whether the point is on `org-mode' tag.
 
 MATCH, BEG and END are the text currently matched emoji and the start position
@@ -486,11 +486,13 @@ way to guarantee that we run after font-lock"
               (save-match-data
                 (search-forward-regexp "\\s-" (line-end-position) t))))))
 
-(defun emojify-in-org-list-p (&rest ignored)
+(defun emojify-in-org-list-p (text &rest ignored)
   "Determine whether the point is in `org-mode' list.
 
-The arguments IGNORED are, well ignored"
+TEXT is the text which is supposed to rendered a an emoji.  The arguments
+IGNORED are ignored."
   (and (eq major-mode 'org-mode)
+       (equal text "8)")
        (org-at-item-p)))
 
 (defun emojify-valid-program-context-p (emoji beg end)
