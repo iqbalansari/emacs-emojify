@@ -919,22 +919,11 @@ This returns nil if the emojis between BEG and END do not fall in region."
                  (emojify--inside-rectangle-selection-p beg end)))
     (face-background 'region)))
 
-(defun emojify--cursor-background-maybe (beg end)
-  "If the BEG and END fall inside a cursor return the background color for cursor."
-  (when (and emojify-current-point
-             (or (and (equal cursor-type t)
-		      (equal (frame-parameter nil 'cursor-type) 'box))
-		 (equal cursor-type 'box))
-             (and (<= beg emojify-current-point)
-                  (< emojify-current-point end)))
-    (face-background 'cursor)))
-
 (defun emojify--get-image-background (beg end)
   "Get the color to be used as background for emoji between BEG and END."
   ;; We do a separate check for region since `background-color-at-point'
   ;; does not always detect background color inside regions properly
-  (or (emojify--cursor-background-maybe beg end)
-      (emojify--region-background-maybe beg end)
+  (or (emojify--region-background-maybe beg end)
       (save-excursion
         (goto-char beg)
         (background-color-at-point))))
