@@ -388,6 +388,22 @@
   ;;   (emojify-tests-should-be-emojified (1- (point-max)))
   ;;   (emojify-tests-should-not-be-emojified (1+ (point-min))))
 
+  ;; 8) should not emojified if it is a list item
+  (emojify-tests-with-emojified-static-buffer "7) *)
+8) 8)
+9) :/"
+    (org-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-tests-should-not-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-be-emojified (1- (line-end-position 2))))
+
+  ;; Emojis that are part of org-mode tags should not be emojified
+  (emojify-tests-with-emojified-static-buffer "* Test :p\n* Test2 :p:"
+    (org-mode)
+    (emojify-redisplay-emojis-in-region)
+    (emojify-tests-should-be-emojified (1- (line-end-position)))
+    (emojify-tests-should-not-be-emojified (- (line-end-position 2) 3)))
+
   (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
     (org-agenda-mode)
     (emojify-redisplay-emojis-in-region)
