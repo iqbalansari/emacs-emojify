@@ -471,27 +471,21 @@ buffer where emojis are going to be displayed selected."
   :type 'boolean
   :group 'emojify)
 
-(defun emojify-in-org-tags-p (match _beg end)
+(defun emojify-in-org-tags-p (match beg _end)
   "Determine whether the point is on `org-mode' tag.
 
-MATCH, _BEG and END are the text currently matched emoji and the start position
+MATCH, BEG and _END are the text currently matched emoji and the start position
 and end position of emoji text respectively.
 
 Easiest would have to inspect face at point but unfortunately, there is no
 way to guarantee that we run after font-lock"
   (and (memq major-mode '(org-mode org-agenda-mode))
-       ;; The emoji either matches a full tag :book: or
-       ;; it is part of a larger tag (:p):
-       (or (string-match-p ":[^:]+:" match)
-           (and (string-match-p ":[^:]+" match)
-                (equal (char-after end) ?:)))
+       (string-match-p ":[^:]+[:]?" match)
        (org-at-heading-p)
-       (not (save-excursion
-              (save-match-data
-                ;; If are only zero or more spaces till the end of line from
-                ;; this position then this an org-mode tag
-                (and (search-forward-regexp "\\s-" (line-end-position) t)
-                     (search-forward-regexp "[^\s-]" (line-end-position) t)))))))
+       (save-excursion
+         (save-match-data
+           (goto-char beg)
+           (looking-at ":[^:]+:[\s-]*$")))))
 
 (defun emojify-in-org-list-p (text beg &rest ignored)
   "Determine whether the point is in `org-mode' list.
