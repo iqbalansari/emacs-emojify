@@ -54,7 +54,7 @@
 ;; We do not "require" these functions but if `org-mode' is active we use them
 
 ;; Required to determine point is in an org-list
-(declare-function org-at-item-p "org-list")
+(declare-function org-list-get-item-begin "org-list")
 (declare-function org-at-heading-p "org")
 
 ;; Required to determine point is in an org-src block
