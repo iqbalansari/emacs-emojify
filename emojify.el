@@ -480,7 +480,7 @@ and end position of emoji text respectively.
 Easiest would have to inspect face at point but unfortunately, there is no
 way to guarantee that we run after font-lock"
   (and (memq major-mode '(org-mode org-agenda-mode))
-       (string-match-p ":.*:" match)
+       (string-match-p ":[^:]+[:]?" match)
        (org-at-heading-p)
        (not (save-excursion
               (save-match-data
