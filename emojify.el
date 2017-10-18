@@ -1354,7 +1354,8 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 (defun emojify--emoji-download-emoji-set (data)
   "Download the emoji images according to DATA."
-  (let ((destination (make-temp-name temporary-file-directory)))
+  (let ((destination (expand-file-name (make-temp-name "emojify")
+                                       temporary-file-directory)))
     (url-copy-file (ht-get data "url")
                    destination)
     (let ((downloaded-sha (with-temp-buffer
