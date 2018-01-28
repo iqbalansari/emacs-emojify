@@ -1347,6 +1347,22 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
 
 ;; Lazy image downloading
 
+(defcustom emojify-download-emojis-p 'ask
+  "Should emojify download images, if the selected emoji sets are not available.
+
+Emojify can automatically download the images required to display the selected
+emoji set.  By default the user will be asked for confirmation before downloading
+the image.  Set this variable to t to download the images without asking for
+confirmation.  Setting it to nil will disable automatic download of the images.
+
+Please note that emojify will not download the images if Emacs is running in
+non-interactive mode and `emojify-download-images-p' is set to `ask'."
+  :type '(radio :tag "Automatically download required images"
+                (const :tag "Ask before downloading" ask)
+                (const :tag "Download without asking" t)
+                (const :tag "Disable automatic downloads" nil))
+  :group 'emojify)
+
 (defvar emojify--refused-image-download-p nil
   "Used to remember that user has refused to download images in this session.")
 (defvar emojify--download-in-progress-p nil
@@ -1386,6 +1402,20 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
           (t
            (emojify--extract-emojis (emojify--emoji-download-emoji-set (ht-get emojify-emoji-set-json emoji-set)))))))
 
+(defun emojify--confirm-emoji-download ()
+  "Confirm download of emojis.
+
+This takes care of respecting the `emojify-download-emojis-p' and making sure we
+do not prompt the user to download emojis multiple times."
+  (if (not (equal emojify-download-emojis-p 'ask))
+      emojify-download-emojis-p
+    ;; Skip the prompt if we are in noninteractive mode or the user has already
+    ;; denied us permission to download once
+    (unless (or noninteractive emojify--refused-image-download-p)
+      (let ((download-confirmed-p (yes-or-no-p "[emojify] Emoji images not available should I download them now?")))
+        (setq emojify--refused-image-download-p (not download-confirmed-p))
+        download-confirmed-p))))
+
 (defun emojify-download-emoji-maybe ()
   "Download emoji images if needed."
   (when (and (equal emojify-display-style 'image)
@@ -1395,11 +1425,8 @@ of the window.  DISPLAY-START corresponds to the new start of the window."
         ;; Do not prompt for download if download is in progress
         (unless emojify--download-in-progress-p
           (setq emojify--download-in-progress-p t)
-          (if (yes-or-no-p "[emojify] Emoji images not available should I download them now?")
+          (if (emojify--confirm-emoji-download)
               (emojify-download-emoji emojify-emoji-set)
-            ;; Remember that user has refused to download the emojis so that we
-            ;; do not ask again in present session
-            (setq emojify--refused-image-download-p t)
             (warn "[emojify] Not downloading emoji images for now. Emojis would
 not be displayed since images are not available. If you wish to download emojis,
 run the command `emojify-download-emoji'")))

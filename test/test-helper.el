@@ -16,7 +16,6 @@
                                                        emacs-minor-version)
                                                project-dir)))
       (normal-top-level-add-subdirs-to-load-path))
-
     (add-to-list 'load-path project-dir)))
 
 ;; Libs required for tests

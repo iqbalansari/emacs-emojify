@@ -619,6 +619,38 @@ return 4
 
       (should (= matches 1)))))
 
+(ert-deftest emojify-tests-download-confirmation ()
+  :tags '(download)
+  ;; Tests in interactive mode
+  (let ((noninteractive nil))
+    ;; Prompt user for confirmation if `emojify-download-emojis-p' is `ask'
+    (let ((emojify-download-emojis-p 'ask))
+      (with-mock
+        (mock (yes-or-no-p *) => t)
+        (should (emojify--confirm-emoji-download)))
+      (with-mock
+        (mock (yes-or-no-p *) => nil)
+        (should-not (emojify--confirm-emoji-download))))
+
+    ;; Do not prompt user for confirmation if `emojify-download-emojis-p' is `t'
+    (let ((emojify-download-emojis-p t))
+      (with-mock
+        (stub yes-or-no-p => (error "`emojify--confirm-emoji-download' should prompt user, if `emojify-download-emojis-p' is t"))
+        (should (emojify--confirm-emoji-download))))
+
+    ;; Do not prompt user for confirmation if `emojify-download-emojis-p' is `nil'
+    (let ((emojify-download-emojis-p nil))
+      (with-mock
+        (stub yes-or-no-p => (error "`emojify--confirm-emoji-download' should prompt user, if `emojify-download-emojis-p' is nil"))
+        (should-not (emojify--confirm-emoji-download)))))
+
+  ;; Do not prompt user for confirmation in noninteractive mode
+  (let ((emojify-download-emojis-p 'ask)
+        (noninteractive t))
+    (with-mock
+      (stub yes-or-no-p => (error "`emojify--confirm-emoji-download' should prompt user, in non-interactive mode"))
+      (should-not (emojify--confirm-emoji-download)))))
+
 (ert-deftest emojify-tests-no-byte-compilation-warnings ()
   :tags '(byte-compilation)
   (with-mock
