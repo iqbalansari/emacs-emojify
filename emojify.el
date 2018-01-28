@@ -1356,7 +1356,7 @@ the image.  Set this variable to t to download the images without asking for
 confirmation.  Setting it to nil will disable automatic download of the images.
 
 Please note that emojify will not download the images if Emacs is running in
-non-interactive mode and `emojify-download-images-p' is set to `ask'."
+non-interactive mode and `emojify-download-emojis-p' is set to `ask'."
   :type '(radio :tag "Automatically download required images"
                 (const :tag "Ask before downloading" ask)
                 (const :tag "Download without asking" t)
