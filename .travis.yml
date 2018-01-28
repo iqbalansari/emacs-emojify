@@ -1,5 +1,5 @@
 language: generic
-sudo: false
+sudo: required
 env:
   - EVM_EMACS=emacs-25.1
   - EVM_EMACS=emacs-24.5
