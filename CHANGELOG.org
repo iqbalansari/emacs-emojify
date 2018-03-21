@@ -13,6 +13,8 @@
     - Fix display of emojis containing the plus sign (eg. ~:+1:~)
     - Fix backspace to delete complete emojis in ~org-mode~
 *** Added
+    - Support for displaying emojis in the company mode's popups, this can be disabled by customizing the variable ~emojify-company-tooltips-p~
+    - Experimental support for displaying emojis in the mode-line, see ~emojify-mode-line-mode~ and ~global-emojify-mode-line-mode~
     - New command ~emojify-describe-emoji-at-point~ can be used to view help about emoji displayed at point.
     - New command ~emojify-describe-emoji~ can be used to view help about a emoji.
     - New command ~emojify-list-emojis~ for listing all the emojis
