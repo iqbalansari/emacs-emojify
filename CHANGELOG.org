@@ -3,7 +3,10 @@
   The format is based on [[http://keepachangelog.com/][Keep a Changelog]].
 
 ** Unreleased
-   See [[https://github.com/iqbalansari/emacs-emojify/compare/v0.4...HEAD][Changes]]
+   See [[https://github.com/iqbalansari/emacs-emojify/compare/v1.0...HEAD][Changes]]
+
+** v1.0 - 2018-03-21
+   See [[https://github.com/iqbalansari/emacs-emojify/compare/v0.4...v1.0][Changes]]
 
 *** Fixed
     - Do not try emojifying areas larger than 5000 points
