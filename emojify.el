@@ -922,6 +922,23 @@ This returns nil if the emojis between BEG and END do not fall in region."
         (goto-char beg)
         (background-color-at-point))))
 
+(defvar emojify--imagemagick-support-cache (ht-create))
+
+(defun emojify--imagemagick-supports-p (format)
+  "Check if imagemagick support given FORMAT.
+
+This function caches the result of the check since the naive check
+
+    (memq format (imagemagick-types))
+
+can be expensive if imagemagick-types returns a large list, this is
+especially problematic since this check is potentially called during
+very redisplay. See https://github.com/iqbalansari/emacs-emojify/issues/41"
+  (when (fboundp 'imagemagick-types)
+    (when (equal (ht-get emojify--imagemagick-support-cache format 'unset) 'unset)
+      (ht-set emojify--imagemagick-support-cache format (memq format (imagemagick-types))))
+    (ht-get emojify--imagemagick-support-cache format)))
+
 (defun emojify--get-image-display (data buffer beg end &optional target)
   "Get the display text property to display the emoji as an image.
 
@@ -939,9 +956,8 @@ other different display constructs, for now this works."
         (create-image image-file
                       ;; use imagemagick if available and supports PNG images
                       ;; (allows resizing images)
-                      (when (and (fboundp 'imagemagick-types)
-                                 (memq image-type (imagemagick-types)))
-                        'imagemagick)
+                      (when (emojify--imagemagick-supports-p image-type)
+			'imagemagick)
                       nil
                       :ascent 'center
                       :heuristic-mask t
