@@ -965,6 +965,7 @@ other different display constructs, for now this works."
                                          (face-background 'mode-line nil 'default))
                                         (t (emojify--get-image-background beg end)))
                       ;; no-op if imagemagick is  not available
+                      :scale 1
                       :height (cond ((bufferp target)
                                      (with-current-buffer target
                                        (emojify-default-font-height)))
