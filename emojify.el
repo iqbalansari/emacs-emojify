@@ -1394,8 +1394,10 @@ non-interactive mode and `emojify-download-emojis-p' is set to `ask'."
     (let ((downloaded-sha (with-temp-buffer
                             (insert-file-contents-literally destination)
                             (secure-hash 'sha256 (current-buffer)))))
-      (when (string= downloaded-sha (ht-get data "sha256"))
-        destination))))
+      (if (string= downloaded-sha (ht-get data "sha256"))
+          destination
+        (error "cannot download from \"%s\" as %s != %s"
+               (ht-get data "url") downloaded-sha (ht-get data "sha256"))))))
 
 (defun emojify--extract-emojis (file)
   "Extract the tar FILE in emoji directory."
