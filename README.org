@@ -3,34 +3,37 @@
 [[./CHANGELOG.org][file:https://img.shields.io/badge/version-v0.4-blue.svg]] [[https://melpa.org/#/emojify][file:https://melpa.org/packages/emojify-badge.svg]] [[http://stable.melpa.org/#/emojify][file:http://stable.melpa.org/packages/emojify-badge.svg]] [[https://travis-ci.org/iqbalansari/emacs-emojify][https://travis-ci.org/iqbalansari/emacs-emojify.svg?branch=master]] [[https://coveralls.io/github/iqbalansari/emacs-emojify?branch=master][https://coveralls.io/repos/github/iqbalansari/emacs-emojify/badge.svg?branch=master]] [[http://www.gnu.org/licenses/gpl-3.0.html][http://img.shields.io/:license-gpl3-blue.svg]] [[http://makeapullrequest.com][file:https://img.shields.io/badge/PRs-welcome-brightgreen.svg]]
 
 ** Table of contents                                              :TOC_3_gh:
- - [[#emojify][Emojify]]
-   - [[#what-is-this][What is this?]]
-   - [[#what-does-it-look-like][What does it look like?]]
-   - [[#requirements][Requirements]]
-   - [[#installation][Installation]]
-     - [[#elpa][ELPA]]
-   - [[#usage][Usage]]
-     - [[#displaying-emojis][Displaying emojis]]
-     - [[#searching-emojis][Searching emojis]]
-     - [[#inserting-emojis][Inserting emojis]]
-     - [[#describing-emojis][Describing emojis]]
-     - [[#listing-all-emojis][Listing all emojis]]
-   - [[#customizations][Customizations]]
-     - [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
-     - [[#displaying-emojis-in-company-mode-tooltips][Displaying emojis in company mode tooltips]]
-     - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
-     - [[#configuring-how-emojis-are-displayed][Configuring how emojis are displayed]]
-     - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
-     - [[#configuring-the-texts-that-are-displayed-as-emojis][Configuring the texts that are displayed as emojis]]
-     - [[#customizing-the-behaviour-when-point-enters-an-emoji][Customizing the behaviour when point enters an emoji]]
-     - [[#customizing-the-behaviour-during-isearch-mode][Customizing the behaviour during isearch-mode]]
-     - [[#customizing-the-behaviour-when-mouse-hovers-over-an-emoji][Customizing the behaviour when mouse hovers over an emoji]]
-     - [[#custom-emojis][Custom emojis]]
-   - [[#known-issues][Known issues]]
-   - [[#contributing][Contributing]]
-   - [[#thanks][Thanks]]
-   - [[#credits][Credits]]
-   - [[#licence][Licence]]
+- [[#emojify][Emojify]]
+  - [[#what-is-this][What is this?]]
+  - [[#what-does-it-look-like][What does it look like?]]
+  - [[#requirements][Requirements]]
+  - [[#installation][Installation]]
+    - [[#elpa][ELPA]]
+  - [[#usage][Usage]]
+    - [[#displaying-emojis][Displaying emojis]]
+    - [[#searching-emojis][Searching emojis]]
+    - [[#inserting-emojis][Inserting emojis]]
+    - [[#describing-emojis][Describing emojis]]
+    - [[#listing-all-emojis][Listing all emojis]]
+  - [[#customizations][Customizations]]
+    - [[#displaying-composed-text-as-emojis][Displaying composed text as emojis]]
+    - [[#displaying-emojis-in-company-mode-tooltips][Displaying emojis in company mode tooltips]]
+    - [[#configuring-the-types-of-emojis-displayed][Configuring the types of emojis displayed]]
+    - [[#configuring-how-emojis-are-displayed][Configuring how emojis are displayed]]
+    - [[#configuring-the-buffers-where-emojify-mode-is-enabled][Configuring the buffers where emojify mode is enabled]]
+    - [[#configuring-the-texts-that-are-displayed-as-emojis][Configuring the texts that are displayed as emojis]]
+    - [[#customizing-the-behaviour-when-point-enters-an-emoji][Customizing the behaviour when point enters an emoji]]
+    - [[#customizing-the-behaviour-during-isearch-mode][Customizing the behaviour during isearch-mode]]
+    - [[#customizing-the-behaviour-when-mouse-hovers-over-an-emoji][Customizing the behaviour when mouse hovers over an emoji]]
+    - [[#custom-emojis][Custom emojis]]
+  - [[#known-issues][Known issues]]
+  - [[#contributing][Contributing]]
+  - [[#thanks][Thanks]]
+  - [[#credits][Credits]]
+  - [[#licence][Licence]]
+    - [[#emojione-images][EmojiOne images]]
+    - [[#twemoji-images][Twemoji images]]
+    - [[#source-code][Source code]]
 
 ** What is this?
    Emojify is an Emacs extension to display emojis. It can display github style
@@ -314,5 +317,13 @@
    Emoji set designed and offered free by [[http://emojione.com][Emoji One]].
 
 ** Licence
-   The emoji images are distributed under [[http://creativecommons.org/licenses/by-sa/4.0/][Creative Commons License]] (CC-BY-SA).
-   The source code itself is distributed under [[http://www.gnu.org/licenses/quick-guide-gplv3.html][GNU General Public License v3]]. See [[LICENSE][LICENSE]].
+*** EmojiOne images
+    The emoji images are distributed under [[http://creativecommons.org/licenses/by-sa/4.0/][Creative Commons License]] (CC-BY-SA).
+
+*** Twemoji images
+    Copyright 2018 Twitter, Inc and other contributors
+    Code licensed under the MIT License: http://opensource.org/licenses/MIT
+    Graphics licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+*** Source code
+    The source code is distributed under [[http://www.gnu.org/licenses/quick-guide-gplv3.html][GNU General Public License v3]]. See [[LICENSE][LICENSE]].

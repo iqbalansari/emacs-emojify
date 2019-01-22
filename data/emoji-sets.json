@@ -22,5 +22,17 @@
         "website" : "http://emojione.com",
         "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/4e91ba8c2b3415cd78f53e7026fc76b9ac935fc3/emojione-v2.2.6.tar",
         "sha256" : "416b5807d9836a7030434710c9b859accce1e2e5c3c0dcae8ef2a0d9483ff2e9"
+    },
+    "twemoji-v2": {
+        "description": "Emojis provided by Twitter (version 2)",
+        "website" : "https://twemoji.twitter.com/",
+        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/2610f56d156038a50ae04d99e1a9826c6c500ef6/twemoji-v2.tar",
+        "sha256": "2632de8df254097cf621f9e0e2d8aac5dcd1ca12f29c35d0af9c3179fcdc6523"
+    },
+    "twemoji-v2-22": {
+        "description": "Emojis provided by Twitter (version 2), resized to 22px",
+        "website" : "https://twemoji.twitter.com/",
+        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/2610f56d156038a50ae04d99e1a9826c6c500ef6/twemoji-v2-22.tar",
+        "sha256": "7dba0460c0e93c6a9916fbc67324a347c0c61f395d3bb7f8ed4bea6fc3b5e721"
     }
 }
