@@ -650,19 +650,18 @@ Does nothing if the value is anything else."
 
 This is inspired by `prettify-symbol-mode's logic for
 `prettify-symbols-unprettify-at-point'."
-  (while-no-input
-    (emojify-with-saved-buffer-state
-      (when emojify--last-emoji-pos
-        (emojify-on-emoji-exit (car emojify--last-emoji-pos) (cdr emojify--last-emoji-pos)))
+  (emojify-with-saved-buffer-state
+    (when emojify--last-emoji-pos
+      (emojify-on-emoji-exit (car emojify--last-emoji-pos) (cdr emojify--last-emoji-pos)))
 
-      (when (get-text-property (point) 'emojified)
-        (let* ((text-props (text-properties-at (point)))
-               (buffer (plist-get text-props 'emojify-buffer))
-               (match-beginning (plist-get text-props 'emojify-beginning))
-               (match-end (plist-get text-props 'emojify-end)))
-          (when (eq buffer (current-buffer))
-            (emojify-on-emoji-enter match-beginning match-end)
-            (setq emojify--last-emoji-pos (cons match-beginning match-end))))))))
+    (when (get-text-property (point) 'emojified)
+      (let* ((text-props (text-properties-at (point)))
+             (buffer (plist-get text-props 'emojify-buffer))
+             (match-beginning (plist-get text-props 'emojify-beginning))
+             (match-end (plist-get text-props 'emojify-end)))
+        (when (eq buffer (current-buffer))
+          (emojify-on-emoji-enter match-beginning match-end)
+          (setq emojify--last-emoji-pos (cons match-beginning match-end)))))))
 
 (defun emojify-help-function (_window _string pos)
   "Function to get help string to be echoed when point/mouse into the point.
@@ -1351,14 +1350,14 @@ report incorrect values.
 To work around this
 `emojify-update-visible-emojis-background-after-window-scroll' is added to
 `window-scroll-functions' to update emojis on window scroll."
-  (while-no-input (emojify--update-emojis-background-in-region-starting-at (window-start))))
+  (emojify--update-emojis-background-in-region-starting-at (window-start)))
 
 (defun emojify-update-visible-emojis-background-after-window-scroll (_window display-start)
   "Function added to `window-scroll-functions' when region is active.
 
 This function updates the backgrounds of the emojis in the newly displayed area
 of the window.  DISPLAY-START corresponds to the new start of the window."
-  (while-no-input (emojify--update-emojis-background-in-region-starting-at display-start)))
+  (emojify--update-emojis-background-in-region-starting-at display-start))
 
 
 
