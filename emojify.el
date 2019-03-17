@@ -1232,7 +1232,7 @@ inherited from TARGET if provided.  See also `emojify--get-text-display-props'."
       (insert string)
       (let ((beg (point-min))
             (end (point-max))
-            (styles (or styles '(unicode))))
+            (styles (or styles emojify-emoji-styles)))
         (seq-doseq (regexp (apply #'append
                                   (when emojify--user-emojis-regexp
                                     (list emojify--user-emojis-regexp))
