@@ -1395,7 +1395,7 @@ non-interactive mode and `emojify-download-emojis-p' is set to `ask'."
                             (secure-hash 'sha256 (current-buffer)))))
       (if (string= downloaded-sha (ht-get data "sha256"))
           destination
-        (error "cannot download from \"%s\" as %s != %s"
+        (error "Failed to download emojis from \"%s\", hash does not match %s (expected %s)"
                (ht-get data "url") downloaded-sha (ht-get data "sha256"))))))
 
 (defun emojify--extract-emojis (file)
