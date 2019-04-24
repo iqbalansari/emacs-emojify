@@ -1029,10 +1029,13 @@ For explanation of TARGET see the documentation of
                                          'emojify-text text)
                                    buffer-props)))))
 
-(defun emojify-display-emojis-in-region (beg end)
+(defun emojify-display-emojis-in-region (beg end &optional target)
   "Display emojis in region.
 
-BEG and END are the beginning and end of the region respectively.
+BEG and END are the beginning and end of the region respectively.  TARGET
+is used to determine the background color and size of emojis, by default
+the current buffer is used to determine these, see
+`emojify--get-text-display-props' for more details.
 
 Displaying happens in two phases, first search based phase displays actual text
 appearing in buffer as emojis.  In the next phase composed text is searched for
@@ -1097,7 +1100,7 @@ should not be a problem 🤞."
                                        (emojify-looking-at-end-of-list-maybe match-end))))
 
                          (not (run-hook-with-args-until-success 'emojify-inhibit-functions match match-beginning match-end)))
-                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end)))
+                (emojify--propertize-text-for-emoji emoji match buffer match-beginning match-end target)))
             ;; Stop a bit to let `with-timeout' kick in
             (sit-for 0 t))))
 
@@ -1131,7 +1134,7 @@ should not be a problem 🤞."
               ;; Display only composed text that is unicode char
               (when (and emoji
                          (string= (ht-get emoji "style") "unicode"))
-                (emojify--propertize-text-for-emoji emoji match (current-buffer) compose-start compose-end))
+                (emojify--propertize-text-for-emoji emoji match (current-buffer) compose-start compose-end target))
               ;; Setup the next loop
               (setq compose-start (and compose-end (next-single-property-change compose-end
                                                                                 'composition
