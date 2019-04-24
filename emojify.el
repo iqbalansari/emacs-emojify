@@ -613,7 +613,9 @@ Does nothing if the value is anything else."
   :group 'emojify)
 
 (defcustom emojify-reveal-on-isearch t
-  "Should underlying emoji be displayed when point enters emoji while in isearch mode.")
+  "Should underlying emoji be displayed when point enters emoji while in isearch mode."
+  :type 'bool
+  :group 'emojify)
 
 (defcustom emojify-show-help t
   "If non-nil the underlying text is displayed in a popup when mouse moves over it."
@@ -703,12 +705,16 @@ Example -
 The following assumes that custom images are at ~/.emacs.d/emojis/trollface.png and
 ~/.emacs.d/emojis/neckbeard.png
 
-'((\":troll:\"     . ((\"name\" . \"Troll\")
+'((\":troll:\"    . ((\"name\" . \"Troll\")
                     (\"image\" . \"~/.emacs.d/emojis/trollface.png\")
                     (\"style\" . \"github\")))
   (\":neckbeard:\" . ((\"name\" . \"Neckbeard\")
                     (\"image\" . \"~/.emacs.d/emojis/neckbeard.png\")
-                    (\"style\" . \"github\"))))")
+                    (\"style\" . \"github\"))))"
+  :type '(alist :key-type string
+                :value-type (alist :key-type string
+                                   :value-type string))
+  :group 'emojify)
 
 (defvar emojify--user-emojis nil
   "User specified custom emojis.")
@@ -930,9 +936,9 @@ This function caches the result of the check since the naive check
 
     (memq format (imagemagick-types))
 
-can be expensive if imagemagick-types returns a large list, this is
+can be expensive if `imagemagick-types' returns a large list, this is
 especially problematic since this check is potentially called during
-very redisplay. See https://github.com/iqbalansari/emacs-emojify/issues/41"
+very redisplay.  See https://github.com/iqbalansari/emacs-emojify/issues/41"
   (when (fboundp 'imagemagick-types)
     (when (equal (ht-get emojify--imagemagick-support-cache format 'unset) 'unset)
       (ht-set emojify--imagemagick-support-cache format (memq format (imagemagick-types))))
