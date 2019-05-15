@@ -57,9 +57,11 @@
 (declare-function org-list-get-item-begin "org-list")
 (declare-function org-at-heading-p "org")
 
-;; Required to determine point is in an org-src block
+;; Required to determine the context is in an org-src block
 (declare-function org-element-type "org-element")
+(declare-function org-element-property "org-element")
 (declare-function org-element-at-point "org-element")
+(declare-function org-src--get-lang-mode "org-src")
 
 ;; Required for integration with company-mode
 (declare-function company-pseudo-tooltip-unhide "company")
@@ -516,15 +518,16 @@ This returns non-nil if the region is valid according to `emojify-program-contex
                     (memql 'unicode emojify-emoji-styles))
              t)))))
 
-(defun emojify-inside-org-src-p (point)
-  "Return non-nil if POINT is inside `org-mode' src block.
+(defun emojify-org-src-lang-at-point (point)
+  "Return the `major-mode' for the org source block at POINT.
 
-This is used to inhibit display of emoji's in `org-mode' src blocks
-since our mechanisms do not work in it."
+Returns nil if the point is not at an org source block"
   (when (eq major-mode 'org-mode)
     (save-excursion
       (goto-char point)
-      (eq (org-element-type (org-element-at-point)) 'src-block))))
+      (let ((element (org-element-at-point)))
+        (when (eq (org-element-type element) 'src-block)
+          (org-src--get-lang-mode (org-element-property :language element)))))))
 
 (defun emojify-looking-at-end-of-list-maybe (point)
   "Determine if POINT is end of a list.
@@ -1073,8 +1076,7 @@ should not be a problem 🤞."
               (when (and emoji
                          (not (or (get-text-property match-beginning 'emojify-inhibit)
                                   (get-text-property match-end 'emojify-inhibit)))
-                         (memql (intern (ht-get emoji "style"))
-                                emojify-emoji-styles)
+                         (memql (intern (ht-get emoji "style")) emojify-emoji-styles)
                          ;; Skip displaying this emoji if the its bounds are
                          ;; already part of an existing emoji. Since the emojis
                          ;; are searched in descending order of length (see
@@ -1083,10 +1085,19 @@ should not be a problem 🤞."
                          ;; ones
                          (not (or (get-text-property match-beginning 'emojified)
                                   (get-text-property (1- match-end) 'emojified)))
-                         ;; Display unconditionally in non-prog mode
-                         (or (not (derived-mode-p 'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
-                             ;; In prog mode enable respecting `emojify-program-contexts'
-                             (emojify-valid-program-context-p emoji match-beginning match-end))
+
+                         ;; Validate the context in a programming major-mode, if
+                         ;; the buffer is in org-mode we determine the major
+                         ;; mode is picked from the language/babel block if any
+                         ;; at point
+                         (let ((major-mode-at-point (if (eq major-mode 'org-mode)
+                                                        (or (emojify-org-src-lang-at-point match-beginning) 'org-mode)
+                                                      major-mode)))
+                           ;; Display unconditionally in non-prog mode
+                           (or (not (provided-mode-derived-p major-mode-at-point
+                                                             'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
+                               ;; In prog mode enable respecting `emojify-program-contexts'
+                               (emojify-valid-program-context-p emoji match-beginning match-end)))
 
                          ;; Display ascii emojis conservatively, since they have potential
                          ;; to be annoying consider d: in head:, except while executing apropos
@@ -1094,9 +1105,6 @@ should not be a problem 🤞."
                          (or (not (string= (ht-get emoji "style") "ascii"))
                              force-display
                              (emojify-valid-ascii-emoji-context-p match-beginning match-end))
-
-                         (or force-display
-                             (not (emojify-inside-org-src-p match-beginning)))
 
                          ;; Inhibit possibly inside a list
                          ;; 41 is ?) but packages get confused by the extra closing paren :)
