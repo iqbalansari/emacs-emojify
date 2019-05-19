@@ -498,20 +498,40 @@ of the emoji text in the buffer.  The arguments IGNORED are ignored."
        (equal text "8)")
        (equal (org-list-get-item-begin) beg)))
 
-(defun emojify-valid-program-context-p (emoji beg end)
+(defun emojify-program-context-at-point-per-syntax-table (beg end)
+  "Determine the progamming context between BEG and END using the the syntax table."
+  (let ((syntax-beg (syntax-ppss beg))
+        (syntax-end (syntax-ppss end)))
+    (cond ((and (nth 3 syntax-beg) (nth 3 syntax-end)) 'string)
+          ((and (nth 4 syntax-beg) (nth 4 syntax-end)) 'comments)
+          (t 'code))))
+
+(defun emojify-program-context-at-point-per-face (beg _end)
+  "Determine the progamming context between BEG and END using the the face.
+
+Used when the major mode for which we need to check the program context is not
+the same as the current buffer's major mode, currently only used when displaying
+emojis in org source blocks."
+  (let* ((face-at-point (get-text-property beg 'face))
+         (faces-at-point (if (listp face-at-point)
+                             face-at-point
+                           (list face-at-point))))
+    (cond ((memql 'font-lock-doc-face faces-at-point) 'string)
+          ((memql 'font-lock-string-face faces-at-point) 'string)
+          ((memql 'font-lock-comment-face faces-at-point) 'comments)
+          (t 'code))))
+
+
+(defun emojify-valid-program-context-p (emoji beg end &optional use-faces)
   "Determine if EMOJI should be displayed for text between BEG and END.
 
-This returns non-nil if the region is valid according to `emojify-program-contexts'"
+If the optional USE-FACES is true, the programming context is determined using
+faces.  This returns non-nil if the region is valid according to
+`emojify-program-contexts'"
   (when emojify-program-contexts
-    (let* ((syntax-beg (syntax-ppss beg))
-           (syntax-end (syntax-ppss end))
-           (context (cond ((and (nth 3 syntax-beg)
-                                (nth 3 syntax-end))
-                           'string)
-                          ((and (nth 4 syntax-beg)
-                                (nth 4 syntax-end))
-                           'comments)
-                          (t 'code))))
+    (let ((context (if use-faces
+                      (emojify-program-context-at-point-per-face beg end)
+                    (emojify-program-context-at-point-per-syntax-table beg end))))
       (and (memql context emojify-program-contexts)
            (if (equal context 'code)
                (and (string= (ht-get emoji "style") "unicode")
@@ -1097,7 +1117,10 @@ should not be a problem 🤞."
                            (or (not (provided-mode-derived-p major-mode-at-point
                                                              'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
                                ;; In prog mode enable respecting `emojify-program-contexts'
-                               (emojify-valid-program-context-p emoji match-beginning match-end)))
+                               (emojify-valid-program-context-p emoji
+                                                                match-beginning
+                                                                match-end
+                                                                (not (eq major-mode-at-point major-mode)))))
 
                          ;; Display ascii emojis conservatively, since they have potential
                          ;; to be annoying consider d: in head:, except while executing apropos
