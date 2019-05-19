@@ -139,6 +139,16 @@ backported here for compatibility with older Emacsen."
       (apply #'string-join (list strings separator))
     (mapconcat 'identity strings separator)))
 
+(defun emojify-provided-mode-derived-p (mode &rest modes)
+  "Non-nil if MODE is derived from one of MODES.
+Uses the `derived-mode-parent' property of the symbol to trace backwards.
+If you just want to check `major-mode', use `derived-mode-p'."
+  (if (fboundp 'provided-mode-derived-p)
+      (apply #'provided-mode-derived-p mode modes)
+    (while (and (not (memq mode modes))
+                (setq mode (get mode 'derived-mode-parent))))
+    mode))
+
 
 
 ;; Debugging helpers
@@ -1114,8 +1124,8 @@ should not be a problem 🤞."
                                                         (or (emojify-org-src-lang-at-point match-beginning) 'org-mode)
                                                       major-mode)))
                            ;; Display unconditionally in non-prog mode
-                           (or (not (provided-mode-derived-p major-mode-at-point
-                                                             'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
+                           (or (not (emojify-provided-mode-derived-p major-mode-at-point
+                                                                     'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
                                ;; In prog mode enable respecting `emojify-program-contexts'
                                (emojify-valid-program-context-p emoji
                                                                 match-beginning
