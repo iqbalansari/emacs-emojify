@@ -546,6 +546,56 @@ return 4
       (emojify-tests-should-not-be-emojified (line-beginning-position 6))
       (emojify-tests-should-not-be-emojified (line-beginning-position 7)))))
 
+(ert-deftest emojify-tests-org-source-blocks ()
+  :tags '(org-mode contextual)
+  (emojify-tests-with-emojified-static-buffer "#+begin_src markdown
+:smile:
+:)
+:slight_smile:
+#+end_src
+
+#+begin_src emacs-lisp
+\":smile:\"
+;; :smile:
+:smile:
+
+\":)\"
+;; :)
+:)
+
+\"🙂\"
+;; 🙂
+🙂
+#+end_src
+"
+    (emojify-set-emoji-styles '(ascii unicode github))
+    (setq emojify-program-contexts '(comments string code))
+
+    (org-mode)
+    (when (fboundp 'font-lock-ensure)
+      (font-lock-ensure)
+      (emojify-redisplay-emojis-in-region))
+
+    ;; The emojis should be always displayed for org source block for
+    ;; non-programming languages
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-be-emojified (line-beginning-position 3))
+    (emojify-tests-should-be-emojified (line-beginning-position 4))
+
+    ;; In org source block for programming languages emojis should
+    ;; be displayed according to emojify-program-contexts
+    (emojify-tests-should-be-emojified (1+ (line-beginning-position 8)))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 9)))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 10))
+
+    (emojify-tests-should-be-emojified (1+ (line-beginning-position 12)))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 13)))
+    (emojify-tests-should-not-be-emojified (line-beginning-position 14))
+
+    (emojify-tests-should-be-emojified (1+ (line-beginning-position 16)))
+    (emojify-tests-should-be-emojified (+ 3 (line-beginning-position 17)))
+    (emojify-tests-should-be-emojified (line-beginning-position 18))))
+
 (ert-deftest emojify-tests-prettify-symbols-with-custom-images ()
   :tags '(prettify-symbols)
   (when (fboundp 'prettify-symbols-mode)
