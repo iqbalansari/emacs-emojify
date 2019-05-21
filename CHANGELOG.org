@@ -12,6 +12,7 @@
     - Fix rendering of ascii emojis mode-line to take into account the context
     - Fix performance regression introduced due to use of ~while-no-input~
     - Fix performance issues caused by repeated checks on ~imagemagick-types~
+    - Improve error messaging when image download fails
 
 *** Added
     - Support for displaying emojis in ~org-mode~ source blocks
