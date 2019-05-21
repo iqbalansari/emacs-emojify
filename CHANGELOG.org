@@ -3,7 +3,19 @@
   The format is based on [[http://keepachangelog.com/][Keep a Changelog]].
 
 ** Unreleased
-   See [[https://github.com/iqbalansari/emacs-emojify/compare/v1.0...HEAD][Changes]]
+   See [[https://github.com/iqbalansari/emacs-emojify/compare/v1.1...HEAD][Changes]]
+
+** v1.1 - 2019-05-21
+   See [[https://github.com/iqbalansari/emacs-emojify/compare/v1.0...v1.1][Changes]]
+
+*** Fixed
+    - Fix rendering of ascii emojis mode-line to take into account the context
+    - Fix performance regression introduced due to use of ~while-no-input~
+    - Fix performance issues caused by repeated checks on ~imagemagick-types~
+
+*** Added
+    - Support for displaying emojis in ~org-mode~ source blocks
+    - Twemoji image set
 
 ** v1.0 - 2018-03-21
    See [[https://github.com/iqbalansari/emacs-emojify/compare/v0.4...v1.0][Changes]]
