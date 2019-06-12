@@ -892,18 +892,24 @@ and then `emojify-emojis'."
     (goto-char point)
     (cons (current-column) (line-number-at-pos))))
 
+(defun emojify--get-characters-for-composition (composition)
+  "Extract the characters from COMPOSITION."
+  (if (nth 3 composition)
+      (seq-filter #'identity
+                  (seq-map-indexed (lambda (elt index)
+                                     (when (cl-evenp index) elt))
+                                   (nth 2 composition)))
+    (nth 2 composition)))
+
 (defun emojify--get-composed-text (point)
   "Get the text used as composition property at POINT.
 
 This does not check if there is composition property at point the callers should
 make sure the point has a composition property otherwise this function will
 fail."
-  (emojify--string-join (mapcar #'char-to-string
-                                (decode-composition-components (nth 2
-                                                                    (find-composition point
-                                                                                      nil
-                                                                                      nil
-                                                                                      t))))))
+  (let* ((composition (find-composition point nil nil t))
+         (characters (emojify--get-characters-for-composition composition)))
+    (emojify--string-join (seq-map #'char-to-string characters))))
 
 (defun emojify--inside-rectangle-selection-p (beg end)
   "Check if region marked by BEG and END is inside a rectangular selection.
