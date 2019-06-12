@@ -894,12 +894,14 @@ and then `emojify-emojis'."
 
 (defun emojify--get-characters-for-composition (composition)
   "Extract the characters from COMPOSITION."
-  (if (nth 3 composition)
-      (seq-filter #'identity
-                  (seq-map-indexed (lambda (elt index)
-                                     (when (cl-evenp index) elt))
-                                   (nth 2 composition)))
-    (nth 2 composition)))
+  (let ((index -1))
+    (if (nth 3 composition)
+        (seq-filter #'identity
+                    (seq-map (lambda (elt)
+                               (cl-incf index)
+                               (when (cl-evenp index) elt))
+                             (nth 2 composition)))
+      (nth 2 composition))))
 
 (defun emojify--get-composed-text (point)
   "Get the text used as composition property at POINT.
