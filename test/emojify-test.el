@@ -491,6 +491,15 @@
         (delete-selection-pre-hook))
       (should (equal (point-min) (point-max))))))
 
+(ert-deftest emojify-test-composition ()
+  :tags '(composition)
+  (emojify-tests-with-emojified-static-buffer "a == b"
+    (setq emojify-composed-text-p t)
+    (compose-region 1 2 (concat "	" (list #Xe154)))
+    (compose-region 3 5 (concat "	" (list #Xe10f)))
+    (compose-region 6 7 (concat "	" (list #Xe155)))
+    (emojify-string (buffer-string))))
+
 (ert-deftest emojify-tests-prettify-symbols ()
   :tags '(prettify-symbols)
   (when (fboundp 'prettify-symbols-mode)
