@@ -20,7 +20,7 @@ addons:
       # Dependencies for Emacs
       - libxaw7-dev
       - libjpeg-dev
-      - libtiff4-dev
+      - libtiff5-dev
       - libpng-dev
       - texinfo
 
