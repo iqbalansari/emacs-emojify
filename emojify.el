@@ -1549,9 +1549,7 @@ run the command `emojify-download-emoji'")))
   (remove-hook 'emojify-emoji-style-change-hook #'emojify-redisplay-emojis-in-region))
 
 ;; define a emojify-mode-map to enable defining keys specifically for emojify-mode
-(defvar emojify-mode-map
-  (let ((map (make-sparse-keymap)))
-    map)
+(defvar emojify-mode-map (make-sparse-keymap)
   "Keymap for `emojify-mode'.")
 
 ;;;###autoload
