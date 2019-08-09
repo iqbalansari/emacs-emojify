@@ -2,9 +2,9 @@ language: generic
 sudo: required
 env:
   - EVM_EMACS=emacs-26.2
-  - EVM_EMACS=emacs-26.2
-  - EVM_EMACS=emacs-25.1
-  - EVM_EMACS=emacs-24.5
+  - EVM_EMACS=emacs-26.1
+  - EVM_EMACS=emacs-25.3
+  - EVM_EMACS=emacs-25.2
 
 cache:
   apt: true
