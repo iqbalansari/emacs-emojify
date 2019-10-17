@@ -966,7 +966,9 @@ This returns nil if the emojis between BEG and END do not fall in region."
   (or (emojify--region-background-maybe beg end)
       (save-excursion
         (goto-char beg)
-        (background-color-at-point))))
+        (condition-case nil
+            (background-color-at-point)
+          (wrong-type-argument nil)))))
 
 (defvar emojify--imagemagick-support-cache (ht-create))
 
