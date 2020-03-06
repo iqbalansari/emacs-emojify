@@ -1463,7 +1463,7 @@ do not prompt the user to download emojis multiple times."
     ;; Skip the prompt if we are in noninteractive mode or the user has already
     ;; denied us permission to download once
     (unless (or noninteractive emojify--refused-image-download-p)
-      (let ((download-confirmed-p (yes-or-no-p "[emojify] Emoji images not available should I download them now?")))
+      (let ((download-confirmed-p (yes-or-no-p "[emojify] Emoji images not available should I download them now? ")))
         (setq emojify--refused-image-download-p (not download-confirmed-p))
         download-confirmed-p))))
 
