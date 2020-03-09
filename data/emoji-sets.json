@@ -2,37 +2,37 @@
     "emojione-v2-22" : {
         "description" : "Emojis provided by Emoji One (version 2), resized to 22px",
         "website" : "http://emojione.com",
-        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/a81cfd11cdd0eb5b6840d2a7fe95a9505195c1a3/emojione-v2-22.tar",
-        "sha256" : "adbe3cf2c776fe7daf375d8e8dbd4c40567a1dbb753dce1d05e61a2f815572d3"
+        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/emojione-fixed-v2-22.tar",
+        "sha256" : "8b0ccea3610dc98c74d04de8d8c6340b4aaa8e950cad8fb62961e45792625dd7"
     },
     "emojione-v2" : {
         "description" : "Emojis provided by Emoji One (version 2)",
         "website" : "http://emojione.com",
-        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/a81cfd11cdd0eb5b6840d2a7fe95a9505195c1a3/emojione-v2.tar",
-        "sha256" : "46c5a600a148897da22d42d36f42ad764868568943e96917c33e0fe44113afef"
+        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/emojione-fixed-v2.tar",
+        "sha256" : "828765e8f89dc6aa4cfb06c271e9de122aa51383ed85e1169ac774fdf1c739fb"
     },
     "emojione-v2.2.6-22" : {
         "description" : "Emojis provided by Emoji One (version 2.2.6), resized to 22px",
         "website" : "http://emojione.com",
-        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/4e91ba8c2b3415cd78f53e7026fc76b9ac935fc3/emojione-v2.2.6-22.tar",
-        "sha256" : "56dede1c77ad690eebc21e00913b9c7525d290f1a936f87aad282014b04bf2a7"
+        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/emojione-fixed-v2.2.6-22.tar",
+        "sha256" : "f4428b0875cd0a418168139418bb03aaae0655254e4a683ec101f901d2c6ce59"
     },
     "emojione-v2.2.6" : {
         "description" : "Emojis provided by Emoji One (version 2.2.6)",
         "website" : "http://emojione.com",
-        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/4e91ba8c2b3415cd78f53e7026fc76b9ac935fc3/emojione-v2.2.6.tar",
-        "sha256" : "416b5807d9836a7030434710c9b859accce1e2e5c3c0dcae8ef2a0d9483ff2e9"
+        "url" : "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/emojione-fixed-v2.2.6.tar",
+        "sha256" : "eb0ff5637924a2a04d3ab649b66d816a69c5d71eab2bf5274d292115e8178244"
     },
     "twemoji-v2": {
         "description": "Emojis provided by Twitter (version 2)",
         "website" : "https://twemoji.twitter.com/",
-        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/2610f56d156038a50ae04d99e1a9826c6c500ef6/twemoji-v2.tar",
-        "sha256": "2632de8df254097cf621f9e0e2d8aac5dcd1ca12f29c35d0af9c3179fcdc6523"
+        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/twemoji-fixed-v2.tar",
+        "sha256": "0991b1032a04d948835fba4249f43993b4ac88a66d2ae7f278f03be31884851d"
     },
     "twemoji-v2-22": {
         "description": "Emojis provided by Twitter (version 2), resized to 22px",
         "website" : "https://twemoji.twitter.com/",
-        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/2610f56d156038a50ae04d99e1a9826c6c500ef6/twemoji-v2-22.tar",
-        "sha256": "7dba0460c0e93c6a9916fbc67324a347c0c61f395d3bb7f8ed4bea6fc3b5e721"
+        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/twemoji-fixed-v2-22.tar",
+        "sha256": "e3ae26d7ac111fe0be7b90f29afdab89676610a865353dfb672673efb5af044a"
     }
 }
