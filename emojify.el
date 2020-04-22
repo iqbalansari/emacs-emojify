@@ -130,7 +130,7 @@ priority on lower versions."
           overlays-at-pos))
     (overlays-at pos sorted)))
 
-(defun emojify--string-join (strings &optional separator)
+(defun emojify-string-join (strings &optional separator)
   "Join all STRINGS using SEPARATOR.
 
 This function is available on Emacs v24.4 and higher, it has been
@@ -911,7 +911,7 @@ make sure the point has a composition property otherwise this function will
 fail."
   (let* ((composition (find-composition point nil nil t))
          (characters (emojify--get-characters-for-composition composition)))
-    (emojify--string-join (seq-map #'char-to-string characters))))
+    (emojify-string-join (seq-map #'char-to-string characters))))
 
 (defun emojify--inside-rectangle-selection-p (beg end)
   "Check if region marked by BEG and END is inside a rectangular selection.
@@ -1938,7 +1938,7 @@ This respects the `emojify-emoji-styles' variable."
                                                                               tone-stripped))
                          (words (split-string non-alphanumeric-stripped " " t " ")))
                     (concat "http://emojipedia.org/"
-                            (downcase (emojify--string-join words "-"))))
+                            (downcase (emojify-string-join words "-"))))
                   "\n"))))
     (emojify-description-mode)
     (setq emojify-described-emoji (ht-get emoji "emoji")))
