@@ -227,13 +227,18 @@ and end of the emoji for which the form is being executed."
   (declare (debug t) (indent 2))
   `(let ((--emojify-loop-current-pos ,beg)
          (--emojify-loop-end ,end)
-         emoji-start)
+         (--emoji-positions nil)
+         --emoji-start)
      (while (and (> --emojify-loop-end --emojify-loop-current-pos)
-                 (setq emoji-start (text-property-any --emojify-loop-current-pos --emojify-loop-end 'emojified t)))
-       (let ((emoji-end (+ emoji-start
-                           (length (get-text-property emoji-start 'emojify-text)))))
-         ,@forms
-         (setq --emojify-loop-current-pos emoji-end)))))
+                 (setq --emoji-start (text-property-any --emojify-loop-current-pos --emojify-loop-end 'emojified t)))
+       (let ((--emoji-end (+ --emoji-start
+                             (length (get-text-property --emoji-start 'emojify-text)))))
+         (push (cons --emoji-start --emoji-end) --emoji-positions)
+         (setq --emojify-loop-current-pos --emoji-end)))
+     (dolist (--position --emoji-positions)
+       (let ((emoji-start (car --position))
+             (emoji-end (cdr --position)))
+         ,@forms))))
 
 (defun emojify-message (format-string &rest args)
   "Log debugging messages to buffer named 'emojify-log'.
