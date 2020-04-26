@@ -1300,7 +1300,14 @@ TARGET can either be a buffer object or a special value mode-line.  It is used
 to indicate where EMOJI would be displayed, properties like font-height are
 inherited from TARGET if provided.  See also `emojify--get-text-display-props'."
   (emojify-create-emojify-emojis)
-  (let ((emojify-emoji-styles (or styles emojify-emoji-styles)))
+  (let ((emojify-emoji-styles (or styles emojify-emoji-styles))
+        ;; Temporarily disable all `buffer-list-update-hook's, with-temp-buffer
+        ;; internally calls `get-buffer-create' (and `kill-buffer'), which cause
+        ;; this hook to be run. This is problematic because EXWM uses
+        ;; `buffer-list-update-hook' and this temporary buffer confuses EXWM's
+        ;; tracking code leading to
+        ;; https://github.com/iqbalansari/emacs-emojify/issues/64
+        buffer-list-update-hook)
     (with-temp-buffer
       (insert string)
       (emojify-display-emojis-in-region (point-min) (point-max) target)
