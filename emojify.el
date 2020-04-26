@@ -61,6 +61,7 @@
 (declare-function org-element-type "org-element")
 (declare-function org-element-property "org-element")
 (declare-function org-element-at-point "org-element")
+(declare-function org-src-get-lang-mode "org-src")
 (declare-function org-src--get-lang-mode "org-src")
 
 ;; Required for integration with company-mode
@@ -148,6 +149,13 @@ If you just want to check `major-mode', use `derived-mode-p'."
     (while (and (not (memq mode modes))
                 (setq mode (get mode 'derived-mode-parent))))
     mode))
+
+(defun emojify-org-src-get-lang-mode (lang)
+  "Return major mode that should be used for LANG.
+LANG is a string, and the returned major mode is a symbol."
+  (if (fboundp 'org-src-get-lang-mode)
+      (org-src-get-lang-mode lang)
+    (org-src--get-lang-mode lang)))
 
 
 
@@ -557,7 +565,7 @@ Returns nil if the point is not at an org source block"
       (goto-char point)
       (let ((element (org-element-at-point)))
         (when (eq (org-element-type element) 'src-block)
-          (org-src--get-lang-mode (org-element-property :language element)))))))
+          (emojify-org-src-get-lang-mode (org-element-property :language element)))))))
 
 (defun emojify-looking-at-end-of-list-maybe (point)
   "Determine if POINT is end of a list.
