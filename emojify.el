@@ -1593,7 +1593,7 @@ Re-enable it when buffer changes back to multibyte encoding."
 
 ;; Displaying emojis in mode-line
 
-(defun emojify--emojied-mode-line (format)
+(defun emojify--emojified-mode-line (format)
   "Return an emojified version of mode-line FORMAT.
 
 The format is converted to the actual string to be displayed using
@@ -1611,14 +1611,14 @@ The format is converted to the actual string to be displayed using
 
 If the `mode-line-format' is of following format
 
-\(\"%e\" (:eval (emojify-emojied-mode-line ... )))
+\(\"%e\" (:eval (emojify-emojified-mode-line ... )))
 
 We can assume the mode-line is already emojified."
   (and (consp mode-line-format)
        (equal (ignore-errors (cl-caadr mode-line-format))
               :eval)
        (equal (ignore-errors (car (cl-cadadr mode-line-format)))
-              'emojify--emojied-mode-line)))
+              'emojify--emojified-mode-line)))
 
 (defun emojify-emojify-mode-line ()
   "Emojify unicode characters in the mode-line.
@@ -1627,7 +1627,7 @@ This updates `mode-line-format' to a modified version which emojifies the
 mode-line before it is displayed."
   (unless (emojify-mode-line-emojified-p)
     (setq mode-line-format `("%e" (:eval
-                                   (emojify--emojied-mode-line ',mode-line-format))))))
+                                   (emojify--emojified-mode-line ',mode-line-format))))))
 
 (defun emojify-unemojify-mode-line ()
   "Restore `mode-line-format' to unemojified version.
