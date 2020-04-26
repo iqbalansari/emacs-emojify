@@ -1598,11 +1598,13 @@ Re-enable it when buffer changes back to multibyte encoding."
 
 The format is converted to the actual string to be displayed using
 `format-mode-line' and the unicode characters are replaced by images."
-  (if emojify-mode
-      ;; Remove "%e" from format since we keep it as first part of the
-      ;; emojified mode-line, see `emojify-emojify-mode-line'
-      (emojify-string (format-mode-line (delq "%e" format)) nil 'mode-line)
-    (format-mode-line format)))
+  (replace-regexp-in-string "%"
+                            "%%"
+                            (if emojify-mode
+                                ;; Remove "%e" from format since we keep it as first part of the
+                                ;; emojified mode-line, see `emojify-emojify-mode-line'
+                                (emojify-string (format-mode-line (delq "%e" format)) nil 'mode-line)
+                              (format-mode-line format))))
 
 (defun emojify-mode-line-emojified-p ()
   "Check if the mode-line is already emojified.
