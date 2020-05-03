@@ -367,7 +367,8 @@ Possible values are
     ert-results-mode
     compilation-mode
     proced-mode
-    mu4e-headers-mode)
+    mu4e-headers-mode
+    deft-mode)
   "Major modes where emojify mode should not be enabled."
   :type '(repeat symbol)
   :group 'emojify)
