@@ -510,7 +510,8 @@ way to guarantee that we run after font-lock"
        (save-excursion
          (save-match-data
            (goto-char beg)
-           (looking-at ":[^:]+:[\s-]*$")))))
+           ;; Regex for tag picked from https://code.orgmode.org/bzg/org-mode/src/master/lisp/org.el#L589-L590
+           (looking-at ":[[:alnum:]_@#%:]+:[\s-]*$")))))
 
 (defun emojify-in-org-list-p (text beg &rest ignored)
   "Determine whether the point is in `org-mode' list.
