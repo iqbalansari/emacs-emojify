@@ -357,11 +357,12 @@
 
 (ert-deftest emojify-tests-emojifying-org-mode-buffers ()
   :tags '(org-mode contextual)
-  (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:"
+  (emojify-tests-with-emojified-static-buffer "* Test :books:\n:books:\n* Test :book:tag:\n"
     (org-mode)
     (emojify-redisplay-emojis-in-region)
     (emojify-tests-should-not-be-emojified (1- (line-end-position)))
-    (emojify-tests-should-be-emojified (line-beginning-position 2)))
+    (emojify-tests-should-be-emojified (line-beginning-position 2))
+    (emojify-tests-should-not-be-emojified (- (line-end-position 3) 5)))
 
   (emojify-tests-with-emojified-static-buffer "8)"
     ;; org-mode in Emacs v24.3 failed in read only buffers
