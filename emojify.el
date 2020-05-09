@@ -487,6 +487,11 @@ buffer where emojis are going to be displayed selected."
   :type 'hook
   :group 'emojify)
 
+(defcustom emojify-completing-read-function #'completing-read
+  "Require same argument with `completing-read'."
+  :type 'function
+  :group 'emojify)
+
 (defcustom emojify-composed-text-p t
   "Should composed text be emojified."
   :type 'boolean
