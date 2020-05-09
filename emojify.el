@@ -1469,8 +1469,8 @@ non-interactive mode and `emojify-download-emojis-p' is set to `ask'."
 
 (defun emojify-download-emoji (emoji-set)
   "Download the provided EMOJI-SET."
-  (interactive (list (completing-read "Select the emoji set you want to download: "
-                                      (ht-keys emojify-emoji-set-json))))
+  (interactive (list (emojify-completing-read-function "Select the emoji set you want to download: "
+                                                       (ht-keys emojify-emoji-set-json))))
   (let ((emoji-data (ht-get emojify-emoji-set-json emoji-set)))
     (cond ((not emoji-data)
            (error "No emoji set named %s found" emoji-set))
@@ -1853,14 +1853,14 @@ completion UI to display properly emojis."
                                       minibuffer-setup-hook))
          (helm-after-initialize-hook (cons #'emojify--completing-read-helm-hook
                                            (bound-and-true-p helm-after-initialize-hook))))
-    (car (split-string (completing-read prompt
-                                        candidates
-                                        predicate
-                                        require-match
-                                        initial-input
-                                        hist
-                                        def
-                                        inherit-input-method)
+    (car (split-string (emojify-completing-read-function prompt
+                                                         candidates
+                                                         predicate
+                                                         require-match
+                                                         initial-input
+                                                         hist
+                                                         def
+                                                         inherit-input-method)
                        " "))))
 
 ;;;###autoload
