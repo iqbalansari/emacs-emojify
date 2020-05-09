@@ -1822,8 +1822,8 @@ This ensures `emojify' is enabled in helm buffer displaying completion even when
 
 PROMPT is a string to prompt with, PREDICATE, REQUIRE-MATCH, INITIAL-INPUT,
 HIST, DEF, INHERIT-INPUT-METHOD correspond to the arguments for
-`completing-read' and are passed to ‘completing-read’ without any
-interpretation.
+`emojify-completing-read-function' and are passed to
+‘emojify-completing-read-function’ without any interpretation.
 
 For each possible emoji PREDICATE is called with emoji text and data about the
 emoji as a hash-table, the predate should return nil if it the emoji should
