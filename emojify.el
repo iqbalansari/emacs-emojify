@@ -1853,14 +1853,15 @@ completion UI to display properly emojis."
                                       minibuffer-setup-hook))
          (helm-after-initialize-hook (cons #'emojify--completing-read-helm-hook
                                            (bound-and-true-p helm-after-initialize-hook))))
-    (car (split-string (emojify-completing-read-function prompt
-                                                         candidates
-                                                         predicate
-                                                         require-match
-                                                         initial-input
-                                                         hist
-                                                         def
-                                                         inherit-input-method)
+    (car (split-string (funcall emojify-completing-read-function
+                                prompt
+                                candidates
+                                predicate
+                                require-match
+                                initial-input
+                                hist
+                                def
+                                inherit-input-method)
                        " "))))
 
 ;;;###autoload
