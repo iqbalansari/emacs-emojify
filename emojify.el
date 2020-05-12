@@ -1841,7 +1841,6 @@ completion UI to display properly emojis."
   (let* ((emojify-minibuffer-reading-emojis-p t)
          (line-spacing 7)
          (completion-ignore-case t)
-         ;; Ido can only accept a list so grab the keys of the hashmap
          (candidates (emojify--get-completing-read-candidates))
          ;; Vanilla Emacs completion and Icicles use the completion list mode to display candidates
          ;; the following makes sure emojify is enabled in the completion list
