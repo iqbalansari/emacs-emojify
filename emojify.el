@@ -1468,8 +1468,8 @@ non-interactive mode and `emojify-download-emojis-p' is set to `ask'."
 
 (defun emojify-download-emoji (emoji-set)
   "Download the provided EMOJI-SET."
-  (interactive (list (emojify-completing-read-function "Select the emoji set you want to download: "
-                                                       (ht-keys emojify-emoji-set-json))))
+  (interactive (list (completing-read "Select the emoji set you want to download: "
+                                      (ht-keys emojify-emoji-set-json))))
   (let ((emoji-data (ht-get emojify-emoji-set-json emoji-set)))
     (cond ((not emoji-data)
            (error "No emoji set named %s found" emoji-set))
