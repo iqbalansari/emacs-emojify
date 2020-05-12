@@ -796,15 +796,14 @@ The candidates are calculated according to currently active
                  (equal styles (car emojify--completing-candidates-cache)))
       (setq emojify--completing-candidates-cache
             (cons styles
-                  (let ((emojis (ht-create #'equal)))
+                  (let ((emojis '()))
                     (emojify-emojis-each (lambda (key value)
                                            (when (seq-position styles (ht-get value "style"))
-                                             (ht-set! emojis
-                                                      (format "%s - %s (%s)"
-                                                              key
-                                                              (ht-get value "name")
-                                                              (ht-get value "style"))
-                                                      value))))
+                                             (push (format "%s - %s (%s)"
+                                                           key
+                                                           (ht-get value "name")
+                                                           (ht-get value "style"))
+                                                   emojis))))
                     emojis))))
     (cdr emojify--completing-candidates-cache)))
 
@@ -1843,11 +1842,7 @@ completion UI to display properly emojis."
          (line-spacing 7)
          (completion-ignore-case t)
          ;; Ido can only accept a list so grab the keys of the hashmap
-         (candidates (let ((keys ()))
-                       (maphash (lambda (k v) (push k keys))
-                                (emojify--get-completing-read-candidates))
-
-                       keys))
+         (candidates (emojify--get-completing-read-candidates))
          ;; Vanilla Emacs completion and Icicles use the completion list mode to display candidates
          ;; the following makes sure emojify is enabled in the completion list
          (completion-list-mode-hook (cons #'emojify--completing-read-minibuffer-setup-hook
