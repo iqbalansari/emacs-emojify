@@ -74,7 +74,11 @@
     #+BEGIN_QUOTE
     M-x package-install RET emojify
     #+END_QUOTE
-
+**** With use-package
+#+begin_src elisp
+(use-package emojify
+  :hook (after-init . global-emojify-mode))
+#+end_src
 ** Usage
 *** Displaying emojis
     ~emojify-mode~ can be enabled/disabled separately for a buffer by using the
