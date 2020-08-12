@@ -2146,7 +2146,8 @@ displayed."
                      (overlay-get ov 'after-string)))
            (emojified-display (when disp
                                 (emojify-string disp '(unicode))))
-           (emojified-p (when emojified-display
+           (emojified-p (when (and (stringp emojified-display)
+                                   (not (zerop (length emojified-display))))
                           (text-property-any 0 (1- (length emojified-display))
                                              'emojified t
                                              emojified-display))))
