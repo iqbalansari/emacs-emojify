@@ -429,6 +429,13 @@ can customize `emojify-inhibit-major-modes' and
 
 
 
+;; Obsolete vars
+
+(define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
+(define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
+
+
+
 ;; Customizations to control display of emojis
 
 (defvar emojify-emoji-style-change-hook nil
@@ -635,13 +642,6 @@ the visible area."
                    41
                    ;; comment end
                    ?>)))))
-
-
-
-;; Obsolete vars
-
-(define-obsolete-variable-alias 'emojify-emoji-style 'emojify-emoji-styles "0.2")
-(define-obsolete-function-alias 'emojify-set-emoji-style 'emojify-set-emoji-styles "0.2")
 
 
 
