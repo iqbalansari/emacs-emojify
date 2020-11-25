@@ -24,15 +24,21 @@
         "sha256" : "eb0ff5637924a2a04d3ab649b66d816a69c5d71eab2bf5274d292115e8178244"
     },
     "twemoji-v2": {
-        "description": "Emojis provided by Twitter (version 2)",
+        "description" : "Emojis provided by Twitter (version 2)",
         "website" : "https://twemoji.twitter.com/",
         "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/twemoji-fixed-v2.tar",
-        "sha256": "0991b1032a04d948835fba4249f43993b4ac88a66d2ae7f278f03be31884851d"
+        "sha256" : "0991b1032a04d948835fba4249f43993b4ac88a66d2ae7f278f03be31884851d"
     },
     "twemoji-v2-22": {
-        "description": "Emojis provided by Twitter (version 2), resized to 22px",
+        "description" : "Emojis provided by Twitter (version 2), resized to 22px",
         "website" : "https://twemoji.twitter.com/",
         "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/9e36d0e8c2a9c373a39728f837a507adfbb7b931/twemoji-fixed-v2-22.tar",
-        "sha256": "e3ae26d7ac111fe0be7b90f29afdab89676610a865353dfb672673efb5af044a"
+        "sha256" : "e3ae26d7ac111fe0be7b90f29afdab89676610a865353dfb672673efb5af044a"
+    },
+    "openmoji-v13-0": {
+        "description" : "Emojis provided by HfG Schwäbisch Gmünd at 72px",
+        "website" : "https://openmoji.org",
+        "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/5bb02bd3b3398b154f6cb672c10dfd6a8aa5e3e8/openmoji-v13-0.tar",
+        "sha256" : "ccb0bce387e216a0c5f4ff54d53607dbfa1c62e7de9be95ee56af0cd39e42807"
     }
 }
