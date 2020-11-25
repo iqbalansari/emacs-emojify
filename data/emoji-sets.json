@@ -36,7 +36,7 @@
         "sha256" : "e3ae26d7ac111fe0be7b90f29afdab89676610a865353dfb672673efb5af044a"
     },
     "openmoji-v13-0": {
-        "description" : "Emojis provided by HfG Schwäbisch Gmünd at 72px",
+        "description" : "Emojis provided by HfG Schwäbisch Gmünd (version 13.0) at 72px",
         "website" : "https://openmoji.org",
         "url": "https://raw.githubusercontent.com/iqbalansari/emacs-emojify/5bb02bd3b3398b154f6cb672c10dfd6a8aa5e3e8/openmoji-v13-0.tar",
         "sha256" : "ccb0bce387e216a0c5f4ff54d53607dbfa1c62e7de9be95ee56af0cd39e42807"
