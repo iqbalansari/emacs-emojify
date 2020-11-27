@@ -324,6 +324,9 @@
 *** EmojiOne images
     The emoji images are distributed under [[http://creativecommons.org/licenses/by-sa/4.0/][Creative Commons License]] (CC-BY-SA).
 
+*** OpenMoji images
+    All emojis designed by [[https://openmoji.org/][OpenMoji]] – the open-source emoji and icon project. License: [[https://creativecommons.org/licenses/by-sa/4.0/#][CC BY-SA 4.0]]
+
 *** Twemoji images
     Copyright 2018 Twitter, Inc and other contributors
     Code licensed under the MIT License: http://opensource.org/licenses/MIT
