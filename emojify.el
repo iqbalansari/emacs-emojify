@@ -667,7 +667,7 @@ Does nothing if the value is anything else."
 
 (defcustom emojify-reveal-on-isearch t
   "Should underlying emoji be displayed when point enters emoji while in isearch mode."
-  :type 'bool
+  :type 'boolean
   :group 'emojify)
 
 (defcustom emojify-show-help t
