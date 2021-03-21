@@ -6,8 +6,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         emacs-version:
+          - emacs-27.1
+          - emacs-26.3
           - emacs-26.2
           - emacs-26.1
           - emacs-25.3
@@ -20,7 +23,6 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/emacsen
             ~/.emacs.d/emojis
           key: ${{ runner.os }}-${{ matrix.emacs-version }}-${{ hashFiles('**/Cask') }}
 
@@ -38,6 +40,11 @@ jobs:
           evm config path $HOME/emacsen
           evm install ${{ matrix.emacs-version }} --skip
           evm use ${{ matrix.emacs-version }}
+
+      - name: Download keyring.gpg for old versions
+        run: |
+          mkdir -p $HOME/emacsen/${{ matrix.emacs-version }}/etc
+          curl -Lo $HOME/emacsen/${{ matrix.emacs-version }}/etc/package-keyring.gpg https://github.com/emacs-mirror/emacs/raw/master/etc/package-keyring.gpg
 
       - name: Install Cask
         run: |
