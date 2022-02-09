@@ -1803,18 +1803,20 @@ Borrowed from apropos.el"
 ;; Inserting emojis
 
 (defun emojify--completing-read-minibuffer-setup-hook ()
-  "Enables `emojify-mode' in minbuffer while inserting emojis.
+  "Enables `emojify-mode' and add some line spacing in minbuffer while inserting emojis.
 
 This ensures `emojify' is enabled even when `global-emojify-mode' is not on."
-  (emojify-mode +1))
+  (emojify-mode +1)
+  (setq-local line-spacing 7))
 
 (defun emojify--completing-read-helm-hook ()
-  "Enables `emojify-mode' in helm buffer.
+  "Enables `emojify-mode' and add some line spacing in helm buffer.
 
 This ensures `emojify' is enabled in helm buffer displaying completion even when
 `global-emojify-mode' is not on."
   (with-current-buffer helm-buffer
-    (emojify-mode +1)))
+    (emojify-mode +1)
+    (setq-local line-spacing 7)))
 
 (defun emojify-completing-read (prompt &optional predicate require-match initial-input hist def inherit-input-method)
   "Read emoji from the user and return the selected emoji.
@@ -1839,7 +1841,6 @@ This function sets up `ido', `icicles', `helm', `ivy' and vanilla Emacs
 completion UI to display properly emojis."
   (emojify-create-emojify-emojis)
   (let* ((emojify-minibuffer-reading-emojis-p t)
-         (line-spacing 7)
          (completion-ignore-case t)
          (candidates (emojify--get-completing-read-candidates))
          ;; Vanilla Emacs completion and Icicles use the completion list mode to display candidates
