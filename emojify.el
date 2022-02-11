@@ -56,6 +56,7 @@
 ;; Required to determine point is in an org-list
 (declare-function org-list-get-item-begin "org-list")
 (declare-function org-at-heading-p "org")
+(declare-function org-in-regexp "org-macs")
 
 ;; Required to determine the context is in an org-src block
 (declare-function org-element-type "org-element")
@@ -485,7 +486,7 @@ Possible values are
   :group 'emojify)
 
 (defcustom emojify-inhibit-functions
-  '(emojify-in-org-tags-p emojify-in-org-list-p)
+  '(emojify-in-org-tags-p emojify-in-org-list-p emojify-in-org-emphasis-p)
   "Functions used to determine given emoji should displayed at current point.
 
 These functions are called with 3 arguments, the text to be emojified, the start
@@ -534,6 +535,16 @@ of the emoji text in the buffer.  The arguments IGNORED are ignored."
   (and (eq major-mode 'org-mode)
        (equal text "8)")
        (equal (org-list-get-item-begin) beg)))
+
+(defun emojify-in-org-emphasis-p (text &optional beg _end)
+  "Determine whether the point is in `org-mode' emphasis.
+
+TEXT is the text which is supposed to rendered a an emoji. BEG is the beginning
+of the emoji text in the buffer. _END is end."
+  (and (memq major-mode '(org-mode org-agenda-mode))
+       (cl-loop for (marker . emphasis-name) in org-emphasis-alist
+           if (emojify--org-in-specfic-emphasis-p marker)
+           return t)))
 
 (defun emojify-program-context-at-point-per-syntax-table (beg end)
   "Determine the progamming context between BEG and END using the the syntax table."
@@ -642,6 +653,20 @@ the visible area."
                    41
                    ;; comment end
                    ?>)))))
+
+(defun emojify--org-in-specfic-emphasis-p (marker)
+  "Check if point is in MARKER emphasis."
+  (let ((regexp (emojify--org-emphasis-regexp-builder marker)))
+    (save-match-data
+      (and (org-in-regexp regexp 2)
+           (>= (point) (match-beginning 3))
+           (<= (point) (match-end 4))))))
+
+(defun emojify--org-emphasis-regexp-builder (marker)
+  "Return regex that match MARKER marker."
+  (concat "\\([-[:space:]('\"{]\\|^\\)\\(\\(["
+          marker
+          "~]\\)\\([^[:space:]]\\|[^[:space:]].*?\\(?:\n.*?\\)\\{0,1\\}[^[:space:]]\\)\\3\\)\\([-[:space:].,:!?;'\")}\\[]\\|$\\)"))
 
 
 
