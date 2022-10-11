@@ -1154,7 +1154,8 @@ should not be a problem 🤞."
                                                       major-mode)))
                            ;; Display unconditionally in non-prog mode
                            (or (not (emojify-provided-mode-derived-p major-mode-at-point
-                                                                     'prog-mode 'tuareg--prog-mode 'comint-mode 'smalltalk-mode))
+                                                                     'prog-mode 'tuareg--prog-mode 'comint-mode
+                                                                     'smalltalk-mode 'vterm-mode 'term-mode 'eshell-mode))
                                ;; In prog mode enable respecting `emojify-program-contexts'
                                (emojify-valid-program-context-p emoji
                                                                 match-beginning
